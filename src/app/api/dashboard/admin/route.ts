@@ -29,13 +29,19 @@ export async function GET(req: Request) {
     
     let attendanceStats = { present: 0, absent: 0, late: 0, leave: 0 };
     todaysAttendance.forEach(a => {
-      if (a.status === "Present") attendanceStats.present++;
-      else if (a.status === "Absent") attendanceStats.absent++;
-      else if (a.status === "Late") attendanceStats.late++;
-      else if (a.status === "HalfDay") attendanceStats.leave++; // Counting half day as leave/partial for this stat
+      if (a.status === "Present") {
+        attendanceStats.present++;
+        if (a.metrics?.isLate) {
+          attendanceStats.late++;
+        }
+      } else if (a.status === "Absent") {
+        attendanceStats.absent++;
+      } else if (a.status === "Half-Day" || a.status === "Leave") {
+        attendanceStats.leave++;
+      }
     });
     // Add logic to query LeaveRequests for actual 'leave' count if needed, mocking based on absent for now if not strictly recorded today
-    attendanceStats.absent = totalEmployees - attendanceStats.present - attendanceStats.late - attendanceStats.leave;
+    attendanceStats.absent = totalEmployees - attendanceStats.present - attendanceStats.leave;
     if (attendanceStats.absent < 0) attendanceStats.absent = 0;
 
     // 2. Financials (Wallet & Payroll)

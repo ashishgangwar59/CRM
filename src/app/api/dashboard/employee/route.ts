@@ -48,10 +48,18 @@ export async function GET(req: Request) {
     });
 
     // 3. Leave Balances
-    const leaveBalances = await LeaveBalance.find({ employeeId }).lean();
-    const leaveGraph = leaveBalances.map(lb => ({
-      name: lb.leaveType,
-      value: lb.balance
+    const leaveBalance = await LeaveBalance.findOne({ employeeId }).lean();
+    const balances = leaveBalance?.balances || {
+      Paid: 0,
+      Casual: 0,
+      Sick: 0,
+      Maternity: 0,
+      Paternity: 0,
+      CompOff: 0
+    };
+    const leaveGraph = Object.entries(balances).map(([name, value]) => ({
+      name,
+      value: value as number
     }));
 
     // 4. Salary Summary & History
@@ -78,7 +86,7 @@ export async function GET(req: Request) {
       const diffTime = Math.abs(dob.getTime() - today.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays <= 30;
-    }).map(emp => ({ name: `${emp.firstName} ${emp.lastName}`, date: new Date(emp.dateOfBirth).toLocaleDateString() }));
+    }).map(emp => ({ name: `${emp.firstName} ${emp.lastName}`, date: new Date(emp.dateOfBirth!).toLocaleDateString() }));
 
     // 6. Announcements
     const announcements = await Announcement.find()

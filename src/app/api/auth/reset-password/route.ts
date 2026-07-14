@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { Session } from "@/lib/models/Session";
-import { AuditLog } from "@/lib/models/AuditLog";
+import { logAudit } from "@/lib/audit";
 import { hashPassword } from "@/lib/auth";
 import jwt from "jsonwebtoken";
 
@@ -44,12 +44,13 @@ export async function POST(req: Request) {
 
     await Session.deleteMany({ userId: user._id });
 
-    await AuditLog.create({
-      action: "PASSWORD_CHANGED",
-      userId: user._id,
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      details: "Password was reset via token",
-    });
+    await logAudit(
+      req,
+      user._id.toString(),
+      "PASSWORD_CHANGED",
+      "Auth",
+      "Password was reset via token"
+    );
 
     return NextResponse.json({ success: true, message: "Password updated successfully" });
   } catch (error) {

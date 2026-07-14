@@ -50,8 +50,8 @@ export async function GET(req: Request) {
           }
           rows.push({
             Date: a.date,
-            Employee: `${a.employeeId?.firstName || ""} ${a.employeeId?.lastName || ""}`,
-            Code: a.employeeId?.employeeCode || "",
+            Employee: `${(a.employeeId as any)?.firstName || ""} ${(a.employeeId as any)?.lastName || ""}`,
+            Code: (a.employeeId as any)?.employeeCode || "",
             Status: a.status,
             WorkingHours: a.metrics?.workingHours || 0
           });
@@ -68,12 +68,19 @@ export async function GET(req: Request) {
         let leaveCounts: any = { Approved: 0, Pending: 0, Rejected: 0 };
         leaveRecords.forEach(l => {
           leaveCounts[l.status] = (leaveCounts[l.status] || 0) + 1;
+          let days = 0;
+          if (l.isHalfDay) {
+            days = 0.5;
+          } else {
+            const diff = Math.abs(new Date(l.endDate).getTime() - new Date(l.startDate).getTime());
+            days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+          }
           rows.push({
-            Employee: `${l.employeeId?.firstName || ""} ${l.employeeId?.lastName || ""}`,
+            Employee: `${(l.employeeId as any)?.firstName || ""} ${(l.employeeId as any)?.lastName || ""}`,
             LeaveType: l.leaveType,
             StartDate: new Date(l.startDate).toLocaleDateString(),
             EndDate: new Date(l.endDate).toLocaleDateString(),
-            Days: l.totalDays,
+            Days: days,
             Status: l.status
           });
         });
@@ -91,7 +98,7 @@ export async function GET(req: Request) {
           salaryCounts[p.status] = (salaryCounts[p.status] || 0) + 1;
           rows.push({
             Month: p.monthYear,
-            Employee: `${p.employeeId?.firstName || ""} ${p.employeeId?.lastName || ""}`,
+            Employee: `${(p.employeeId as any)?.firstName || ""} ${(p.employeeId as any)?.lastName || ""}`,
             Gross: p.grossSalary,
             Deductions: p.totalDeductions,
             Net: p.netSalary,
@@ -114,7 +121,7 @@ export async function GET(req: Request) {
             Type: w.type,
             Amount: w.amount,
             Description: w.description,
-            CreatedBy: `${w.createdBy?.firstName || ""} ${w.createdBy?.lastName || ""}`
+            CreatedBy: `${(w.createdBy as any)?.firstName || ""} ${(w.createdBy as any)?.lastName || ""}`
           });
         });
         summary = Object.keys(txCounts).map(k => ({ name: k, value: txCounts[k] }));
@@ -137,7 +144,7 @@ export async function GET(req: Request) {
             Email: e.email,
             Department: e.department,
             Designation: e.designation,
-            JoinDate: e.joinDate ? new Date(e.joinDate).toLocaleDateString() : "-"
+            JoinDate: e.dateOfJoining ? new Date(e.dateOfJoining).toLocaleDateString() : "-"
           });
         });
         summary = Object.keys(deptCounts).map(k => ({ name: k, value: deptCounts[k] }));
@@ -157,7 +164,7 @@ export async function GET(req: Request) {
             Source: l.source,
             Stage: l.stage,
             Status: l.status,
-            Owner: `${l.ownerId?.firstName || ""} ${l.ownerId?.lastName || ""}`
+            Owner: `${(l.ownerId as any)?.firstName || ""} ${(l.ownerId as any)?.lastName || ""}`
           });
         });
         summary = Object.keys(leadCounts).map(k => ({ name: k, value: leadCounts[k] }));

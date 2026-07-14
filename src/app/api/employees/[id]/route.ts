@@ -15,7 +15,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const user = await User.findOne({ email: employee.email });
-    const employeeData = employee.toObject();
+    const employeeData = employee.toObject() as any;
     if (user) {
       employeeData.accessibleModules = user.accessibleModules;
     }

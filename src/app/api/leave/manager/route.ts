@@ -4,6 +4,7 @@ import { Leave } from "@/lib/models/Leave";
 import { LeaveBalance } from "@/lib/models/LeaveBalance";
 import { LeaveLedger } from "@/lib/models/LeaveLedger";
 import { verifyAccessToken } from "@/lib/auth";
+import mongoose from "mongoose";
 
 export async function GET(req: Request) {
   try {
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
       leave.status = "Rejected";
     }
 
-    leave.managerId = payload.userId;
+    leave.managerId = new mongoose.Types.ObjectId(payload.userId);
     leave.managerNotes = managerNotes || "";
     await leave.save();
 

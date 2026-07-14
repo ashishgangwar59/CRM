@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [modules, setModules] = useState<string[]>([]);
 

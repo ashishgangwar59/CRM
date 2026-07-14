@@ -25,7 +25,7 @@ export async function PUT(req: Request) {
     const user = await User.findById(payload.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const isMatch = await comparePassword(oldPassword, user.password);
+    const isMatch = await comparePassword(oldPassword, user.password || "");
     if (!isMatch) {
       return NextResponse.json({ error: "Incorrect old password" }, { status: 400 });
     }

@@ -5,6 +5,7 @@ import { Employee } from "@/lib/models/Employee";
 import { Lead } from "@/lib/models/Lead";
 import { Payroll } from "@/lib/models/Payroll";
 import { Attendance } from "@/lib/models/Attendance";
+import { SalaryStructure } from "@/lib/models/SalaryStructure";
 
 export async function GET(req: Request) {
   try {
@@ -89,7 +90,12 @@ export async function GET(req: Request) {
 
     // 4. Financial Forecasting (Salary)
     // Find average salary of active employees
-    const avgSalary = employees.reduce((sum, e) => sum + e.basicSalary, 0) / (employees.length || 1);
+    const salaryStructures = await SalaryStructure.find().lean();
+    const salaryMap = new Map(
+      salaryStructures.map(s => [s.employeeId.toString(), s.basic + s.hra + s.specialAllowance])
+    );
+    const employeeSalaries = employees.map(e => salaryMap.get(e._id.toString()) || 30000);
+    const avgSalary = employeeSalaries.reduce((sum, val) => sum + val, 0) / (employeeSalaries.length || 1);
     const projectedMonthlyRunRate = employees.length * avgSalary;
 
     // Generate 6 month chart data
