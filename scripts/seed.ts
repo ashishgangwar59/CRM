@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crm";
+const MONGODB_URI = process.env.MONGODB_URI;
 
 // Define simplified User schema just for seeding
 const UserSchema = new mongoose.Schema(
@@ -24,9 +24,9 @@ async function main() {
   console.log(`Connecting to MongoDB at ${MONGODB_URI}...`);
   await mongoose.connect(MONGODB_URI);
 
-  const email = process.env.DEFAULT_ADMIN_EMAIL || 'admin@gmial.com';
-  const password = process.env.DEFAULT_ADMIN_PASSWORD || 'Asdmin@123';
-  
+  const email = process.env.DEFAULT_ADMIN_EMAIL;
+  const password = process.env.DEFAULT_ADMIN_PASSWORD;
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const existingAdmin = await User.findOne({ email });
