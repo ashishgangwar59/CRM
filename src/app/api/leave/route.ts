@@ -3,6 +3,8 @@ import { connectToDatabase } from "@/lib/db";
 import { Leave } from "@/lib/models/Leave";
 import { LeaveBalance } from "@/lib/models/LeaveBalance";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
 
 export async function GET(req: Request) {
   try {
@@ -15,7 +17,13 @@ export async function GET(req: Request) {
     try { payload = verifyAccessToken(token); } 
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
-    const leaves = await Leave.find({ employeeId: payload.userId }).sort({ createdAt: -1 }).lean();
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+
+    const leaves = await Leave.find({ employeeId: employee._id }).sort({ createdAt: -1 }).lean();
     return NextResponse.json({ success: true, data: leaves });
   } catch (error) {
     console.error("Fetch Leaves Error:", error);
@@ -33,6 +41,12 @@ export async function POST(req: Request) {
     let payload;
     try { payload = verifyAccessToken(token); } 
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
+
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
 
     const { leaveType, startDate, endDate, isHalfDay, hourlyDuration, reason } = await req.json();
 
@@ -57,7 +71,7 @@ export async function POST(req: Request) {
 
     // Check Balance if it's not Loss of Pay
     if (leaveType !== "Loss of Pay") {
-      const balanceDoc = await LeaveBalance.findOne({ employeeId: payload.userId });
+      const balanceDoc = await LeaveBalance.findOne({ employeeId: employee._id });
       const currentBalance = balanceDoc ? (balanceDoc.balances as any)[leaveType] : 0;
       
       if (currentBalance < requestedDays) {
@@ -69,7 +83,7 @@ export async function POST(req: Request) {
     // For MVP, we'll assume `requestedDays` is accurate to what the user inputted or we'd automatically add +2 if a weekend is detected.
     
     const leave = await Leave.create({
-      employeeId: payload.userId,
+      employeeId: employee._id,
       leaveType,
       startDate: start,
       endDate: end,

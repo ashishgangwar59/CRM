@@ -15,6 +15,9 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
+    if (payload.role !== "Super Admin" && payload.role !== "ADMIN" && payload.role !== "Employee") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type"); // Attendance, Leave, Salary, Wallet, Employee, Department, Lead

@@ -129,6 +129,10 @@ export default function SettingsPage() {
                       <Label>Contact Phone</Label>
                       <Input value={settings.companyProfile.phone} onChange={e => setSettings({...settings, companyProfile: {...settings.companyProfile, phone: e.target.value}})} />
                     </div>
+                    <div className="space-y-2">
+                      <Label>GST Number</Label>
+                      <Input value={settings.companyProfile.gstNo || ""} onChange={e => setSettings({...settings, companyProfile: {...settings.companyProfile, gstNo: e.target.value}})} />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>HQ Address</Label>

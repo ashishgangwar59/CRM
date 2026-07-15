@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+import Image from "next/image";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -51,7 +53,17 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-1 text-center flex flex-col items-center">
+          <div className="mb-2">
+            <Image
+              src="/logo.png"
+              alt="CRM Hub Logo"
+              width={64}
+              height={64}
+              className="object-contain rounded-md"
+              priority
+            />
+          </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
           <CardDescription>
             Enter your email and password to access your account.

@@ -8,6 +8,7 @@ export interface ISystemSettings extends Document {
     phone: string;
     website: string;
     email: string;
+    gstNo?: string;
   };
   departments: string[];
   designations: string[];
@@ -54,7 +55,8 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
       address: { type: String, default: "" },
       phone: { type: String, default: "" },
       website: { type: String, default: "" },
-      email: { type: String, default: "" }
+      email: { type: String, default: "" },
+      gstNo: { type: String, default: "" }
     },
     departments: { type: [String], default: ["Engineering", "Sales", "HR", "Marketing"] },
     designations: { type: [String], default: ["Manager", "Developer", "Analyst"] },
@@ -70,7 +72,7 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
       carryForwardLimit: { type: Number, default: 5 }
     },
     attendancePolicy: {
-      officeStartTime: { type: String, default: "09:00" },
+      officeStartTime: { type: String, default: "10:00" },
       lateThresholdMins: { type: Number, default: 15 },
       halfDayThresholdMins: { type: Number, default: 240 }
     },
@@ -78,15 +80,46 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
       name: { type: String },
       permissions: { type: [String] }
     }],
-    emailTemplates: [{
-      triggerEvent: { type: String },
-      subject: { type: String },
-      body: { type: String }
-    }],
-    smsTemplates: [{
-      triggerEvent: { type: String },
-      body: { type: String }
-    }],
+    emailTemplates: {
+      type: [{
+        triggerEvent: String,
+        subject: String,
+        body: String
+      }],
+      default: [
+        {
+          triggerEvent: "Leave Approved",
+          subject: "Leave Request Approved",
+          body: "Hi {{employeeName}},\n\nYour leave request from {{startDate}} to {{endDate}} has been approved.\n\nBest regards,\nHR Team"
+        },
+        {
+          triggerEvent: "Leave Rejected",
+          subject: "Leave Request Update",
+          body: "Hi {{employeeName}},\n\nYour leave request from {{startDate}} to {{endDate}} has been rejected. Reason: {{reason}}.\n\nBest regards,\nHR Team"
+        },
+        {
+          triggerEvent: "Late Attendance Notice",
+          subject: "Late Attendance Notice",
+          body: "Hi {{employeeName}},\n\nYou checked in late today at {{punchInTime}}.\n\nBest regards,\nHR Team"
+        }
+      ]
+    },
+    smsTemplates: {
+      type: [{
+        triggerEvent: String,
+        body: String
+      }],
+      default: [
+        {
+          triggerEvent: "OTP Verification",
+          body: "Your CRM login OTP is {{otp}}. Valid for 5 minutes."
+        },
+        {
+          triggerEvent: "Lead Assigned",
+          body: "A new lead {{leadName}} has been assigned to you. Check leads page."
+        }
+      ]
+    },
     salaryComponents: [{
       name: { type: String },
       type: { type: String, enum: ["Earning", "Deduction"] }

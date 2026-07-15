@@ -78,12 +78,39 @@ export default function ManagerAttendancePage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        record.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                        "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                      }`}>
-                        {record.status}
-                      </span>
+                      <select 
+                        value={record.status} 
+                        onChange={async (e) => {
+                          const newStatus = e.target.value;
+                          try {
+                            const res = await fetch("/api/attendance/manager", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ attendanceId: record._id, status: newStatus })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              alert(`Status updated to ${newStatus}`);
+                              fetchRecords();
+                            } else {
+                              alert(data.error || "Failed to update status");
+                            }
+                          } catch (err) {
+                            alert("Error updating status");
+                          }
+                        }}
+                        className={`rounded-md border border-zinc-200 px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 ${
+                          record.status === "Present" ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/30" :
+                          record.status === "Half-Day" ? "text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30" :
+                          "text-rose-700 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/30"
+                        }`}
+                      >
+                        <option value="Present">Present</option>
+                        <option value="Half-Day">Half-Day</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Leave">Leave</option>
+                        <option value="Holiday">Holiday</option>
+                      </select>
                       {record.metrics.isLate && <span className="ml-2 text-xs text-amber-600 font-medium">Late</span>}
                       {record.metrics.isEarlyLeave && <span className="ml-2 text-xs text-amber-600 font-medium">Early Leave</span>}
                     </TableCell>

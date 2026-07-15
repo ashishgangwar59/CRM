@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     });
 
     // Create a User account for the employee to log in
-    const hashedPassword = await bcrypt.hash(data.password || "Employee@123", 10);
+    const rawPassword = data.password || "Employee@123";
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
     const accessibleModules = data.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"];
     
     await User.create({
@@ -40,6 +41,23 @@ export async function POST(req: Request) {
       role: "Employee",
       accessibleModules,
     });
+
+    // Send Welcome Email containing credentials and login URL
+    try {
+      const origin = req.headers.get("origin") || "http://localhost:3000";
+      const loginUrl = `${origin}/login`;
+      
+      const { sendWelcomeEmail } = require("@/lib/mail");
+      await sendWelcomeEmail({
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        password: rawPassword,
+        loginUrl
+      });
+    } catch (mailError) {
+      console.error("Welcome email delivery failed:", mailError);
+    }
 
     return NextResponse.json({ success: true, data: newEmployee }, { status: 201 });
   } catch (error: any) {

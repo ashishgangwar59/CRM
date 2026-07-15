@@ -16,6 +16,8 @@ export default function EditEmployeePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [designations, setDesignations] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -33,6 +35,16 @@ export default function EditEmployeePage() {
   });
 
   useEffect(() => {
+    // Fetch departments and designations from settings
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setDepartments(data.data.departments || []);
+          setDesignations(data.data.designations || []);
+        }
+      });
+
     fetch(`/api/employees/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -171,6 +183,34 @@ export default function EditEmployeePage() {
                     <Input id="phone" required value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <select
+                      id="department"
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                      value={formData.department}
+                      onChange={(e) => handleChange("department", e.target.value)}
+                    >
+                      {departments.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                      {departments.length === 0 && <option value="">No departments configured</option>}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="designation">Designation</Label>
+                    <select
+                      id="designation"
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                      value={formData.designation}
+                      onChange={(e) => handleChange("designation", e.target.value)}
+                    >
+                      {designations.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                      {designations.length === 0 && <option value="">No designations configured</option>}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Profile Photo</Label>
                     <div className="flex items-center space-x-2">
                       <Input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, "profilePhotoUrl")} />
@@ -190,12 +230,32 @@ export default function EditEmployeePage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input id="department" value={formData.department} onChange={(e) => handleChange("department", e.target.value)} />
+                    <Label htmlFor="official-department">Department</Label>
+                    <select
+                      id="official-department"
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                      value={formData.department}
+                      onChange={(e) => handleChange("department", e.target.value)}
+                    >
+                      {departments.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                      {departments.length === 0 && <option value="">No departments configured</option>}
+                    </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="designation">Designation</Label>
-                    <Input id="designation" value={formData.designation} onChange={(e) => handleChange("designation", e.target.value)} />
+                    <Label htmlFor="official-designation">Designation</Label>
+                    <select
+                      id="official-designation"
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                      value={formData.designation}
+                      onChange={(e) => handleChange("designation", e.target.value)}
+                    >
+                      {designations.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                      {designations.length === 0 && <option value="">No designations configured</option>}
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>

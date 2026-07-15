@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { LeaveBalance } from "@/lib/models/LeaveBalance";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
 
 export async function GET(req: Request) {
   try {
@@ -14,12 +16,18 @@ export async function GET(req: Request) {
     try { payload = verifyAccessToken(token); } 
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
-    let balance = await LeaveBalance.findOne({ employeeId: payload.userId }).lean();
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+
+    let balance = await LeaveBalance.findOne({ employeeId: employee._id }).lean();
 
     // If no balance exists yet, create default allocation for MVP
     if (!balance) {
       balance = await LeaveBalance.create({
-        employeeId: payload.userId,
+        employeeId: employee._id,
         balances: {
           Paid: 12,
           Casual: 6,

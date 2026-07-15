@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar, Plus } from "lucide-react";
 
 export default function HolidaysPage() {
+  const [role, setRole] = useState<string | null>(null);
   const [holidays, setHolidays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -34,8 +35,21 @@ export default function HolidaysPage() {
     }
   };
 
+  const fetchRole = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.success) {
+        setRole(data.role);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchHolidays();
+    fetchRole();
   }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -68,9 +82,11 @@ export default function HolidaysPage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Holiday Calendar</h1>
           <p className="text-zinc-500 dark:text-zinc-400">View upcoming company and public holidays.</p>
         </div>
-        <Button onClick={() => setShowAdd(!showAdd)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Holiday
-        </Button>
+        {(role === "ADMIN" || role === "Super Admin") && (
+          <Button onClick={() => setShowAdd(!showAdd)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Holiday
+          </Button>
+        )}
       </div>
 
       {showAdd && (

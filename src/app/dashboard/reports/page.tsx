@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,7 +17,9 @@ const REPORT_TYPES = [
 ];
 
 export default function UniversalReportsPage() {
-  const [type, setType] = useState("Salary");
+  const [role, setRole] = useState<string | null>(null);
+  const [modules, setModules] = useState<string[]>([]);
+  const [type, setType] = useState("");
   const [dateFilter, setDateFilter] = useState("month"); // 'month' or 'year'
   const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
   const [year, setYear] = useState(new Date().getFullYear().toString()); // YYYY
@@ -26,6 +28,37 @@ export default function UniversalReportsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setRole(data.role);
+          setModules(data.accessibleModules || []);
+        }
+      });
+  }, []);
+
+  const allowedReportTypes = REPORT_TYPES.filter(t => {
+    if (!role) return false;
+    if (role === "Super Admin" || role === "ADMIN") return true;
+    
+    // Map report types to modules
+    if (t === "Attendance") return modules.includes("Attendance");
+    if (t === "Leave") return modules.includes("Leave");
+    if (t === "Salary") return modules.includes("Payroll");
+    if (t === "Wallet") return modules.includes("Wallet");
+    if (t === "Employee" || t === "Department") return modules.includes("Employees");
+    if (t === "Lead") return modules.includes("Leads");
+    return false;
+  });
+
+  useEffect(() => {
+    if (allowedReportTypes.length > 0 && !type) {
+      setType(allowedReportTypes[0]);
+    }
+  }, [allowedReportTypes, type]);
 
   const fetchReport = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -96,47 +129,47 @@ export default function UniversalReportsPage() {
       </div>
 
       {/* Control Panel */}
-      <Card className="bg-indigo-950 text-white border-indigo-900 shadow-xl">
+      <Card className="bg-white text-zinc-900 border-zinc-200 dark:bg-zinc-950 dark:text-zinc-50 shadow-md">
         <CardContent className="p-6">
           <form onSubmit={fetchReport} className="flex flex-col md:flex-row gap-4 items-end">
             <div className="w-full md:w-64 space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-indigo-300">Report Type</label>
-              <select className="flex h-10 w-full rounded-md border-0 bg-indigo-900/50 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" value={type} onChange={e => setType(e.target.value)}>
-                {REPORT_TYPES.map(t => <option key={t} value={t} className="bg-indigo-950">{t} Report</option>)}
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Report Type</label>
+              <select className="flex h-10 w-full rounded-md border border-zinc-200 bg-white text-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50" value={type} onChange={e => setType(e.target.value)}>
+                {allowedReportTypes.map(t => <option key={t} value={t} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50">{t} Report</option>)}
               </select>
             </div>
             
             <div className="w-full md:w-48 space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-indigo-300">Date Filter</label>
-              <select className="flex h-10 w-full rounded-md border-0 bg-indigo-900/50 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" value={dateFilter} onChange={e => setDateFilter(e.target.value)}>
-                <option value="month" className="bg-indigo-950">Monthly</option>
-                <option value="year" className="bg-indigo-950">Yearly</option>
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Date Filter</label>
+              <select className="flex h-10 w-full rounded-md border border-zinc-200 bg-white text-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50" value={dateFilter} onChange={e => setDateFilter(e.target.value)}>
+                <option value="month" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50">Monthly</option>
+                <option value="year" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50">Yearly</option>
               </select>
             </div>
 
             {dateFilter === "month" ? (
               <div className="w-full md:w-48 space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-indigo-300">Month</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Month</label>
                 <input 
                   type="month" 
                   value={monthYear} 
                   onChange={e => setMonthYear(e.target.value)} 
-                  className="flex h-10 w-full rounded-md border-0 bg-indigo-900/50 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 [color-scheme:dark]"
+                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white text-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
                 />
               </div>
             ) : (
               <div className="w-full md:w-48 space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-indigo-300">Year</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Year</label>
                 <input 
                   type="number" 
                   value={year} 
                   onChange={e => setYear(e.target.value)} 
-                  className="flex h-10 w-full rounded-md border-0 bg-indigo-900/50 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white text-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
                 />
               </div>
             )}
 
-            <Button type="submit" disabled={loading} className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 h-10 px-8">
+            <Button type="submit" disabled={loading} className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 border-0 h-10 px-8">
               {loading ? "Generating..." : <><Filter className="w-4 h-4 mr-2" /> Generate</>}
             </Button>
           </form>

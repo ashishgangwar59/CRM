@@ -22,6 +22,14 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     
+    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { verifyAccessToken } = require("@/lib/auth");
+    const payload = verifyAccessToken(token);
+    if (payload.role === "Employee") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { name, date, type, description } = await req.json();
 
     const holiday = await Holiday.create({

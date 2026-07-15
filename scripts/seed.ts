@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://e2e_website:H26fzSu4IQTv7JmL@cluster0.c6zdint.mongodb.net/crm?retryWrites=true&w=majority&appName=Cluster0";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/";
 
 // Define simplified User schema just for seeding
 const UserSchema = new mongoose.Schema(

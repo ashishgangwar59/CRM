@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plane, Plus, XCircle } from "lucide-react";
+import Link from "next/link";
 
 export default function LeaveDashboardPage() {
+  const [role, setRole] = useState<string | null>(null);
   const [balances, setBalances] = useState<any>(null);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,8 +42,21 @@ export default function LeaveDashboardPage() {
     }
   };
 
+  const fetchRole = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.success) {
+        setRole(data.role);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchRole();
   }, []);
 
   const handleApply = async (e: React.FormEvent) => {
@@ -93,9 +108,16 @@ export default function LeaveDashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Leave Management</h1>
           <p className="text-zinc-500 dark:text-zinc-400">View your balances and apply for time off.</p>
         </div>
-        <Button onClick={() => setShowApply(!showApply)}>
-          <Plus className="mr-2 h-4 w-4" /> Apply Leave
-        </Button>
+        <div className="flex space-x-2">
+          {role && role !== "Employee" && (
+            <Link href="/dashboard/leave/manager">
+              <Button variant="outline">Team Approvals</Button>
+            </Link>
+          )}
+          <Button onClick={() => setShowApply(!showApply)}>
+            <Plus className="mr-2 h-4 w-4" /> Apply Leave
+          </Button>
+        </div>
       </div>
 
       {showApply && (
@@ -175,8 +197,8 @@ export default function LeaveDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leaves.map((leave) => {
-                const isPendingOrApproved = leave.status === "Pending" || leave.status === "Approved";
+               {leaves.map((leave) => {
+                const isPending = leave.status === "Pending";
                 const isPast = new Date(leave.startDate) < new Date();
                 
                 return (
@@ -197,7 +219,7 @@ export default function LeaveDashboardPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {isPendingOrApproved && !isPast && (
+                      {isPending && !isPast && (
                         <Button variant="ghost" size="sm" onClick={() => handleCancel(leave._id)} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50">
                           <XCircle className="mr-2 h-4 w-4" /> Cancel
                         </Button>

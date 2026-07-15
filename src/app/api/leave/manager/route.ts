@@ -4,6 +4,8 @@ import { Leave } from "@/lib/models/Leave";
 import { LeaveBalance } from "@/lib/models/LeaveBalance";
 import { LeaveLedger } from "@/lib/models/LeaveLedger";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
 import mongoose from "mongoose";
 
 export async function GET(req: Request) {
@@ -13,10 +15,28 @@ export async function GET(req: Request) {
     // Auth
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    let payload;
+    try { payload = verifyAccessToken(token); } 
+    catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
+
+    let query: any = {};
+
+    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+      const user = await User.findById(payload.userId);
+      if (user) {
+        const managerEmployee = await Employee.findOne({ email: user.email });
+        if (managerEmployee && managerEmployee.department) {
+          // Find all employees belonging to the manager's department
+          const sameDeptEmployees = await Employee.find({ department: managerEmployee.department }).select("_id");
+          const employeeIds = sameDeptEmployees.map(e => e._id);
+          query.employeeId = { $in: employeeIds };
+        }
+      }
+    }
     
-    // Fetch all pending leaves across the team
-    const leaves = await Leave.find({ status: "Pending" })
-      .populate("employeeId", "firstName lastName employeeCode")
+    // Fetch pending leaves populated with employee details and department name
+    const leaves = await Leave.find(query)
+      .populate("employeeId", "firstName lastName employeeCode department")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -43,6 +63,18 @@ export async function POST(req: Request) {
     const leave = await Leave.findById(leaveId);
     if (!leave) return NextResponse.json({ error: "Leave not found" }, { status: 404 });
     if (leave.status !== "Pending") return NextResponse.json({ error: "Leave is not pending" }, { status: 400 });
+
+    // Verify department constraints if regular manager (excluding Super Admin and ADMIN)
+    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+      const user = await User.findById(payload.userId);
+      if (user) {
+        const managerEmployee = await Employee.findOne({ email: user.email });
+        const leaveEmployee = await Employee.findById(leave.employeeId);
+        if (managerEmployee && leaveEmployee && managerEmployee.department !== leaveEmployee.department) {
+          return NextResponse.json({ error: "Forbidden: You can only approve/reject leaves within your department." }, { status: 403 });
+        }
+      }
+    }
 
     if (action === "Approve") {
       leave.status = "Approved";

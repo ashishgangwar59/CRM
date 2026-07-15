@@ -3,6 +3,9 @@ import { connectToDatabase } from "@/lib/db";
 import { Attendance } from "@/lib/models/Attendance";
 import { AttendanceSettings } from "@/lib/models/AttendanceSettings";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
+import { LeaveBalance } from "@/lib/models/LeaveBalance";
 
 // Helper to parse "HH:MM" into minutes since midnight
 function timeToMinutes(timeStr: string) {
@@ -25,6 +28,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+
     const { action, latitude, longitude } = await req.json(); // action = "IN" or "OUT"
     const ipAddress = req.headers.get("x-forwarded-for") || "unknown";
     
@@ -35,10 +44,13 @@ export async function POST(req: Request) {
     // Get settings
     let settings = await AttendanceSettings.findOne();
     if (!settings) {
-      settings = await AttendanceSettings.create({}); // Use defaults
+      settings = await AttendanceSettings.create({ standardStartTime: "10:00" }); // Use defaults
+    } else if (settings.standardStartTime === "09:00") {
+      settings.standardStartTime = "10:00";
+      await settings.save();
     }
 
-    let attendance = await Attendance.findOne({ employeeId: payload.userId, date: dateStr });
+    let attendance = await Attendance.findOne({ employeeId: employee._id, date: dateStr });
 
     if (action === "IN") {
       if (attendance?.punchIn) {
@@ -52,7 +64,7 @@ export async function POST(req: Request) {
 
       if (!attendance) {
         attendance = new Attendance({
-          employeeId: payload.userId,
+          employeeId: employee._id,
           date: dateStr,
           status: "Present",
           metrics: { isLate, isEarlyLeave: false, workingHours: 0, overtimeHours: 0 }
@@ -75,7 +87,7 @@ export async function POST(req: Request) {
       }
 
       // Calculate working hours
-      const diffMs = now.getTime() - attendance.punchIn.time.getTime();
+      const diffMs = now.getTime() - new Date(attendance.punchIn.time).getTime();
       const workingHours = diffMs / (1000 * 60 * 60);
 
       // Check Early Leave
@@ -91,6 +103,18 @@ export async function POST(req: Request) {
       const standardShiftHours = (standardEndMinutes - timeToMinutes(settings.standardStartTime)) / 60;
       if (workingHours > standardShiftHours) {
         attendance.metrics.overtimeHours = Number((workingHours - standardShiftHours).toFixed(2));
+      }
+
+      // If working hours are less than 7 hours, set status to Half-Day and deduct 0.5 Casual leave
+      if (workingHours < 7) {
+        attendance.status = "Half-Day";
+        const balanceDoc = await LeaveBalance.findOne({ employeeId: employee._id });
+        if (balanceDoc) {
+          balanceDoc.balances.Casual = Math.max(0, (balanceDoc.balances.Casual || 0) - 0.5);
+          await balanceDoc.save();
+        }
+      } else {
+        attendance.status = "Present";
       }
 
       await attendance.save();

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Payroll } from "@/lib/models/Payroll";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
 
 export async function GET(req: Request) {
   try {
@@ -20,7 +22,11 @@ export async function GET(req: Request) {
     }
 
     if (payload.role === "Employee") {
-      query.employeeId = payload.userId;
+      const user = await User.findById(payload.userId);
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const employee = await Employee.findOne({ email: user.email });
+      if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+      query.employeeId = employee._id;
     }
 
     const payrolls = await Payroll.find(query)

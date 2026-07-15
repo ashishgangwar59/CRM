@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Attendance } from "@/lib/models/Attendance";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
 
 export async function GET(req: Request) {
   try {
@@ -18,6 +20,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+
     const { searchParams } = new URL(req.url);
     const yearMonth = searchParams.get("month"); // e.g., "2026-07"
     
@@ -27,7 +35,7 @@ export async function GET(req: Request) {
 
     // Find attendance records starting with this month for this user
     const records = await Attendance.find({
-      employeeId: payload.userId,
+      employeeId: employee._id,
       date: { $regex: `^${yearMonth}` }
     }).sort({ date: 1 }).lean();
 

@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Leave } from "@/lib/models/Leave";
 import { LeaveBalance } from "@/lib/models/LeaveBalance";
-import { LeaveLedger } from "@/lib/models/LeaveLedger";
 import { verifyAccessToken } from "@/lib/auth";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
+import { LeaveLedger } from "@/lib/models/LeaveLedger";
 
 export async function POST(req: Request) {
   try {
@@ -16,13 +18,19 @@ export async function POST(req: Request) {
     try { payload = verifyAccessToken(token); } 
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+
     const { leaveId } = await req.json();
 
-    const leave = await Leave.findOne({ _id: leaveId, employeeId: payload.userId });
+    const leave = await Leave.findOne({ _id: leaveId, employeeId: employee._id });
     if (!leave) return NextResponse.json({ error: "Leave not found" }, { status: 404 });
 
-    if (leave.status === "Cancelled" || leave.status === "Rejected") {
-      return NextResponse.json({ error: "Leave is already cancelled or rejected" }, { status: 400 });
+    if (leave.status !== "Pending") {
+      return NextResponse.json({ error: "Only pending leave requests can be cancelled" }, { status: 400 });
     }
 
     // If it was already approved, we need to refund the balance via the Ledger

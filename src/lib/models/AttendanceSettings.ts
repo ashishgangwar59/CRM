@@ -17,7 +17,7 @@ export interface IAttendanceSettings extends Document {
 
 const AttendanceSettingsSchema: Schema<IAttendanceSettings> = new Schema(
   {
-    standardStartTime: { type: String, default: "09:00" },
+    standardStartTime: { type: String, default: "10:00" },
     standardEndTime: { type: String, default: "18:00" },
     lateThresholdMinutes: { type: Number, default: 15 },
     earlyLeaveThresholdMinutes: { type: Number, default: 15 },

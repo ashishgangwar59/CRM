@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import Image from "next/image";
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -36,12 +38,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Executive AI", href: "/dashboard/executive", icon: Brain, roles: ["ADMIN", "Super Admin"] },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "Super Admin"] },
-    { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "Super Admin"] },
+    { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "Super Admin", "Employee"] },
     { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "Super Admin"] },
-    { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "Super Admin"] },
+    { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "Super Admin", "Employee"] },
+    { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "Super Admin", "Employee"] },
     { name: "Employees", href: "/dashboard/employees", icon: Users, roles: ["ADMIN", "Super Admin"] },
     { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "Super Admin", "Employee"] },
     { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "Super Admin", "Employee"] },
@@ -62,9 +63,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col">
         <div className="flex h-16 items-center px-6 border-b border-zinc-200 dark:border-zinc-800">
           <Link href="/dashboard" className="flex items-center space-x-2 font-bold text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-            <div className="h-8 w-8 bg-zinc-900 dark:bg-white rounded-md flex items-center justify-center">
-              <span className="text-white dark:text-black text-sm font-bold">CR</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="CRM Hub Logo"
+              width={32}
+              height={32}
+              className="rounded-md object-contain"
+            />
             <span>CRM Hub</span>
           </Link>
         </div>
