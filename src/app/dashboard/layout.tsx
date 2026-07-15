@@ -7,12 +7,14 @@ import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrell
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
+import { useTheme } from "../theme-provider";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [modules, setModules] = useState<string[]>([]);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -58,7 +60,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   });
 
   return (
-    <div className="flex h-screen bg-zinc-50 dark:bg-black">
+    <div className="flex h-screen bg-white dark:bg-gray-900">
       {/* Sidebar */}
       <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col">
         <div className="flex h-16 items-center px-6 border-b border-zinc-200 dark:border-zinc-800">
@@ -96,13 +98,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center space-x-3 px-3 py-2.5 rounded-md text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </button>
+          <div className="flex flex-col space-y-0">
+            {/* <button
+              onClick={toggleTheme}
+              className="flex w-full items-center justify-center space-x-3 px-3 py-2.5 rounded-md text-sm font-medium text-zinc-500 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 dark:text-gray-200 transition-colors"
+            >
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </button> */}
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center space-x-3 px-3 py-2.5 rounded-md text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </aside>
 
