@@ -29,8 +29,8 @@ export async function POST(req: Request) {
     const leave = await Leave.findOne({ _id: leaveId, employeeId: employee._id });
     if (!leave) return NextResponse.json({ error: "Leave not found" }, { status: 404 });
 
-    if (leave.status !== "Pending") {
-      return NextResponse.json({ error: "Only pending leave requests can be cancelled" }, { status: 400 });
+    if (leave.status !== "Pending" && leave.status !== "Approved") {
+      return NextResponse.json({ error: "Only pending or approved leave requests can be cancelled" }, { status: 400 });
     }
 
     // If it was already approved, we need to refund the balance via the Ledger
