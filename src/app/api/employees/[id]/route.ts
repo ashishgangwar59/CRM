@@ -18,6 +18,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const employeeData = employee.toObject() as any;
     if (user) {
       employeeData.accessibleModules = user.accessibleModules;
+      employeeData.role = user.role;
     }
 
     return NextResponse.json({ success: true, data: employeeData });

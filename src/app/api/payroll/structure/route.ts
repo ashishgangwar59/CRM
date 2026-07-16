@@ -42,6 +42,15 @@ export async function POST(req: Request) {
       { new: true, upsert: true } // Create if doesn't exist, update if it does
     );
 
+    // Invalidate/delete any existing "Draft" payroll slips for this employee 
+    // so they are forced to be regenerated with the new salary structure.
+    try {
+      const { Payroll } = await import("@/lib/models/Payroll");
+      await Payroll.deleteMany({ employeeId: data.employeeId, status: "Draft" });
+    } catch (e) {
+      console.error("Failed to delete draft payrolls on structure update", e);
+    }
+
     return NextResponse.json({ success: true, data: structure });
   } catch (error) {
     console.error("Save Salary Structure Error:", error);

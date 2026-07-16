@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings } from "lucide-react";
+import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings, Plug } from "lucide-react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("Company Profile");
@@ -20,7 +20,8 @@ export default function SettingsPage() {
     { name: "Office Locations", icon: Building },
     { name: "Policies", icon: Umbrella },
     { name: "Email Templates", icon: Mail },
-    { name: "SMS Templates", icon: MessageSquare }
+    { name: "SMS Templates", icon: MessageSquare },
+    { name: "Integrations", icon: Plug }
   ];
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export default function SettingsPage() {
   };
 
   if (loading) return <div className="p-8">Loading settings...</div>;
-  if (!settings) return <div className="p-8 text-rose-500">Failed to load settings. Are you a Super Admin?</div>;
+  if (!settings) return <div className="p-8 text-rose-500">Failed to load settings. Are you a KEY_ADMIN?</div>;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-24">
@@ -75,7 +76,7 @@ export default function SettingsPage() {
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400">Configure global application parameters.</p>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="bg-zinc-900 text-white">
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
@@ -277,6 +278,81 @@ export default function SettingsPage() {
                     <div className="text-sm italic text-zinc-400 p-4 text-center border border-dashed rounded-lg">No templates configured yet.</div>
                   ) : null}
                   
+                </div>
+              )}
+
+              {activeTab === "Integrations" && settings.integrations && (
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">SMTP Email Configuration</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>SMTP Host</Label>
+                        <Input value={settings.integrations.smtp?.host || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smtp: {...settings.integrations.smtp, host: e.target.value}}})} placeholder="e.g. smtp.gmail.com" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>SMTP Port</Label>
+                        <Input value={settings.integrations.smtp?.port || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smtp: {...settings.integrations.smtp, port: e.target.value}}})} placeholder="e.g. 587" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>SMTP User</Label>
+                        <Input value={settings.integrations.smtp?.user || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smtp: {...settings.integrations.smtp, user: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>SMTP Password</Label>
+                        <Input type="password" value={settings.integrations.smtp?.pass || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smtp: {...settings.integrations.smtp, pass: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>From Address</Label>
+                        <Input value={settings.integrations.smtp?.from || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smtp: {...settings.integrations.smtp, from: e.target.value}}})} placeholder='e.g. "HR Team" <hr@company.com>' />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Payment Gateway (Razorpay/Cashfree)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Account Number</Label>
+                        <Input value={settings.integrations.paymentGateway?.razorpayAccountNumber || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, paymentGateway: {...settings.integrations.paymentGateway, razorpayAccountNumber: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Key ID</Label>
+                        <Input value={settings.integrations.paymentGateway?.razorpayKeyId || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, paymentGateway: {...settings.integrations.paymentGateway, razorpayKeyId: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Key Secret</Label>
+                        <Input type="password" value={settings.integrations.paymentGateway?.razorpayKeySecret || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, paymentGateway: {...settings.integrations.paymentGateway, razorpayKeySecret: e.target.value}}})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">SMS Gateway (Twilio / MSG91)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Twilio Account SID</Label>
+                        <Input value={settings.integrations.smsGateway?.twilioAccountSid || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, twilioAccountSid: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Twilio Auth Token</Label>
+                        <Input type="password" value={settings.integrations.smsGateway?.twilioAuthToken || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, twilioAuthToken: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Twilio Phone Number</Label>
+                        <Input value={settings.integrations.smsGateway?.twilioPhoneNumber || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, twilioPhoneNumber: e.target.value}}})} />
+                      </div>
+                      
+                      <div className="space-y-2 md:col-span-2 border-t pt-4 mt-2">
+                        <Label>MSG91 Auth Key</Label>
+                        <Input type="password" value={settings.integrations.smsGateway?.msg91AuthKey || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, msg91AuthKey: e.target.value}}})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>MSG91 Sender ID</Label>
+                        <Input value={settings.integrations.smsGateway?.msg91SenderId || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, msg91SenderId: e.target.value}}})} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 

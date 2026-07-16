@@ -27,8 +27,8 @@ export default function SalaryStructurePage() {
   const fetchData = async () => {
     try {
       const [empRes, structRes] = await Promise.all([
-        fetch("/api/employees"),
-        fetch("/api/payroll/structure")
+        fetch("/api/employees", { cache: 'no-store' }),
+        fetch("/api/payroll/structure", { cache: 'no-store' })
       ]);
       const empData = await empRes.json();
       const structData = await structRes.json();
@@ -48,16 +48,16 @@ export default function SalaryStructurePage() {
 
   const handleSelect = (empId: string) => {
     setSelectedEmp(empId);
-    const existing = structures.find(s => s.employeeId._id === empId);
+    const existing = structures.find(s => s.employeeId?._id === empId || s.employeeId === empId);
     if (existing) {
       setFormData({
-        basic: existing.basic,
-        hra: existing.hra,
-        specialAllowance: existing.specialAllowance,
-        pf: existing.pf,
-        esi: existing.esi,
-        professionalTax: existing.professionalTax,
-        incomeTax: existing.incomeTax,
+        basic: existing.basic || 0,
+        hra: existing.hra || 0,
+        specialAllowance: existing.specialAllowance || 0,
+        pf: existing.pf || 0,
+        esi: existing.esi || 0,
+        professionalTax: existing.professionalTax || 0,
+        incomeTax: existing.incomeTax || 0,
       });
     } else {
       setFormData({ basic: 0, hra: 0, specialAllowance: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0 });

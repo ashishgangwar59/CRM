@@ -2,20 +2,30 @@ import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
 
-// Setup transporter using env config
-const getTransporter = () => {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+import { connectToDatabase } from "@/lib/db";
+import { SystemSettings } from "@/lib/models/SystemSettings";
 
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass }
-    });
+// Setup transporter using db config
+const getTransporter = async () => {
+  try {
+    await connectToDatabase();
+    const settings = await SystemSettings.findOne();
+    const smtp = settings?.integrations?.smtp;
+
+    if (smtp && smtp.host && smtp.user && smtp.pass) {
+      const port = parseInt(smtp.port || "587");
+      return {
+        transporter: nodemailer.createTransport({
+          host: smtp.host,
+          port,
+          secure: port === 465,
+          auth: { user: smtp.user, pass: smtp.pass }
+        }),
+        from: smtp.from || `"Niventra CRM" <${smtp.user}>`
+      };
+    }
+  } catch (err) {
+    console.error("Failed to load SMTP settings from DB", err);
   }
   return null;
 };
@@ -59,12 +69,12 @@ export async function sendWelcomeEmail({
     </div>
   `;
 
-  const transporter = getTransporter();
+  const smtpConfig = await getTransporter();
 
-  if (transporter) {
+  if (smtpConfig && smtpConfig.transporter) {
     try {
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || `"Niventra CRM" <${process.env.SMTP_USER}>`,
+      await smtpConfig.transporter.sendMail({
+        from: smtpConfig.from,
         to: email,
         subject,
         text: textContent,

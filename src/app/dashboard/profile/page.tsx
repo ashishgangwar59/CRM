@@ -5,10 +5,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { KeyRound, ShieldCheck, User, UploadCloud } from "lucide-react";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
+  const [employee, setEmployee] = useState<any>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -51,6 +53,48 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.employee) {
+          setEmployee(data.employee);
+        }
+      });
+  }, []);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setUploadingPhoto(true);
+    const file = e.target.files[0];
+    const data = new FormData();
+    data.append("file", file);
+    try {
+      const res = await fetch("/api/employees/upload", { method: "POST", body: data });
+      const json = await res.json();
+      if (json.success) {
+        // Save to DB
+        const updateRes = await fetch("/api/auth/me", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ profilePhotoUrl: json.url })
+        });
+        const updateJson = await updateRes.json();
+        if (updateJson.success) {
+          setEmployee((prev: any) => ({ ...prev, profilePhotoUrl: json.url }));
+          alert("Profile photo updated successfully!");
+        } else {
+          alert("Failed to save profile photo.");
+        }
+      } else {
+        alert("Upload failed");
+      }
+    } catch (err) {
+      alert("Upload error");
+    }
+    setUploadingPhoto(false);
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
@@ -60,6 +104,72 @@ export default function ProfilePage() {
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400">Manage your account security and preferences.</p>
       </div>
+
+      {employee && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <User className="mr-2 h-5 w-5 text-zinc-500" /> Personal Information
+            </CardTitle>
+            <CardDescription>Your personal and official details (Read-Only).</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center space-x-6">
+              <div className="h-24 w-24 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex items-center justify-center shrink-0">
+                {employee.profilePhotoUrl ? (
+                  <img src={employee.profilePhotoUrl} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-12 w-12 text-zinc-400" />
+                )}
+              </div>
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="photoUpload" className="text-sm font-medium cursor-pointer flex items-center text-blue-600 hover:text-blue-700">
+                  <UploadCloud className="w-4 h-4 mr-2" />
+                  {uploadingPhoto ? "Uploading..." : "Change Profile Photo"}
+                </Label>
+                <Input 
+                  id="photoUpload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handlePhotoUpload} 
+                  disabled={uploadingPhoto}
+                />
+                <p className="text-xs text-zinc-500">Only JPG, PNG files are allowed.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider">Full Name</Label>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">{employee.firstName} {employee.lastName}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider">Email Address</Label>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">{employee.email}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider">Phone Number</Label>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">{employee.phone}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider">Date of Birth</Label>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                  {employee.dateOfBirth ? new Date(employee.dateOfBirth).toLocaleDateString() : "Not Provided"}
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider">Department</Label>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">{employee.department || "N/A"}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider">Designation</Label>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">{employee.designation || "N/A"}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

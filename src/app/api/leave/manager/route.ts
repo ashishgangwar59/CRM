@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     let query: any = {};
 
-    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       const user = await User.findById(payload.userId);
       if (user) {
         const managerEmployee = await Employee.findOne({ email: user.email });
@@ -64,8 +64,8 @@ export async function POST(req: Request) {
     if (!leave) return NextResponse.json({ error: "Leave not found" }, { status: 404 });
     if (leave.status !== "Pending") return NextResponse.json({ error: "Leave is not pending" }, { status: 400 });
 
-    // Verify department constraints if regular manager (excluding Super Admin and ADMIN)
-    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+    // Verify department constraints if regular manager (excluding KEY_ADMIN and ADMIN)
+    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       const user = await User.findById(payload.userId);
       if (user) {
         const managerEmployee = await Employee.findOne({ email: user.email });

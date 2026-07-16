@@ -42,5 +42,5 @@ export default function DashboardPage() {
     return <div className="p-8">Redirecting to Attendance...</div>;
   }
 
-  return (role === "Super Admin" || role === "ADMIN") ? <AdminDashboard /> : <EmployeeDashboard />;
+  return (role === "KEY_ADMIN" || role === "ADMIN") ? <AdminDashboard /> : <EmployeeDashboard />;
 }

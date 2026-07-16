@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "Super Admin" && payload.role !== "ADMIN" && payload.role !== "Employee") {
+    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN" && payload.role !== "Employee") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

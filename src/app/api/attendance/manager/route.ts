@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     try { payload = verifyAccessToken(token); } 
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
-    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -45,7 +45,7 @@ export async function PUT(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, User, Trash2, Edit } from "lucide-react";
 import Link from "next/link";
 
@@ -12,6 +14,8 @@ export default function EmployeeProfilePage() {
   const router = useRouter();
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [newPassword, setNewPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     fetch(`/api/employees/${id}`)
@@ -33,6 +37,33 @@ export default function EmployeeProfilePage() {
     } catch (e) {
       alert("Error deleting employee");
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      alert("Password must be at least 6 characters.");
+      return;
+    }
+    if (!confirm("Are you sure you want to force reset this user's password?")) return;
+    
+    setResettingPassword(true);
+    try {
+      const res = await fetch(`/api/employees/${id}/password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        setNewPassword("");
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("Error resetting password");
+    }
+    setResettingPassword(false);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -139,6 +170,37 @@ export default function EmployeeProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Administrative Actions - Only show for regular users */}
+        {employee.role !== "SUPER_ADMIN" && employee.role !== "ADMIN" && (
+          <Card className="md:col-span-2 border-rose-200 bg-rose-50/10 dark:bg-rose-900/10 dark:border-rose-900">
+            <CardHeader>
+              <CardTitle className="text-rose-700 dark:text-rose-400">Administrative Actions</CardTitle>
+              <CardDescription>Force reset this user's login password. They will be prompted to change it on their next login.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-end space-x-4 max-w-sm">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password" 
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Enter minimum 6 characters..."
+                  />
+                </div>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleResetPassword} 
+                  disabled={resettingPassword}
+                >
+                  {resettingPassword ? "Resetting..." : "Force Reset"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

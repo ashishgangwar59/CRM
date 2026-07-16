@@ -2,9 +2,13 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
-dotenv.config();
+import fs from "fs";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/";
+// if (fs.existsSync(".env.local")) dotenv.config({ path: ".env.local" });
+// else if (fs.existsSync(".env.development")) dotenv.config({ path: ".env.development" });
+// else dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crm";
 
 // Define simplified User schema just for seeding
 const UserSchema = new mongoose.Schema(
@@ -33,14 +37,14 @@ async function main() {
 
   if (existingAdmin) {
     existingAdmin.password = hashedPassword;
-    existingAdmin.role = 'ADMIN';
+    existingAdmin.role = 'KEY_ADMIN';
     await existingAdmin.save();
     console.log(`Updated existing admin user: ${email}`);
   } else {
     await User.create({
       email,
       password: hashedPassword,
-      role: 'ADMIN',
+      role: 'KEY_ADMIN',
     });
     console.log(`Created auto-seeded default user: ${email}`);
   }

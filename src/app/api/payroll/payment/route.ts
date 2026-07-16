@@ -72,7 +72,7 @@ export async function POST(req: Request) {
       type: "Debit",
       amount: totalAmount,
       balanceAfter: wallet.balance,
-      description: `Bulk Salary Payment (${payrolls.length} employees) for ${monthYear}`,
+      description: `Bulk Salary Payment (${payrolls.length} employees) via Bank Transfer for ${monthYear}`,
       referenceType: "SalaryPayment",
       createdBy: payload.userId
     });

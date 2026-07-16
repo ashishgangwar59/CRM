@@ -42,7 +42,7 @@ export default function UniversalReportsPage() {
 
   const allowedReportTypes = REPORT_TYPES.filter(t => {
     if (!role) return false;
-    if (role === "Super Admin" || role === "ADMIN") return true;
+    if (role === "KEY_ADMIN" || role === "ADMIN") return true;
     
     // Map report types to modules
     if (t === "Attendance") return modules.includes("Attendance");
@@ -169,7 +169,7 @@ export default function UniversalReportsPage() {
               </div>
             )}
 
-            <Button type="submit" disabled={loading} className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 border-0 h-10 px-8">
+            <Button type="submit" disabled={loading} className="h-10 px-8">
               {loading ? "Generating..." : <><Filter className="w-4 h-4 mr-2" /> Generate</>}
             </Button>
           </form>

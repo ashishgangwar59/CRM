@@ -45,6 +45,27 @@ export interface ISystemSettings extends Document {
     name: string;
     type: "Earning" | "Deduction";
   }[];
+  integrations: {
+    smtp: {
+      host: string;
+      port: string;
+      user: string;
+      pass: string;
+      from: string;
+    };
+    paymentGateway: {
+      razorpayAccountNumber: string;
+      razorpayKeyId: string;
+      razorpayKeySecret: string;
+    };
+    smsGateway: {
+      twilioAccountSid: string;
+      twilioAuthToken: string;
+      twilioPhoneNumber: string;
+      msg91AuthKey: string;
+      msg91SenderId: string;
+    };
+  };
 }
 
 const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
@@ -123,7 +144,28 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
     salaryComponents: [{
       name: { type: String },
       type: { type: String, enum: ["Earning", "Deduction"] }
-    }]
+    }],
+    integrations: {
+      smtp: {
+        host: { type: String, default: "" },
+        port: { type: String, default: "" },
+        user: { type: String, default: "" },
+        pass: { type: String, default: "" },
+        from: { type: String, default: "" },
+      },
+      paymentGateway: {
+        razorpayAccountNumber: { type: String, default: "" },
+        razorpayKeyId: { type: String, default: "" },
+        razorpayKeySecret: { type: String, default: "" },
+      },
+      smsGateway: {
+        twilioAccountSid: { type: String, default: "" },
+        twilioAuthToken: { type: String, default: "" },
+        twilioPhoneNumber: { type: String, default: "" },
+        msg91AuthKey: { type: String, default: "" },
+        msg91SenderId: { type: String, default: "" },
+      }
+    }
   },
   { timestamps: true }
 );

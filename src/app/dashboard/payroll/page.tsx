@@ -346,11 +346,11 @@ export default function PayrollDashboardPage() {
             </p>
           </div>
           <Button 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-8" 
+            className="bg-brand hover:opacity-90 text-white rounded-full px-8" 
             onClick={handleBulkPayment}
             disabled={processingBulk}
           >
-            {processingBulk ? "Processing..." : "Pay Salaries via Wallet"}
+            {processingBulk ? "Processing..." : "Process Bank Transfer"}
           </Button>
         </div>
       )}

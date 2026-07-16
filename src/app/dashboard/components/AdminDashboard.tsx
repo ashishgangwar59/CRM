@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Clock, Wallet, IndianRupee, Target, UserCheck, UserX, AlertCircle, CalendarDays, TrendingUp } from "lucide-react";
+import { Users, Clock, Wallet, IndianRupee, Target, UserCheck, UserX, AlertCircle, CalendarDays, TrendingUp, Gift } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
+import Link from "next/link";
 
 const PIE_COLORS = ['#10b981', '#f43f5e', '#3b82f6'];
 
@@ -28,7 +29,7 @@ export function AdminDashboard() {
     fetchAdminDashboard();
   }, []);
 
-  if (loading) return <div className="p-8">Loading Super Admin Command Center...</div>;
+  if (loading) return <div className="p-8">Loading Key Admin Command Center...</div>;
   if (!data) return <div className="p-8">Failed to load admin dashboard.</div>;
 
   const k = data.kpis;
@@ -38,7 +39,7 @@ export function AdminDashboard() {
     <div className="space-y-6 max-w-7xl mx-auto pb-24">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Command Center</h1>
-        <p className="text-zinc-500 dark:text-zinc-400">Super Admin overview of financials, HR, and sales.</p>
+        <p className="text-zinc-500 dark:text-zinc-400">Key Admin & Admin overview of financials, HR, and sales.</p>
       </div>
 
       {/* Row 1: Global KPIs */}
@@ -214,6 +215,51 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
+      </div>
+
+      {/* Row 4: Upcoming Events / Birthdays */}
+      <div className="grid grid-cols-1 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-500 flex items-center">
+              <Gift className="w-4 h-4 mr-2 text-rose-500" /> Upcoming Birthdays (Next 30 Days)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.upcomingBirthdays && data.upcomingBirthdays.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.upcomingBirthdays.map((bday: any) => (
+                  <Link key={bday.id} href={`/dashboard/employees/${bday.id}`}>
+                    <div className="flex items-center space-x-4 p-3 rounded-lg border border-zinc-100 hover:border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer dark:border-zinc-800 dark:hover:border-rose-900/50 dark:hover:bg-rose-900/10">
+                      <div className="h-10 w-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
+                        {bday.profilePhotoUrl ? (
+                          <img src={bday.profilePhotoUrl} alt="Profile" className="h-full w-full object-cover" />
+                        ) : (
+                          <Gift className="h-5 w-5 text-rose-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{bday.name}</p>
+                        <p className="text-xs text-zinc-500">{new Date(bday.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {bday.department}</p>
+                      </div>
+                      <div className="ml-auto text-right">
+                        {bday.daysUntil === 0 ? (
+                          <span className="text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-full">Today!</span>
+                        ) : (
+                          <span className="text-xs font-medium text-zinc-500">In {bday.daysUntil} days</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm italic text-zinc-400 p-4 text-center border border-dashed rounded-lg">
+                No upcoming birthdays in the next 30 days.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
     </div>

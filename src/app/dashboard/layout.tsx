@@ -39,17 +39,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const navItems = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "Super Admin"] },
-    { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Employees", href: "/dashboard/employees", icon: Users, roles: ["ADMIN", "Super Admin"] },
-    { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "Super Admin", "Employee"] },
-    { name: "Notifications", href: "/dashboard/reports/notifications", icon: RadioTower, roles: ["ADMIN", "Super Admin"] },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "Super Admin"] },
+    { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "KEY_ADMIN"] },
+    { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Employees", href: "/dashboard/employees", icon: Users, roles: ["ADMIN", "KEY_ADMIN"] },
+    { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Notifications", href: "/dashboard/reports/notifications", icon: RadioTower, roles: ["ADMIN", "KEY_ADMIN"] },
+    { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee"] },
   ];
 

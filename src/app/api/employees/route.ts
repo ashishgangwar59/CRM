@@ -4,6 +4,7 @@ import { Employee } from "@/lib/models/Employee";
 import { User } from "@/lib/models/User";
 import { Counter } from "@/lib/models/Counter";
 import bcrypt from "bcryptjs";
+import { verifyAccessToken } from "@/lib/auth";
 
 // Helper function to auto-generate employee code
 async function getNextEmployeeCode() {
@@ -22,23 +23,47 @@ export async function POST(req: Request) {
     await connectToDatabase();
     const data = await req.json();
 
+    // Pre-check to ensure email is not already used in User or Employee collection
+    const existingUser = await User.findOne({ email: data.email });
+    if (existingUser) {
+      return NextResponse.json({ error: "Email is already registered as a User" }, { status: 400 });
+    }
+
+    const existingEmployee = await Employee.findOne({ email: data.email });
+    if (existingEmployee) {
+      return NextResponse.json({ error: "Email is already registered as an Employee" }, { status: 400 });
+    }
+
+    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    let createdBy = null;
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        createdBy = payload.userId;
+      } catch (e) {
+        // Ignore token errors for creation if it's somehow public, though it shouldn't be
+      }
+    }
+
     // Auto-generate employee code
     const employeeCode = await getNextEmployeeCode();
 
     const newEmployee = await Employee.create({
       ...data,
       employeeCode,
+      createdBy,
     });
 
     // Create a User account for the employee to log in
-    const rawPassword = data.password || "Employee@123";
+    const systemRole = data.systemRole === "ADMIN" ? "ADMIN" : "Employee";
+    const rawPassword = data.password || (systemRole === "ADMIN" ? "Admin@123" : "Employee@123");
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
     const accessibleModules = data.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"];
     
     await User.create({
       email: data.email,
       password: hashedPassword,
-      role: "Employee",
+      role: systemRole,
       accessibleModules,
     });
 
@@ -79,6 +104,20 @@ export async function GET(req: Request) {
     const status = searchParams.get("status") || "";
 
     const query: any = {};
+
+    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        if (payload.role === "ADMIN") {
+          query.createdBy = payload.userId;
+        }
+      } catch (e) {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      }
+    } else {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     if (search) {
       query.$or = [

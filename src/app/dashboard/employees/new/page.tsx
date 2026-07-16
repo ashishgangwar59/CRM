@@ -6,24 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Upload } from "lucide-react";
+import { ArrowLeft, Save, ChevronRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function NewEmployeePage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("personal");
+  const [step, setStep] = useState(0);
+  const steps = ["Personal", "Official", "KYC & Docs", "Bank", "Permissions"];
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [departments, setDepartments] = useState<string[]>([]);
   const [designations, setDesignations] = useState<string[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
+    dateOfBirth: "",
     status: "Active",
     employeeType: "Full-Time",
+    systemRole: "Employee",
     department: "",
     designation: "",
     kyc: { aadharNumber: "", panNumber: "" },
@@ -64,6 +69,14 @@ export default function NewEmployeePage() {
           }
         }
       });
+      
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCurrentUserRole(data.role);
+        }
+      });
   }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
@@ -84,8 +97,30 @@ export default function NewEmployeePage() {
     }
   };
 
+  const checkEmail = async (email: string) => {
+    if (!email) return;
+    try {
+      const res = await fetch(`/api/employees/check-email?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.exists) {
+        setEmailError("This email is already registered in the system.");
+      } else {
+        setEmailError("");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError("");
+    
+    if (emailError) {
+      setSubmitError("Please fix the errors before saving.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/employees", {
@@ -97,10 +132,10 @@ export default function NewEmployeePage() {
       if (data.success) {
         router.push("/dashboard/employees");
       } else {
-        alert(data.error);
+        setSubmitError(data.error || "Failed to save employee");
       }
     } catch (err) {
-      alert("Failed to save employee");
+      setSubmitError("Failed to save employee");
     }
     setLoading(false);
   };
@@ -119,17 +154,23 @@ export default function NewEmployeePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="personal">Personal</TabsTrigger>
-            <TabsTrigger value="official">Official</TabsTrigger>
-            <TabsTrigger value="kyc">KYC & Docs</TabsTrigger>
-            <TabsTrigger value="bank">Bank Details</TabsTrigger>
-            <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          </TabsList>
+      <form onSubmit={(e) => e.preventDefault()}>
+        {/* Stepper Header */}
+        <div className="mb-8 overflow-x-auto pb-4">
+          <div className="flex items-center min-w-max">
+            {steps.map((s, i) => (
+              <div key={s} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step >= i ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900' : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'}`}>
+                  {i + 1}
+                </div>
+                <span className={`ml-2 text-sm font-medium ${step >= i ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500'}`}>{s}</span>
+                {i < steps.length - 1 && <div className={`w-12 h-1 mx-4 rounded-full ${step > i ? 'bg-zinc-900 dark:bg-zinc-50' : 'bg-zinc-200 dark:bg-zinc-800'}`} />}
+              </div>
+            ))}
+          </div>
+        </div>
 
-          <TabsContent value="personal">
+        {step === 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Personal Details</CardTitle>
@@ -147,11 +188,27 @@ export default function NewEmployeePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
-                    <Input id="email" type="email" required value={formData.email} onChange={(e) => handleChange("email", e.target.value)} />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      required 
+                      value={formData.email} 
+                      onChange={(e) => {
+                        handleChange("email", e.target.value);
+                        if (emailError) setEmailError("");
+                      }} 
+                      onBlur={(e) => checkEmail(e.target.value)}
+                      className={emailError ? "border-rose-500 focus-visible:ring-rose-500" : ""}
+                    />
+                    {emailError && <p className="text-xs text-rose-500 mt-1">{emailError}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone *</Label>
                     <Input id="phone" required value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleChange("dateOfBirth", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
@@ -188,12 +245,31 @@ export default function NewEmployeePage() {
                       {formData.profilePhotoUrl && <span className="text-sm text-emerald-600 font-medium">Uploaded!</span>}
                     </div>
                   </div>
+                  {currentUserRole === "KEY_ADMIN" && (
+                    <div className="space-y-2 md:col-span-2">
+                      <div className="p-4 border border-rose-200 bg-rose-50 rounded-lg dark:bg-rose-900/10 dark:border-rose-900">
+                        <Label htmlFor="systemRole" className="text-rose-700 font-bold dark:text-rose-400">System Role (Key Admin Only)</Label>
+                        <select
+                          id="systemRole"
+                          className="mt-2 flex h-10 w-full rounded-md border border-rose-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 dark:bg-zinc-950 dark:border-rose-800"
+                          value={formData.systemRole}
+                          onChange={(e) => handleChange("systemRole", e.target.value)}
+                        >
+                          <option value="Employee">Employee (Default)</option>
+                          <option value="ADMIN">Administrator</option>
+                        </select>
+                        <p className="text-xs mt-2 text-rose-600 dark:text-rose-400">
+                          Administrators have elevated access and use the default password <b>Admin@123</b>. Employees use <b>Employee@123</b>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+        )}
 
-          <TabsContent value="official">
+        {step === 1 && (
             <Card>
               <CardHeader>
                 <CardTitle>Official Details</CardTitle>
@@ -261,9 +337,9 @@ export default function NewEmployeePage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+        )}
 
-          <TabsContent value="kyc">
+        {step === 2 && (
             <Card>
               <CardHeader>
                 <CardTitle>KYC & Documents</CardTitle>
@@ -282,9 +358,9 @@ export default function NewEmployeePage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+        )}
 
-          <TabsContent value="bank">
+        {step === 3 && (
             <Card>
               <CardHeader>
                 <CardTitle>Bank Details</CardTitle>
@@ -311,15 +387,20 @@ export default function NewEmployeePage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+        )}
 
-          <TabsContent value="permissions">
+        {step === 4 && (
             <Card>
               <CardHeader>
-                <CardTitle>Module Access</CardTitle>
-                <CardDescription>Select which sidebar modules this employee can access.</CardDescription>
+                <CardTitle>Module Permissions</CardTitle>
+                <CardDescription>Select which modules this employee can access.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                {submitError && (
+                  <div className="p-4 bg-rose-50 border border-rose-200 text-rose-600 rounded-md mb-4 dark:bg-rose-900/20 dark:border-rose-900">
+                    {submitError}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Leads", "Reports", "Profile",
@@ -346,13 +427,22 @@ export default function NewEmployeePage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+        )}
 
-        <div className="mt-8 flex justify-end">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Employee</>}
+        <div className="mt-8 flex justify-between items-center border-t border-zinc-200 dark:border-zinc-800 pt-6">
+          <Button type="button" variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || loading}>
+            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
           </Button>
+          
+          {step < steps.length - 1 ? (
+            <Button type="button" onClick={() => setStep(step + 1)}>
+              Next <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button type="button" onClick={handleSubmit} disabled={loading}>
+              {loading ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Employee</>}
+            </Button>
+          )}
         </div>
       </form>
     </div>

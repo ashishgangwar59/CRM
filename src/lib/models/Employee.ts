@@ -20,6 +20,7 @@ export interface IEmployee extends Document {
   reportingManager?: mongoose.Types.ObjectId;
   dateOfJoining?: Date;
   workLocation?: string;
+  createdBy?: mongoose.Types.ObjectId;
 
   // 3. Status & Type
   status: "Active" | "Inactive" | "Notice Period" | "Resigned" | "Absconding";
@@ -107,6 +108,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
     reportingManager: { type: Schema.Types.ObjectId, ref: "Employee" },
     dateOfJoining: { type: Date },
     workLocation: { type: String },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     status: { 
       type: String, 

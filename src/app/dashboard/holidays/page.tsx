@@ -82,7 +82,7 @@ export default function HolidaysPage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Holiday Calendar</h1>
           <p className="text-zinc-500 dark:text-zinc-400">View upcoming company and public holidays.</p>
         </div>
-        {(role === "ADMIN" || role === "Super Admin") && (
+        {(role === "ADMIN" || role === "KEY_ADMIN") && (
           <Button onClick={() => setShowAdd(!showAdd)}>
             <Plus className="mr-2 h-4 w-4" /> Add Holiday
           </Button>

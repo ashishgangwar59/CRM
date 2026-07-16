@@ -24,6 +24,7 @@ export default function EditEmployeePage() {
     lastName: "",
     email: "",
     phone: "",
+    dateOfBirth: "",
     status: "Active",
     employeeType: "Full-Time",
     department: "",
@@ -55,6 +56,7 @@ export default function EditEmployeePage() {
             lastName: emp.lastName || "",
             email: emp.email || "",
             phone: emp.phone || "",
+            dateOfBirth: emp.dateOfBirth ? new Date(emp.dateOfBirth).toISOString().split('T')[0] : "",
             status: emp.status || "Active",
             employeeType: emp.employeeType || "Full-Time",
             department: emp.department || "",
@@ -181,6 +183,10 @@ export default function EditEmployeePage() {
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone *</Label>
                     <Input id="phone" required value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleChange("dateOfBirth", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>

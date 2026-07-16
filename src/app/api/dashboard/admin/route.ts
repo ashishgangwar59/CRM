@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "Super Admin" && payload.role !== "ADMIN") {
+    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -24,8 +24,40 @@ export async function GET(req: Request) {
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // 1. Employees & Attendance Today
-    const totalEmployees = await Employee.countDocuments({ status: "Active" });
+    const activeEmployees = await Employee.find({ status: "Active" }).lean();
+    const totalEmployees = activeEmployees.length;
     const todaysAttendance = await Attendance.find({ date: today.toISOString().split('T')[0] }).lean();
+    
+    // Upcoming Birthdays
+    const currentMonth = today.getMonth();
+    const currentDay = today.getDate();
+
+    const upcomingBirthdays = activeEmployees
+      .filter(emp => emp.dateOfBirth)
+      .map(emp => {
+        const dob = new Date(emp.dateOfBirth!);
+        const dobMonth = dob.getMonth();
+        const dobDay = dob.getDate();
+        
+        let nextBirthdayYear = today.getFullYear();
+        if (dobMonth < currentMonth || (dobMonth === currentMonth && dobDay < currentDay)) {
+          nextBirthdayYear++;
+        }
+        
+        const nextBirthdayDate = new Date(nextBirthdayYear, dobMonth, dobDay);
+        const daysUntil = Math.ceil((nextBirthdayDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return {
+          id: emp._id,
+          name: `${emp.firstName} ${emp.lastName}`,
+          date: dob.toISOString().split('T')[0],
+          daysUntil,
+          department: emp.department || 'N/A',
+          profilePhotoUrl: emp.profilePhotoUrl
+        };
+      })
+      .filter(emp => emp.daysUntil <= 30) // Show next 30 days
+      .sort((a, b) => a.daysUntil - b.daysUntil);
     
     let attendanceStats = { present: 0, absent: 0, late: 0, leave: 0 };
     todaysAttendance.forEach(a => {
@@ -111,7 +143,8 @@ export async function GET(req: Request) {
         charts: {
           monthlyData,
           leadConversion
-        }
+        },
+        upcomingBirthdays
       }
     });
   } catch (error) {

@@ -1,0 +1,16 @@
+Subject: Welcome to Niventra Capital - Your CRM Account Details
+
+Hi Admin admin,
+
+Your CRM employee portal account has been created successfully!
+
+Here are your login credentials:
+
+Login Link: http://localhost:3000/login
+Username (Email): admin@gmail.com
+Password: Admin@123
+
+Please change your password after logging in.
+
+Best regards,
+HR Administration Team
