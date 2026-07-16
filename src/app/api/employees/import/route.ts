@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Employee } from "@/lib/models/Employee";
+import { User } from "@/lib/models/User";
 import { Counter } from "@/lib/models/Counter";
 import * as XLSX from "xlsx";
+import bcrypt from "bcryptjs";
+import { verifyAccessToken } from "@/lib/auth";
 
 async function getNextEmployeeCode() {
   const counter = await Counter.findByIdAndUpdate(
@@ -33,6 +36,17 @@ export async function POST(req: Request) {
 
     let importedCount = 0;
     const errors = [];
+    
+    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    let createdBy = null;
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        createdBy = payload.userId;
+      } catch (e) {
+        // Ignore token errors for import, but it should be valid
+      }
+    }
 
     for (const row of rows) {
       try {
@@ -42,9 +56,15 @@ export async function POST(req: Request) {
           continue;
         }
 
-        const existing = await Employee.findOne({ email });
-        if (existing) {
-          errors.push(`${email} already exists`);
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          errors.push(`${email} already registered as User`);
+          continue;
+        }
+
+        const existingEmployee = await Employee.findOne({ email });
+        if (existingEmployee) {
+          errors.push(`${email} already registered as Employee`);
           continue;
         }
 
@@ -56,16 +76,46 @@ export async function POST(req: Request) {
           lastName: row["Last Name"] || "Unknown",
           email: email,
           phone: row["Phone"] || "0000000000",
+          dateOfBirth: row["Date of Birth"] ? new Date(row["Date of Birth"]) : undefined,
+          gender: row["Gender"],
+          bloodGroup: row["Blood Group"],
+          maritalStatus: row["Marital Status"],
           department: row["Department"],
           designation: row["Designation"],
           status: row["Status"] || "Active",
           employeeType: row["Employee Type"] || "Full-Time",
+          dateOfJoining: row["Joined Date"] ? new Date(row["Joined Date"]) : undefined,
+          workLocation: row["Work Location"],
           kyc: {
-            aadharNumber: row["Aadhar"],
-            panNumber: row["PAN"],
-          }
+            aadharNumber: row["Aadhar"]?.toString(),
+            panNumber: row["PAN"]?.toString(),
+            passportNumber: row["Passport Number"]?.toString(),
+          },
+          bankDetails: {
+            bankName: row["Bank Name"]?.toString(),
+            accountNumber: row["Bank Account"]?.toString(),
+            ifscCode: row["IFSC Code"]?.toString(),
+            branchName: row["Bank Branch"]?.toString(),
+          },
+          emergencyContact: {
+            name: row["Emergency Contact Name"],
+            relationship: row["Emergency Contact Relation"],
+            phone: row["Emergency Contact Phone"]?.toString(),
+          },
+          createdBy
         });
+
+        // Generate User account so they can log in
+        const rawPassword = "Employee@123";
+        const hashedPassword = await bcrypt.hash(rawPassword, 10);
         
+        await User.create({
+          email,
+          password: hashedPassword,
+          role: "Employee",
+          accessibleModules: ["Overview", "Attendance", "Leads", "Reports", "Profile"],
+        });
+
         importedCount++;
       } catch (err: any) {
         errors.push(`Failed to import row: ${err.message}`);
