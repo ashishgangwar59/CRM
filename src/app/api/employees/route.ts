@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
-    let createdBy = null;
+    let createdBy: string | undefined = undefined;
     if (token) {
       try {
         const payload = verifyAccessToken(token);

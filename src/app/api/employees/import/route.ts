@@ -19,7 +19,7 @@ async function getNextEmployeeCode() {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
@@ -31,14 +31,14 @@ export async function POST(req: Request) {
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
+
     const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
 
     let importedCount = 0;
     const errors = [];
-    
+
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
-    let createdBy = null;
+    let createdBy: string | undefined = undefined;
     if (token) {
       try {
         const payload = verifyAccessToken(token);
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
         // Generate User account so they can log in
         const rawPassword = "Employee@123";
         const hashedPassword = await bcrypt.hash(rawPassword, 10);
-        
+
         await User.create({
           email,
           password: hashedPassword,
@@ -122,10 +122,10 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      imported: importedCount, 
-      errors 
+    return NextResponse.json({
+      success: true,
+      imported: importedCount,
+      errors
     });
   } catch (error) {
     console.error("Import Employees Error:", error);
