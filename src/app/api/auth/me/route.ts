@@ -2,7 +2,35 @@ import { NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { User } from "@/lib/models/User";
-
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user details
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 role:
+ *                   type: string
+ *                 accessibleModules:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 employee:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
+ */
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
@@ -33,7 +61,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });
   }
 }
-
+/**
+ * @swagger
+ * /api/auth/me:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profilePhotoUrl:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: No fields to update
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 export async function PUT(req: Request) {
   try {
     await connectToDatabase();

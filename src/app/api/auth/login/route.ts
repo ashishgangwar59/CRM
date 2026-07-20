@@ -5,7 +5,49 @@ import { Session } from "@/lib/models/Session";
 import { LoginHistory } from "@/lib/models/LoginHistory";
 import { comparePassword, signAccessToken, signRefreshToken } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Authenticate a user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               rememberMe:
+ *                 type: boolean
+ *               deviceInfo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 role:
+ *                   type: string
+ *       400:
+ *         description: Missing credentials
+ *       401:
+ *         description: Invalid credentials
+ *       403:
+ *         description: Password change required
+ */
 export async function POST(req: Request) {
   try {
     await connectToDatabase();

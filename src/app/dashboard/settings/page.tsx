@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
 
   const TABS = [
     { name: "Company Profile", icon: Building },
@@ -21,7 +22,8 @@ export default function SettingsPage() {
     { name: "Policies", icon: Umbrella },
     { name: "Email Templates", icon: Mail },
     { name: "SMS Templates", icon: MessageSquare },
-    { name: "Integrations", icon: Plug }
+    { name: "Integrations", icon: Plug },
+    { name: "Access Control", icon: Shield }
   ];
 
   useEffect(() => {
@@ -38,6 +40,33 @@ export default function SettingsPage() {
     };
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "Access Control" && users.length === 0) {
+      fetch("/api/users").then(res => res.json()).then(data => {
+        if (data.success) setUsers(data.data);
+      });
+    }
+  }, [activeTab]);
+
+  const handleRoleChange = async (email: string, newRole: string) => {
+    try {
+      const res = await fetch("/api/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role: newRole })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsers(users.map(u => u.email === email ? { ...u, role: newRole } : u));
+        alert("Role updated successfully!");
+      } else {
+        alert(data.error || "Failed to update role");
+      }
+    } catch (e) {
+      alert("Error updating role");
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -352,6 +381,61 @@ export default function SettingsPage() {
                         <Input value={settings.integrations.smsGateway?.msg91SenderId || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, msg91SenderId: e.target.value}}})} />
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "Access Control" && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-zinc-900">Admin Roles & Permissions</h3>
+                      <p className="text-sm text-zinc-500">Assign the ADMIN or KEY_ADMIN role to employees to give them access to Settings.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="border border-zinc-200 rounded-lg overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-zinc-50 text-zinc-500 font-medium border-b border-zinc-200">
+                        <tr>
+                          <th className="px-4 py-3">Email</th>
+                          <th className="px-4 py-3">Current Role</th>
+                          <th className="px-4 py-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-200">
+                        {users.map(u => (
+                          <tr key={u.email} className="bg-white hover:bg-zinc-50">
+                            <td className="px-4 py-3 font-medium text-zinc-900">{u.email}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                u.role === "KEY_ADMIN" ? "bg-purple-100 text-purple-700" :
+                                u.role === "ADMIN" ? "bg-indigo-100 text-indigo-700" :
+                                "bg-zinc-100 text-zinc-700"
+                              }`}>
+                                {u.role}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <select 
+                                className="block w-full text-sm border-zinc-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white px-3 py-1.5"
+                                value={u.role}
+                                onChange={(e) => handleRoleChange(u.email, e.target.value)}
+                              >
+                                <option value="Employee">Employee</option>
+                                <option value="ADMIN">ADMIN (Gets Settings Access)</option>
+                                <option value="KEY_ADMIN">KEY_ADMIN</option>
+                              </select>
+                            </td>
+                          </tr>
+                        ))}
+                        {users.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-zinc-500">Loading users...</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}

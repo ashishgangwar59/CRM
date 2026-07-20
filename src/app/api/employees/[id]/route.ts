@@ -41,10 +41,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Employee not found" }, { status: 404 });
     }
 
-    if (data.accessibleModules) {
+    if (data.accessibleModules || data.systemRole) {
+      const userUpdates: any = {};
+      if (data.accessibleModules) userUpdates.accessibleModules = data.accessibleModules;
+      if (data.systemRole) userUpdates.role = data.systemRole;
+
       await User.findOneAndUpdate(
         { email: employee.email },
-        { accessibleModules: data.accessibleModules }
+        userUpdates
       );
     }
 
