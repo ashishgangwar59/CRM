@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
     try {
       // Verify token
       const { payload } = await jwtVerify(accessToken, JWT_SECRET);
-      
+
       // Role-Based Access Control Example
       // If we wanted to protect an admin route:
       if (pathname.startsWith('/admin') && payload.role !== 'ADMIN') {

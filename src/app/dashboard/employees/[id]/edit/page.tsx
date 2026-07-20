@@ -18,7 +18,7 @@ export default function EditEmployeePage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [departments, setDepartments] = useState<string[]>([]);
   const [designations, setDesignations] = useState<string[]>([]);
-  
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -61,9 +61,9 @@ export default function EditEmployeePage() {
             employeeType: emp.employeeType || "Full-Time",
             department: emp.department || "",
             designation: emp.designation || "",
-            kyc: { 
-              aadharNumber: emp.kyc?.aadharNumber || "", 
-              panNumber: emp.kyc?.panNumber || "" 
+            kyc: {
+              aadharNumber: emp.kyc?.aadharNumber || "",
+              panNumber: emp.kyc?.panNumber || ""
             },
             bankDetails: {
               bankName: emp.bankDetails?.bankName || "",
@@ -72,7 +72,7 @@ export default function EditEmployeePage() {
               branchName: emp.bankDetails?.branchName || ""
             },
             profilePhotoUrl: emp.profilePhotoUrl || "",
-            accessibleModules: emp.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"]
+            accessibleModules: emp.accessibleModules || ["Attendance", "Leads", "Reports", "Profile"]
           });
         }
         setPageLoading(false);
@@ -265,7 +265,7 @@ export default function EditEmployeePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>
-                    <select 
+                    <select
                       id="status"
                       className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
                       value={formData.status}
@@ -280,7 +280,7 @@ export default function EditEmployeePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="employeeType">Employee Type</Label>
-                    <select 
+                    <select
                       id="employeeType"
                       className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
                       value={formData.employeeType}
@@ -359,8 +359,8 @@ export default function EditEmployeePage() {
                     "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Notifications", "Settings"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         id={`module-${module}`}
                         checked={formData.accessibleModules.includes(module)}
                         onChange={(e) => {
