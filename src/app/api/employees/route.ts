@@ -6,16 +6,20 @@ import { Counter } from "@/lib/models/Counter";
 import bcrypt from "bcryptjs";
 import { verifyAccessToken } from "@/lib/auth";
 
-// Helper function to auto-generate employee code
-async function getNextEmployeeCode() {
+// Helper function to auto-generate employee/admin code
+async function getNextEmployeeCode(systemRole?: string) {
+  const roleUpper = (systemRole || "").toUpperCase().replace("_", "");
+  const isAdmin = roleUpper === "ADMIN" || roleUpper === "KEYADMIN" || roleUpper === "MANAGER";
+  const counterId = isAdmin ? "adminCode" : "employeeCode";
+  const prefix = isAdmin ? "Admin" : "EMP";
+
   const counter = await Counter.findByIdAndUpdate(
-    { _id: "employeeCode" },
+    { _id: counterId },
     { $inc: { seq: 1 } },
     { new: true, upsert: true }
   );
   
-  // Format as EMP-0001, EMP-0002, etc.
-  return `EMP-${counter.seq.toString().padStart(4, "0")}`;
+  return `${prefix}-${counter.seq.toString().padStart(4, "0")}`;
 }
 
 export async function POST(req: Request) {
@@ -41,12 +45,14 @@ export async function POST(req: Request) {
         const payload = verifyAccessToken(token);
         createdBy = payload.userId;
       } catch (e) {
-        // Ignore token errors for creation if it's somehow public, though it shouldn't be
+        // Ignore token errors
       }
     }
 
-    // Auto-generate employee code
-    const employeeCode = await getNextEmployeeCode();
+    const systemRole = data.systemRole === "ADMIN" || data.role === "ADMIN" ? "ADMIN" : "Employee";
+
+    // Auto-generate code using Admin-0001 or EMP-0001 format
+    const employeeCode = data.employeeCode || (await getNextEmployeeCode(systemRole));
 
     const newEmployee = await Employee.create({
       ...data,
@@ -55,7 +61,6 @@ export async function POST(req: Request) {
     });
 
     // Create a User account for the employee to log in
-    const systemRole = data.systemRole === "ADMIN" ? "ADMIN" : "Employee";
     const rawPassword = data.password || (systemRole === "ADMIN" ? "Admin@123" : "Employee@123");
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
     const accessibleModules = data.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"];

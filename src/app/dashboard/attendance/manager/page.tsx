@@ -124,7 +124,18 @@ export default function ManagerAttendancePage() {
                       {record.metrics.workingHours > 0 ? `${record.metrics.workingHours}h` : "-"}
                     </TableCell>
                     <TableCell className="text-xs font-mono text-zinc-500">
-                      {record.punchIn?.ipAddress || "-"}
+                      {record.punchIn?.latitude && record.punchIn?.longitude ? (
+                        <a
+                          href={`https://maps.google.com/?q=${record.punchIn.latitude},${record.punchIn.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:underline font-semibold flex items-center gap-1"
+                        >
+                          📍 {record.punchIn.latitude.toFixed(4)}, {record.punchIn.longitude.toFixed(4)}
+                        </a>
+                      ) : (
+                        record.punchIn?.ipAddress || "-"
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

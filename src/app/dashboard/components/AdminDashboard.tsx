@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Clock, Wallet, IndianRupee, Target, UserCheck, UserX, AlertCircle, CalendarDays, TrendingUp, Gift } from "lucide-react";
+import { Users, Clock, Wallet, IndianRupee, Target, UserCheck, UserX, AlertCircle, CalendarDays, TrendingUp, Gift, MapPin } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
 import Link from "next/link";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const PIE_COLORS = ['#10b981', '#f43f5e', '#3b82f6'];
 
@@ -160,6 +162,77 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Row 2.5: Today's All Employees Attendance List */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-500 flex items-center">
+            <Clock className="w-4 h-4 mr-2 text-indigo-500" /> Today's All Employee Attendance List ({new Date().toISOString().split('T')[0]})
+          </CardTitle>
+          <Link href="/dashboard/attendance/manager" className="text-xs font-semibold text-indigo-600 hover:underline">
+            View Full Team View &rarr;
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Punch In</TableHead>
+                <TableHead>Punch Out</TableHead>
+                <TableHead>Location / IP</TableHead>
+                <TableHead className="text-right">Hours</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(!data.todaysAttendanceList || data.todaysAttendanceList.length === 0) ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-zinc-500">
+                    No employee attendance records found for today.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.todaysAttendanceList.map((emp: any) => (
+                  <TableRow key={emp.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{emp.name}</p>
+                        <p className="text-xs text-zinc-500">{emp.employeeCode}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">{emp.department}</TableCell>
+                    <TableCell>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        emp.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" :
+                        emp.status === "Half-Day" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" :
+                        "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                      }`}>
+                        {emp.status}
+                      </span>
+                      {emp.isLate && <span className="ml-2 text-xs font-semibold text-amber-600">Late</span>}
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">{emp.punchIn}</TableCell>
+                    <TableCell className="text-sm font-medium">{emp.punchOut}</TableCell>
+                    <TableCell className="text-xs font-mono">
+                      {emp.geoUrl ? (
+                        <a href={emp.geoUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline inline-flex items-center gap-1 font-semibold">
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 inline" />
+                          {emp.location}
+                        </a>
+                      ) : (
+                        <span className="text-zinc-500">{emp.location}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm font-semibold text-right">{emp.workingHours}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Row 3: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

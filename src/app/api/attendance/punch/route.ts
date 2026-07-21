@@ -13,12 +13,26 @@ function timeToMinutes(timeStr: string) {
   return hours * 60 + minutes;
 }
 
+function getToken(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) {
+    const match = cookieHeader.match(/accessToken=([^;]+)/);
+    if (match) return match[1];
+  }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    if (authHeader.startsWith("Bearer ")) return authHeader.substring(7).trim();
+    return authHeader.trim();
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
     
-    // Get user from cookie
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    // Get user from cookie or Authorization header
+    const token = getToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     let payload;
@@ -31,8 +45,29 @@ export async function POST(req: Request) {
     const user = await User.findById(payload.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const employee = await Employee.findOne({ email: user.email });
-    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+    let employee = await Employee.findOne({ email: { $regex: `^${user.email}$`, $options: "i" } });
+    if (!employee) {
+      const nameParts = (user.email || "Employee").split("@")[0].split(".");
+      const firstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : "Employee";
+      const lastName = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : "";
+      
+      const roleUpper = (user.role || "").toUpperCase().replace("_", "");
+      const isAdmin = roleUpper === "ADMIN" || roleUpper === "KEYADMIN" || roleUpper === "MANAGER";
+      const prefix = isAdmin ? "Admin" : "EMP";
+
+      const count = await Employee.countDocuments();
+      const employeeCode = `${prefix}-${(count + 1).toString().padStart(4, "0")}`;
+
+      employee = await Employee.create({
+        email: user.email,
+        firstName,
+        lastName,
+        employeeCode,
+        status: "Active",
+        employeeType: "Full-Time",
+        department: "Management"
+      });
+    }
 
     const { action, latitude, longitude } = await req.json(); // action = "IN" or "OUT"
     const ipAddress = req.headers.get("x-forwarded-for") || "unknown";
@@ -82,9 +117,7 @@ export async function POST(req: Request) {
       if (!attendance || !attendance.punchIn) {
         return NextResponse.json({ error: "Cannot punch out without punching in" }, { status: 400 });
       }
-      if (attendance.punchOut) {
-        return NextResponse.json({ error: "Already punched out today" }, { status: 400 });
-      }
+      // Allow updating punch-out time if already punched out
 
       // Calculate working hours
       const diffMs = now.getTime() - new Date(attendance.punchIn.time).getTime();

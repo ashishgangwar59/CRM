@@ -67,8 +67,8 @@ TabsTrigger.displayName = "TabsTrigger"
 
 const TabsContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { value: string; activeValue?: string }
->(({ className, value, activeValue, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { value: string; activeValue?: string; onValueChange?: (value: string) => void }
+>(({ className, value, activeValue, onValueChange, ...props }, ref) => {
   if (value !== activeValue) return null;
   return (
     <div

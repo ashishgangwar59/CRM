@@ -7,16 +7,34 @@ import { CompanyWallet } from "@/lib/models/CompanyWallet";
 import { Payroll } from "@/lib/models/Payroll";
 import { Lead } from "@/lib/models/Lead";
 
+function getToken(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) {
+    const match = cookieHeader.match(/accessToken=([^;]+)/);
+    if (match) return match[1];
+  }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    if (authHeader.startsWith("Bearer ")) return authHeader.substring(7).trim();
+    return authHeader.trim();
+  }
+  return null;
+}
+
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = getToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
+    const role = (payload.role || "").toUpperCase().replace("_", "");
+    if (role !== "KEYADMIN" && role !== "ADMIN" && role !== "MANAGER") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -24,9 +42,16 @@ export async function GET(req: Request) {
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // 1. Employees & Attendance Today
-    const activeEmployees = await Employee.find({ status: "Active" }).lean();
-    const totalEmployees = activeEmployees.length;
-    const todaysAttendance = await Attendance.find({ date: today.toISOString().split('T')[0] }).lean();
+    let activeEmployees = await Employee.find().lean();
+    let totalEmployees = activeEmployees.length;
+    
+    // Fetch today's attendance records by date string or today's createdAt timestamp
+    const todaysAttendance = await Attendance.find({
+      $or: [
+        { date: dateStr },
+        { createdAt: { $gte: today } }
+      ]
+    }).lean();
     
     // Upcoming Birthdays
     const currentMonth = today.getMonth();
@@ -56,25 +81,22 @@ export async function GET(req: Request) {
           profilePhotoUrl: emp.profilePhotoUrl
         };
       })
-      .filter(emp => emp.daysUntil <= 30) // Show next 30 days
+      .filter(emp => emp.daysUntil <= 30)
       .sort((a, b) => a.daysUntil - b.daysUntil);
     
     let attendanceStats = { present: 0, absent: 0, late: 0, leave: 0 };
     todaysAttendance.forEach(a => {
-      if (a.status === "Present") {
+      if (a.status === "Present" || a.status === "Half-Day" || a.status === "Late" || a.punchIn) {
         attendanceStats.present++;
-        if (a.metrics?.isLate) {
+        if (a.metrics?.isLate || a.status === "Late") {
           attendanceStats.late++;
         }
-      } else if (a.status === "Absent") {
-        attendanceStats.absent++;
-      } else if (a.status === "Half-Day" || a.status === "Leave") {
+      } else if (a.status === "Leave") {
         attendanceStats.leave++;
       }
     });
-    // Add logic to query LeaveRequests for actual 'leave' count if needed, mocking based on absent for now if not strictly recorded today
-    attendanceStats.absent = totalEmployees - attendanceStats.present - attendanceStats.leave;
-    if (attendanceStats.absent < 0) attendanceStats.absent = 0;
+
+    attendanceStats.absent = Math.max(0, totalEmployees - attendanceStats.present - attendanceStats.leave);
 
     // 2. Financials (Wallet & Payroll)
     const wallet = await CompanyWallet.findOne().lean();
@@ -126,6 +148,54 @@ export async function GET(req: Request) {
       { name: "Open", value: openLeads }
     ];
 
+    const attendanceMap = new Map();
+    todaysAttendance.forEach((rec) => {
+      if (rec.employeeId) {
+        attendanceMap.set(rec.employeeId.toString(), rec);
+      }
+    });
+
+    const todaysAttendanceList = activeEmployees.map((emp: any) => {
+      const att = attendanceMap.get(emp._id.toString());
+      if (att) {
+        let location = '-';
+        let geoUrl = null;
+        if (att.punchIn?.latitude && att.punchIn?.longitude) {
+          location = `${att.punchIn.latitude.toFixed(4)}, ${att.punchIn.longitude.toFixed(4)}`;
+          geoUrl = `https://maps.google.com/?q=${att.punchIn.latitude},${att.punchIn.longitude}`;
+        } else if (att.punchIn?.ipAddress) {
+          location = att.punchIn.ipAddress;
+        }
+
+        return {
+          id: emp._id,
+          name: `${emp.firstName} ${emp.lastName || ''}`.trim(),
+          employeeCode: emp.employeeCode || '-',
+          department: emp.department || 'General',
+          status: att.punchIn ? 'Present' : (att.status || 'Absent'),
+          punchIn: att.punchIn ? new Date(att.punchIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+          punchOut: att.punchOut ? new Date(att.punchOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+          workingHours: att.metrics?.workingHours ? `${att.metrics.workingHours}h` : '-',
+          isLate: att.metrics?.isLate || false,
+          location,
+          geoUrl,
+        };
+      }
+      return {
+        id: emp._id,
+        name: `${emp.firstName} ${emp.lastName || ''}`.trim(),
+        employeeCode: emp.employeeCode || '-',
+        department: emp.department || 'General',
+        status: 'Absent',
+        punchIn: '-',
+        punchOut: '-',
+        workingHours: '-',
+        isLate: false,
+        location: '-',
+        geoUrl: null,
+      };
+    });
+
     return NextResponse.json({
       success: true,
       data: {
@@ -135,11 +205,12 @@ export async function GET(req: Request) {
           walletBalance,
           salaryPaid,
           salaryPending,
-          visitorsToday: 0, // Mocked
+          visitorsToday: 0,
           openLeads,
           wonLeads,
           revenue
         },
+        todaysAttendanceList,
         charts: {
           monthlyData,
           leadConversion
