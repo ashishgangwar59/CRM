@@ -41,7 +41,7 @@ export async function GET(req: Request) {
     const dateStr = searchParams.get("date") || new Date().toISOString().split("T")[0];
 
     // 1. Fetch all employees
-    let employees = await Employee.find()
+    let employees: any[] = await Employee.find()
       .select("firstName lastName employeeCode department email phone designation")
       .lean();
 
@@ -139,8 +139,8 @@ export async function PUT(req: Request) {
         employeeId: empId,
         date: dateStr,
         status,
-        punchIn: null,
-        punchOut: null,
+        punchIn: undefined,
+        punchOut: undefined,
         metrics: { workingHours: 0, isLate: false, isEarlyLeave: false },
       });
     }

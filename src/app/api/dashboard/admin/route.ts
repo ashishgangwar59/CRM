@@ -85,10 +85,10 @@ export async function GET(req: Request) {
       .sort((a, b) => a.daysUntil - b.daysUntil);
     
     let attendanceStats = { present: 0, absent: 0, late: 0, leave: 0 };
-    todaysAttendance.forEach(a => {
-      if (a.status === "Present" || a.status === "Half-Day" || a.status === "Late" || a.punchIn) {
+    todaysAttendance.forEach((a: any) => {
+      if (a.status === "Present" || a.status === "Half-Day" || a.punchIn) {
         attendanceStats.present++;
-        if (a.metrics?.isLate || a.status === "Late") {
+        if (a.metrics?.isLate) {
           attendanceStats.late++;
         }
       } else if (a.status === "Leave") {
