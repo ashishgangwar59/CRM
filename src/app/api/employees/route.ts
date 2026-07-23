@@ -22,23 +22,49 @@ async function getNextEmployeeCode(systemRole?: string) {
   return `${prefix}-${counter.seq.toString().padStart(4, "0")}`;
 }
 
+function getToken(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) {
+    const match = cookieHeader.match(/accessToken=([^;]+)/);
+    if (match) return match[1];
+  }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    if (authHeader.startsWith("Bearer ")) return authHeader.substring(7).trim();
+    return authHeader.trim();
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
     const data = await req.json();
 
+    if (!data.email || !data.email.trim()) {
+      return NextResponse.json({ error: "Email address is required." }, { status: 400 });
+    }
+    if (!data.firstName || !data.firstName.trim()) {
+      return NextResponse.json({ error: "First Name is required." }, { status: 400 });
+    }
+    if (!data.lastName || !data.lastName.trim()) {
+      return NextResponse.json({ error: "Last Name is required." }, { status: 400 });
+    }
+
+    const cleanEmail = data.email.toLowerCase().trim();
+
     // Pre-check to ensure email is not already used in User or Employee collection
-    const existingUser = await User.findOne({ email: data.email });
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return NextResponse.json({ error: "Email is already registered as a User" }, { status: 400 });
     }
 
-    const existingEmployee = await Employee.findOne({ email: data.email });
+    const existingEmployee = await Employee.findOne({ email: cleanEmail });
     if (existingEmployee) {
       return NextResponse.json({ error: "Email is already registered as an Employee" }, { status: 400 });
     }
 
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = getToken(req);
     let createdBy: string | undefined = undefined;
     if (token) {
       try {
@@ -54,19 +80,39 @@ export async function POST(req: Request) {
     // Auto-generate code using Admin-0001 or EMP-0001 format
     const employeeCode = data.employeeCode || (await getNextEmployeeCode(systemRole));
 
+    // Sanitize empty strings for dates & ObjectIds
+    const cleanData = { ...data, email: cleanEmail };
+
+    if (!cleanData.dateOfBirth || cleanData.dateOfBirth === "") delete cleanData.dateOfBirth;
+    else if (typeof cleanData.dateOfBirth === "string") {
+      const d = new Date(cleanData.dateOfBirth);
+      if (isNaN(d.getTime())) delete cleanData.dateOfBirth;
+      else cleanData.dateOfBirth = d;
+    }
+
+    if (!cleanData.dateOfJoining || cleanData.dateOfJoining === "") delete cleanData.dateOfJoining;
+    else if (typeof cleanData.dateOfJoining === "string") {
+      const d = new Date(cleanData.dateOfJoining);
+      if (isNaN(d.getTime())) delete cleanData.dateOfJoining;
+      else cleanData.dateOfJoining = d;
+    }
+
+    if (!cleanData.reportingManager || cleanData.reportingManager === "") delete cleanData.reportingManager;
+    if (!cleanData.createdBy || cleanData.createdBy === "") delete cleanData.createdBy;
+
     const newEmployee = await Employee.create({
-      ...data,
+      ...cleanData,
       employeeCode,
       createdBy,
     });
 
     // Create a User account for the employee to log in
-    const rawPassword = data.password || (systemRole === "ADMIN" ? "Admin@123" : "Employee@123");
+    const rawPassword = cleanData.password || (systemRole === "ADMIN" ? "Admin@123" : "Employee@123");
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
-    const accessibleModules = data.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"];
+    const accessibleModules = cleanData.accessibleModules || cleanData.moduleAccess || ["Overview", "Attendance", "Leads", "Reports", "Profile"];
     
     await User.create({
-      email: data.email,
+      email: cleanEmail,
       password: hashedPassword,
       role: systemRole,
       accessibleModules,
@@ -79,9 +125,9 @@ export async function POST(req: Request) {
       
       const { sendWelcomeEmail } = require("@/lib/mail");
       await sendWelcomeEmail({
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        email: cleanEmail,
+        firstName: cleanData.firstName,
+        lastName: cleanData.lastName,
         password: rawPassword,
         loginUrl
       });
@@ -93,9 +139,9 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Create Employee Error:", error);
     if (error.code === 11000) {
-       return NextResponse.json({ error: "Email or Employee Code already exists" }, { status: 400 });
+      return NextResponse.json({ error: "Email or Employee Code already exists" }, { status: 400 });
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to create employee" }, { status: 400 });
   }
 }
 

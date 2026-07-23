@@ -35,27 +35,59 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
     const data = await req.json();
     
-    const employee = await Employee.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+    const cleanData = { ...data };
+
+    if (!cleanData.dateOfBirth || cleanData.dateOfBirth === "") delete cleanData.dateOfBirth;
+    else if (typeof cleanData.dateOfBirth === "string") {
+      const d = new Date(cleanData.dateOfBirth);
+      if (isNaN(d.getTime())) delete cleanData.dateOfBirth;
+      else cleanData.dateOfBirth = d;
+    }
+
+    if (!cleanData.dateOfJoining || cleanData.dateOfJoining === "") delete cleanData.dateOfJoining;
+    else if (typeof cleanData.dateOfJoining === "string") {
+      const d = new Date(cleanData.dateOfJoining);
+      if (isNaN(d.getTime())) delete cleanData.dateOfJoining;
+      else cleanData.dateOfJoining = d;
+    }
+
+    if (!cleanData.reportingManager || cleanData.reportingManager === "") delete cleanData.reportingManager;
+    if (!cleanData.createdBy || cleanData.createdBy === "") delete cleanData.createdBy;
+
+    const existingEmployee = await Employee.findById(id);
+    if (!existingEmployee) {
+      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+    }
+
+    const oldEmail = existingEmployee.email;
+    const employee = await Employee.findByIdAndUpdate(id, cleanData, { new: true, runValidators: true });
     
     if (!employee) {
       return NextResponse.json({ error: "Employee not found" }, { status: 404 });
     }
 
-    if (data.accessibleModules || data.systemRole) {
+    const accessibleModules = cleanData.accessibleModules || cleanData.moduleAccess;
+    const systemRole = cleanData.systemRole || cleanData.role;
+
+    if (accessibleModules || systemRole || cleanData.email) {
       const userUpdates: any = {};
-      if (data.accessibleModules) userUpdates.accessibleModules = data.accessibleModules;
-      if (data.systemRole) userUpdates.role = data.systemRole;
+      if (accessibleModules) userUpdates.accessibleModules = accessibleModules;
+      if (systemRole) userUpdates.role = systemRole;
+      if (cleanData.email) userUpdates.email = cleanData.email;
 
       await User.findOneAndUpdate(
-        { email: employee.email },
+        { email: oldEmail },
         userUpdates
       );
     }
 
     return NextResponse.json({ success: true, data: employee });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Update Employee Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (error.code === 11000) {
+      return NextResponse.json({ error: "Email or Employee Code already exists" }, { status: 400 });
+    }
+    return NextResponse.json({ error: error.message || "Failed to update employee" }, { status: 400 });
   }
 }
 
