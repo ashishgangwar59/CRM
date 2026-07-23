@@ -33,9 +33,18 @@ export async function middleware(request: NextRequest) {
   let response: NextResponse;
 
   // Define public routes
-  const publicRoutes = ['/login', '/forgot-password', '/reset-password'];
+  const publicRoutes = ['/login', '/forgot-password', '/reset-password', '/investor-register', '/api/investors/register', '/api/debenture-application'];
   if (publicRoutes.some(route => pathname.startsWith(route)) || pathname.startsWith('/api/auth/')) {
     response = NextResponse.next();
+  } else if (pathname.startsWith('/debenture-application')) {
+    const hasRef = request.nextUrl.searchParams.has('ref');
+    const accessToken = request.cookies.get('accessToken')?.value;
+    // Allow if logged in OR if accessing via referral link ?ref=...
+    if (hasRef || accessToken) {
+      response = NextResponse.next();
+    } else {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   } else {
     // Define protected routes
     const protectedRoutes = ['/dashboard'];

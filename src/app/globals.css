@@ -2,7 +2,10 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
+  --border: #eeeeee;
+  --brand-blue: #134086;
+  --brand-green: #00a65a;
 }
 
 @theme inline {
@@ -10,29 +13,26 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-brand: #114485;
+  --color-brand: #134086;
 }
 
 ::selection {
-  background-color: var(--color-brand);
+  background-color: #134086;
   color: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #ffffff;
+  --foreground: #111111;
+  --border: #eeeeee;
 }
 
-/* Class-based dark mode overrides */
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+*, ::before, ::after {
+  border-color: #eeeeee;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #ffffff !important;
+  color: #111111 !important;
   font-family: Arial, Helvetica, sans-serif;
 }

@@ -45,6 +45,7 @@ export interface ISystemSettings extends Document {
     name: string;
     type: "Earning" | "Deduction";
   }[];
+  investorLegalBondTemplate?: string;
   integrations: {
     smtp: {
       host: string;
@@ -141,10 +142,15 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
         }
       ]
     },
-    salaryComponents: [{
-      name: { type: String },
-      type: { type: String, enum: ["Earning", "Deduction"] }
-    }],
+    investorLegalBondTemplate: {
+      type: String,
+      default: `INVESTOR CAPITAL BOND AGREEMENT TERMS
+
+1. The Investor agrees to invest the specified capital amount (RS) into the capital fund.
+2. Monthly returns will be computed at the agreed rate per month subject to document verification.
+3. All uploaded KYC documents (Aadhar, PAN, Marksheets & Bank Details) are verified by Key Admin before activation.
+4. By checking the agreement box, the investor digitally signs and confirms that all submitted information is accurate and legally binding.`
+    },
     integrations: {
       smtp: {
         host: { type: String, default: "" },

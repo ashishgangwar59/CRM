@@ -27,7 +27,13 @@ export async function GET(req: Request) {
     const token = getToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const payload = verifyAccessToken(token);
+    let payload;
+    try {
+      payload = verifyAccessToken(token);
+    } catch {
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+    }
+
     const role = (payload.role || "").toUpperCase().replace("_", "");
     if (role !== "KEYADMIN" && role !== "ADMIN" && role !== "MANAGER") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -43,19 +43,25 @@ export async function GET(req: Request) {
     const user = await User.findById(payload.userId).lean();
     const accessibleModules = user?.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"];
 
-    // Also fetch the corresponding employee record
+    // Also fetch the corresponding employee / investor record
     let employeeData = null;
+    let investorData = null;
     if (user) {
-      // Import Employee here if needed or at the top
       const { Employee } = await import("@/lib/models/Employee");
+      const { Investor } = await import("@/lib/models/Investor");
       employeeData = await Employee.findOne({ email: user.email }).lean();
+      investorData = await Investor.findOne({ userId: user._id }).lean();
+      if (!investorData && user.email) {
+        investorData = await Investor.findOne({ email: user.email }).lean();
+      }
     }
 
     return NextResponse.json({ 
       success: true, 
       role: payload.role, 
       accessibleModules,
-      employee: employeeData
+      employee: employeeData,
+      investor: investorData
     });
   } catch (error) {
     return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 });

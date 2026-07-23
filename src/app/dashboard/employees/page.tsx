@@ -216,6 +216,7 @@ export default function EmployeesPage() {
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Debenture Form Link</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -251,6 +252,20 @@ export default function EmployeesPage() {
                       }`}>
                         {emp.status}
                       </span>
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const refLink = `${window.location.origin}/debenture-application?ref=${emp.employeeCode || emp.email}`;
+                          navigator.clipboard.writeText(refLink);
+                          alert(`Copied Debenture Referral link for ${emp.firstName} (${emp.employeeCode}):\n${refLink}`);
+                        }}
+                        className="bg-[#eee] text-[#134086] border-[#eee] hover:bg-blue-100 font-bold text-xs"
+                      >
+                        Copy Form Link 📋
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

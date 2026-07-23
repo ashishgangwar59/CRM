@@ -3,7 +3,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
@@ -14,6 +14,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [modules, setModules] = useState<string[]>([]);
+  const [empCode, setEmpCode] = useState<string>("");
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -23,6 +24,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         if (data.success) {
           setRole(data.role);
           setModules(data.accessibleModules || []);
+          if (data.employee?.employeeCode) {
+            setEmpCode(data.employee.employeeCode);
+          } else if (data.employee?.email) {
+            setEmpCode(data.employee.email);
+          }
         }
       });
   }, []);
@@ -38,24 +44,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   };
 
+  const debentureHref = empCode ? `/debenture-application?ref=${encodeURIComponent(empCode)}` : "/debenture-application";
+
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Investor Details", href: "/dashboard", icon: LayoutDashboard, roles: ["INVESTOR"] },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Investors", href: "/dashboard/investors", icon: DollarSign, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Employees", href: "/dashboard/employees", icon: Users, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Notifications", href: "/dashboard/reports/notifications", icon: RadioTower, roles: ["ADMIN", "KEY_ADMIN"] },
+    { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
-    { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee"] },
+    { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee", "INVESTOR"] },
   ];
 
   const visibleNavItems = navItems.filter(item => {
     if (!role) return false;
-    if (role === "Employee") return modules.includes(item.name);
+    if (role === "INVESTOR") return item.roles.includes("INVESTOR");
+    if (role === "Employee") {
+      if (item.name === "Debenture Form") return true;
+      return modules.includes(item.name);
+    }
     return item.roles.includes(role);
   });
 

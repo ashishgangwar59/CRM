@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { EmployeeDashboard } from "./components/EmployeeDashboard";
+import { InvestorDashboard } from "./components/InvestorDashboard";
 
 export default function DashboardPage() {
   const [role, setRole] = useState<string | null>(null);
@@ -37,6 +38,10 @@ export default function DashboardPage() {
 
   if (loading) return <div className="p-8">Authenticating workspace...</div>;
   if (!role) return <div className="p-8 text-rose-500">Unauthorized. Please log in.</div>;
+
+  if (role === "INVESTOR") {
+    return <InvestorDashboard />;
+  }
 
   if (role === "Employee" && !modules.includes("Overview")) {
     return <div className="p-8">Redirecting to Attendance...</div>;

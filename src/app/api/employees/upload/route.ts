@@ -12,6 +12,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file received." }, { status: 400 });
     }
 
+    // PDF validation: check file type & extension
+    const ext = path.extname(file.name).toLowerCase();
+    if (file.type !== "application/pdf" && ext !== ".pdf") {
+      return NextResponse.json({ error: "Only PDF documents are allowed." }, { status: 400 });
+    }
+
+    // 15MB size validation (15 * 1024 * 1024 bytes)
+    const MAX_SIZE = 15 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "File size exceeds maximum limit of 15MB." }, { status: 400 });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     
     // Ensure uploads directory exists
@@ -23,7 +35,6 @@ export async function POST(req: Request) {
     }
 
     // Generate unique filename to prevent collisions
-    const ext = path.extname(file.name);
     const fileName = `${uuidv4()}${ext}`;
     const filePath = path.join(uploadsDir, fileName);
 

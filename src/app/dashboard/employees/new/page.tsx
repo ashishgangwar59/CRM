@@ -24,15 +24,22 @@ export default function NewEmployeePage() {
     firstName: "",
     lastName: "",
     email: "",
+    officeEmail: "",
     phone: "",
     dateOfBirth: "",
+    gender: "",
+    bloodGroup: "",
+    maritalStatus: "",
+    dateOfJoining: "",
+    workLocation: "",
     status: "Active",
     employeeType: "Full-Time",
     systemRole: "Employee",
     department: "",
     designation: "",
-    kyc: { aadharNumber: "", panNumber: "" },
+    kyc: { aadharNumber: "", panNumber: "", passportNumber: "" },
     bankDetails: { bankName: "", accountNumber: "", ifscCode: "", branchName: "" },
+    emergencyContact: { name: "", relation: "", phone: "" },
     profilePhotoUrl: "",
     accessibleModules: ["Overview", "Attendance", "Leads", "Reports", "Profile"]
   });
@@ -211,6 +218,43 @@ export default function NewEmployeePage() {
                     <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleChange("dateOfBirth", e.target.value)} />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="officeEmail">Office Email</Label>
+                    <Input id="officeEmail" type="email" value={formData.officeEmail} onChange={(e) => handleChange("officeEmail", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <select
+                      id="gender"
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50"
+                      value={formData.gender}
+                      onChange={(e) => handleChange("gender", e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bloodGroup">Blood Group</Label>
+                    <Input id="bloodGroup" placeholder="e.g. O+, A+, B+" value={formData.bloodGroup} onChange={(e) => handleChange("bloodGroup", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maritalStatus">Marital Status</Label>
+                    <select
+                      id="maritalStatus"
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50"
+                      value={formData.maritalStatus}
+                      onChange={(e) => handleChange("maritalStatus", e.target.value)}
+                    >
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
                     <select
                       id="department"
@@ -273,10 +317,18 @@ export default function NewEmployeePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Official Details</CardTitle>
-                <CardDescription>Employment status, department, and roles.</CardDescription>
+                <CardDescription>Employment status, department, joined date and work location.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfJoining">Joined Date</Label>
+                    <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="workLocation">Work Location</Label>
+                    <Input id="workLocation" placeholder="e.g. Noida, Delhi" value={formData.workLocation} onChange={(e) => handleChange("workLocation", e.target.value)} />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="official-department">Department</Label>
                     <select
@@ -355,6 +407,10 @@ export default function NewEmployeePage() {
                     <Label htmlFor="panNumber">PAN Number</Label>
                     <Input id="panNumber" value={formData.kyc.panNumber} onChange={(e) => handleChange("kyc.panNumber", e.target.value)} />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="passportNumber">Passport Number</Label>
+                    <Input id="passportNumber" value={formData.kyc.passportNumber} onChange={(e) => handleChange("kyc.passportNumber", e.target.value)} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -363,26 +419,47 @@ export default function NewEmployeePage() {
         {step === 3 && (
             <Card>
               <CardHeader>
-                <CardTitle>Bank Details</CardTitle>
-                <CardDescription>Salary account information.</CardDescription>
+                <CardTitle>Bank & Emergency Details</CardTitle>
+                <CardDescription>Salary account information and emergency contact.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank Name</Label>
-                    <Input id="bankName" value={formData.bankDetails.bankName} onChange={(e) => handleChange("bankDetails.bankName", e.target.value)} />
+              <CardContent className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Bank Details</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bankName">Bank Name / Bank Account</Label>
+                      <Input id="bankName" value={formData.bankDetails.bankName} onChange={(e) => handleChange("bankDetails.bankName", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="accountNumber">Account Number (Ac Num)</Label>
+                      <Input id="accountNumber" value={formData.bankDetails.accountNumber} onChange={(e) => handleChange("bankDetails.accountNumber", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ifscCode">IFSC Code</Label>
+                      <Input id="ifscCode" value={formData.bankDetails.ifscCode} onChange={(e) => handleChange("bankDetails.ifscCode", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="branchName">Bank Branch</Label>
+                      <Input id="branchName" value={formData.bankDetails.branchName} onChange={(e) => handleChange("bankDetails.branchName", e.target.value)} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number</Label>
-                    <Input id="accountNumber" value={formData.bankDetails.accountNumber} onChange={(e) => handleChange("bankDetails.accountNumber", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ifscCode">IFSC Code</Label>
-                    <Input id="ifscCode" value={formData.bankDetails.ifscCode} onChange={(e) => handleChange("bankDetails.ifscCode", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="branchName">Branch Name</Label>
-                    <Input id="branchName" value={formData.bankDetails.branchName} onChange={(e) => handleChange("bankDetails.branchName", e.target.value)} />
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3">Emergency Contact Details</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emergencyName">Emergency Contact Name</Label>
+                      <Input id="emergencyName" value={formData.emergencyContact.name} onChange={(e) => handleChange("emergencyContact.name", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergencyRelation">Emergency Contact Relation</Label>
+                      <Input id="emergencyRelation" value={formData.emergencyContact.relation} onChange={(e) => handleChange("emergencyContact.relation", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergencyPhone">Emergency Contact Number</Label>
+                      <Input id="emergencyPhone" value={formData.emergencyContact.phone} onChange={(e) => handleChange("emergencyContact.phone", e.target.value)} />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -404,7 +481,7 @@ export default function NewEmployeePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Leads", "Reports", "Profile",
-                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Notifications", "Settings"
+                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Notifications", "Settings", "Debenture Form"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2">
                       <input 

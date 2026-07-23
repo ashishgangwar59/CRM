@@ -106,7 +106,19 @@ export async function POST(req: Request) {
 
     await logAudit(req, user._id.toString(), "Login", "Auth", "User logged in successfully");
 
-    const response = NextResponse.json({ success: true, role: user.role });
+    const response = NextResponse.json({
+      success: true,
+      role: user.role,
+      token: accessToken,
+      accessToken,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        firstName: (user as any).firstName || "",
+        lastName: (user as any).lastName || "",
+      },
+    });
 
     response.cookies.set("accessToken", accessToken, {
       httpOnly: true,

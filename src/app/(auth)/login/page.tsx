@@ -115,10 +115,17 @@ export default function LoginPage() {
               </Label>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-3">
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
+
+            <div className="text-center text-xs text-zinc-500 pt-2 border-t w-full">
+              Are you an Investor?{" "}
+              <a href="/investor-register" className="text-blue-600 hover:underline font-semibold">
+                Register Investor Account
+              </a>
+            </div>
           </CardFooter>
         </form>
       </Card>

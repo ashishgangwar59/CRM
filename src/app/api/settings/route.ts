@@ -10,8 +10,8 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     let settings = await SystemSettings.findOne();
@@ -55,8 +55,13 @@ export async function GET(req: Request) {
       updated = true;
     }
 
-    if (settings.attendancePolicy && settings.attendancePolicy.officeStartTime === "09:00") {
-      settings.attendancePolicy.officeStartTime = "10:00";
+    if (!settings.investorLegalBondTemplate) {
+      settings.investorLegalBondTemplate = `INVESTOR CAPITAL BOND AGREEMENT TERMS
+
+1. The Investor agrees to invest the specified capital amount (RS) into the capital fund.
+2. Monthly returns will be computed at the agreed rate per month subject to document verification.
+3. All uploaded KYC documents (Aadhar, PAN, Marksheets & Bank Details) are verified by Key Admin before activation.
+4. By checking the agreement box, the investor digitally signs and confirms that all submitted information is accurate and legally binding.`;
       updated = true;
     }
 
@@ -78,7 +83,8 @@ export async function PUT(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
+    const role = (payload.role || "").toUpperCase().replace("_", "");
+    if (role !== "KEYADMIN" && role !== "ADMIN" && role !== "MANAGER") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

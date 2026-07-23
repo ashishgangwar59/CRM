@@ -110,7 +110,21 @@ export async function GET(req: Request) {
 
     const query: any = {};
 
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    function getToken(req: Request): string | null {
+      const cookieHeader = req.headers.get("cookie");
+      if (cookieHeader) {
+        const match = cookieHeader.match(/accessToken=([^;]+)/);
+        if (match) return match[1];
+      }
+      const authHeader = req.headers.get("authorization");
+      if (authHeader) {
+        if (authHeader.startsWith("Bearer ")) return authHeader.substring(7).trim();
+        return authHeader.trim();
+      }
+      return null;
+    }
+
+    const token = getToken(req);
     if (token) {
       try {
         const payload = verifyAccessToken(token);
@@ -118,7 +132,7 @@ export async function GET(req: Request) {
           query.createdBy = payload.userId;
         }
       } catch (e) {
-        return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+        return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
       }
     } else {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
