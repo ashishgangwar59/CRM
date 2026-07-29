@@ -409,7 +409,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div className="notice">OFFICIAL FILLED APPLICATION DOCUMENT</div>
             </div>
 
-            <div style={{ display: "flex", justifyBetween: "space-between", margin: "10px 20px", fontSize: "12px", borderBottom: "1px solid #c9972f", paddingBottom: "6px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", margin: "10px 20px", fontSize: "12px", borderBottom: "1px solid #c9972f", paddingBottom: "6px" }}>
               <div>
                 <b>Application No:</b> <span className="font-mono text-[#0c1c3d] font-bold">{form.applicationNo || investor.investorCode}</span>
               </div>

@@ -46,6 +46,7 @@ function DebentureFormContent() {
     passportPhotoUrl: "",
     panDocUrl: "",
     aadharDocUrl: "",
+    bankPassbookUrl: "",
     place: "",
     declDay: new Date().getDate().toString().padStart(2, "0"),
     declMonth: (new Date().getMonth() + 1).toString().padStart(2, "0"),
