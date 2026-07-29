@@ -6,20 +6,66 @@ import { Counter } from "@/lib/models/Counter";
 import bcrypt from "bcryptjs";
 import { verifyAccessToken } from "@/lib/auth";
 
-// Helper function to auto-generate employee/admin code
-async function getNextEmployeeCode(systemRole?: string) {
-  const roleUpper = (systemRole || "").toUpperCase().replace("_", "");
-  const isAdmin = roleUpper === "ADMIN" || roleUpper === "KEYADMIN" || roleUpper === "MANAGER";
-  const counterId = isAdmin ? "adminCode" : "employeeCode";
-  const prefix = isAdmin ? "Admin" : "EMP";
+function toRoman(num: number): string {
+  const lookup: { [key: string]: number } = {
+    M: 1000, CM: 900, D: 500, CD: 400,
+    C: 100, XC: 90, L: 50, XL: 40,
+    X: 10, IX: 9, V: 5, IV: 4, I: 1
+  };
+  let roman = "";
+  let n = num;
+  for (let i in lookup) {
+    while (n >= lookup[i]) {
+      roman += i;
+      n -= lookup[i];
+    }
+  }
+  return roman || "I";
+}
 
+// Helper function to auto-generate employee/admin code using MDSDWK-00<ROMAN> format
+async function getNextEmployeeCode(systemRole?: string) {
   const counter = await Counter.findByIdAndUpdate(
-    { _id: counterId },
+    { _id: "employeeCode" },
     { $inc: { seq: 1 } },
     { new: true, upsert: true }
   );
   
-  return `${prefix}-${counter.seq.toString().padStart(4, "0")}`;
+  return `MDSDWK-00${toRoman(counter.seq)}`;
+}
+
+// Automatically update old employee IDs that don't match MDSDWK-00 format
+async function migrateOldEmployeeCodes() {
+  try {
+    const oldEmployees = await Employee.find({ 
+      $or: [
+        { employeeCode: { $exists: false } },
+        { employeeCode: null },
+        { employeeCode: { $not: /^MDSDWK-00/ } }
+      ]
+    }).sort({ createdAt: 1 });
+
+    if (oldEmployees.length > 0) {
+      // Find current count of migrated ones
+      const migratedCount = await Employee.countDocuments({ employeeCode: /^MDSDWK-00/ });
+      let currentSeq = migratedCount + 1;
+
+      for (const emp of oldEmployees) {
+        emp.employeeCode = `MDSDWK-00${toRoman(currentSeq)}`;
+        await emp.save();
+        currentSeq++;
+      }
+
+      // Sync counter
+      await Counter.findByIdAndUpdate(
+        { _id: "employeeCode" },
+        { seq: currentSeq - 1 },
+        { upsert: true }
+      );
+    }
+  } catch (err) {
+    console.error("Employee code migration error:", err);
+  }
 }
 
 function getToken(req: Request): string | null {
@@ -39,6 +85,7 @@ function getToken(req: Request): string | null {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
+    await migrateOldEmployeeCodes();
     const data = await req.json();
 
     if (!data.email || !data.email.trim()) {
@@ -148,6 +195,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
+    await migrateOldEmployeeCodes();
     
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";

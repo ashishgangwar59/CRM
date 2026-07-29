@@ -179,7 +179,7 @@ export default function SalarySlipPage() {
                 <p className="text-xs text-zinc-500">{companyProfile.address}</p>
                 <p className="text-xs text-zinc-500 font-medium">
                   {companyProfile.email}
-                  {companyProfile.gstNo ? ` | GSTIN: ${companyProfile.gstNo}` : ""}
+
                 </p>
                 <div className="mt-2 flex items-center space-x-3">
                   <span className="text-xs font-black tracking-widest text-white bg-indigo-900 px-3 py-1 rounded">PAYSLIP FOR {payroll.monthYear}</span>
@@ -247,7 +247,7 @@ export default function SalarySlipPage() {
               <div className="space-y-4">
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Basic Salary</span><span className="font-bold">₹{payroll.earnings.basic.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">House Rent Allowance</span><span className="font-bold">₹{payroll.earnings.hra.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Metro Allowance</span><span className="font-bold">₹{(payroll.earnings.metroAllowance || payroll.earnings.specialAllowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-zinc-700">Travel Allowance</span><span className="font-bold">₹{(payroll.earnings.travelAllowance || payroll.earnings.metroAllowance || payroll.earnings.specialAllowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
                 {payroll.earnings.incentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Incentive</span><span className="font-bold">₹{payroll.earnings.incentive.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}
                 {payroll.earnings.overtimeAmount > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Overtime Pay</span><span className="font-bold">₹{payroll.earnings.overtimeAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}
                 {payroll.earnings.bonus > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Performance Bonus</span><span className="font-bold">₹{payroll.earnings.bonus.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}

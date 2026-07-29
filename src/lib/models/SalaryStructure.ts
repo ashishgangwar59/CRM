@@ -8,6 +8,7 @@ export interface ISalaryStructure extends Document {
   hra: number;
   specialAllowance: number;
   metroAllowance: number;
+  travelAllowance: number;
   incentive: number;
   
   // Deductions
@@ -30,6 +31,7 @@ const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
     hra: { type: Number, default: 0 },
     specialAllowance: { type: Number, default: 0 },
     metroAllowance: { type: Number, default: 0 },
+    travelAllowance: { type: Number, default: 0 },
     incentive: { type: Number, default: 0 },
     
     pf: { type: Number, default: 0 },

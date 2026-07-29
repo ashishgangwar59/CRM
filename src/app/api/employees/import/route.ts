@@ -7,13 +7,30 @@ import * as XLSX from "xlsx";
 import bcrypt from "bcryptjs";
 import { verifyAccessToken } from "@/lib/auth";
 
+function toRoman(num: number): string {
+  const lookup: { [key: string]: number } = {
+    M: 1000, CM: 900, D: 500, CD: 400,
+    C: 100, XC: 90, L: 50, XL: 40,
+    X: 10, IX: 9, V: 5, IV: 4, I: 1
+  };
+  let roman = "";
+  let n = num;
+  for (let i in lookup) {
+    while (n >= lookup[i]) {
+      roman += i;
+      n -= lookup[i];
+    }
+  }
+  return roman || "I";
+}
+
 async function getNextEmployeeCode() {
   const counter = await Counter.findByIdAndUpdate(
     { _id: "employeeCode" },
     { $inc: { seq: 1 } },
     { new: true, upsert: true }
   );
-  return `EMP-${counter.seq.toString().padStart(4, "0")}`;
+  return `MDSDWK-00${toRoman(counter.seq)}`;
 }
 
 export async function POST(req: Request) {

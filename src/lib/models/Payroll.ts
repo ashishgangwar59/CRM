@@ -10,6 +10,7 @@ export interface IPayroll extends Document {
     hra: number;
     specialAllowance: number;
     metroAllowance: number;
+    travelAllowance: number;
     bonus: number;
     incentive: number;
     overtimeAmount: number;
@@ -49,6 +50,7 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
       hra: { type: Number, default: 0 },
       specialAllowance: { type: Number, default: 0 },
       metroAllowance: { type: Number, default: 0 },
+      travelAllowance: { type: Number, default: 0 },
       bonus: { type: Number, default: 0 },
       incentive: { type: Number, default: 0 },
       overtimeAmount: { type: Number, default: 0 },
