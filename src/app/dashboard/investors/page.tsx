@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2 } from "lucide-react";
+import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award } from "lucide-react";
+import PaymentBondModal from "./PaymentBondModal";
 
 export default function AdminInvestorsPage() {
   const [investors, setInvestors] = useState<any[]>([]);
@@ -16,6 +17,8 @@ export default function AdminInvestorsPage() {
   
   // Modal / Detail state
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
+  const [bondModalInvestor, setBondModalInvestor] = useState<any>(null);
+  const [bondAutoDownload, setBondAutoDownload] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [rejectReasonInput, setRejectReasonInput] = useState("");
@@ -101,6 +104,11 @@ export default function AdminInvestorsPage() {
         setShowRejectBox(false);
         setRejectReasonInput("");
         fetchInvestors();
+        // Auto-open bond modal with auto-download when investor is approved
+        if (status === "Verified") {
+          setBondAutoDownload(true);
+          setBondModalInvestor(json.data);
+        }
       } else {
         alert(json.error || "Action failed");
       }
@@ -611,12 +619,29 @@ export default function AdminInvestorsPage() {
                     >
                       <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
                     </Button>
+                    {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (
+                      <Button
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md"
+                        onClick={() => setBondModalInvestor(selectedInvestor)}
+                      >
+                        <Award className="w-4 h-4 mr-2" /> Download Payment Bond (PDF)
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
             })()}
           </div>
         </div>
+      )}
+
+      {/* --- Payment Bond Certificate PDF Modal --- */}
+      {bondModalInvestor && (
+        <PaymentBondModal
+          investor={bondModalInvestor}
+          autoDownload={bondAutoDownload}
+          onClose={() => { setBondModalInvestor(null); setBondAutoDownload(false); }}
+        />
       )}
 
       {/* --- Add Investor Modal --- */}

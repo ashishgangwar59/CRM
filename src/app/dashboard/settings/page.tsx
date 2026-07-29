@@ -226,6 +226,19 @@ export default function SettingsPage() {
                       Customize the legal bond terms presented to investors when signing their capital investment agreement.
                     </p>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-bold">Bond Maturity Period (Months)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={settings.investorMaturityPeriodMonths ?? 1}
+                        onChange={e => setSettings({ ...settings, investorMaturityPeriodMonths: parseInt(e.target.value) || 1 })}
+                        placeholder="e.g. 1"
+                      />
+                      <p className="text-xs text-zinc-500">Number of months after investment date when the bond matures. This will appear on the Payment Bond PDF.</p>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label className="font-bold">Legal Bond Agreement Text</Label>
                     <textarea 

@@ -5,13 +5,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare } from "lucide-react";
+import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award } from "lucide-react";
+import PaymentBondModal from "../investors/PaymentBondModal";
 
 export function InvestorDashboard() {
   const [investor, setInvestor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showBondModal, setShowBondModal] = useState(false);
 
   // Form states
   const [investmentAmount, setInvestmentAmount] = useState<number>(0);
@@ -185,6 +187,15 @@ export function InvestorDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          {investor.status === "Verified" && (
+            <Button
+              onClick={() => setShowBondModal(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-black shadow-md flex items-center gap-2"
+            >
+              <Award className="w-4 h-4" />
+              Download Payment Bond (PDF)
+            </Button>
+          )}
           <div className="text-right">
             <p className="text-xs text-zinc-400 uppercase font-semibold">Verification Status</p>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -535,6 +546,13 @@ export function InvestorDashboard() {
             {saving ? "Submitting..." : "Submit All Details for Admin Verification"}
           </Button>
         </div>
+      )}
+      {/* Payment Bond Modal for verified investor */}
+      {showBondModal && investor && (
+        <PaymentBondModal
+          investor={investor}
+          onClose={() => setShowBondModal(false)}
+        />
       )}
     </div>
   );

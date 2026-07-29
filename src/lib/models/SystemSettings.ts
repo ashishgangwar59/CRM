@@ -46,6 +46,7 @@ export interface ISystemSettings extends Document {
     type: "Earning" | "Deduction";
   }[];
   investorLegalBondTemplate?: string;
+  investorMaturityPeriodMonths?: number;
   integrations: {
     smtp: {
       host: string;
@@ -151,6 +152,7 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
 3. All uploaded KYC documents (Aadhar, PAN, Marksheets & Bank Details) are verified by Key Admin before activation.
 4. By checking the agreement box, the investor digitally signs and confirms that all submitted information is accurate and legally binding.`
     },
+    investorMaturityPeriodMonths: { type: Number, default: 1 },
     integrations: {
       smtp: {
         host: { type: String, default: "" },
