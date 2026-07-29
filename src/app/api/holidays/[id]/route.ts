@@ -7,11 +7,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     await connectToDatabase();
     
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     const payload = verifyAccessToken(token);
-    if (payload.role === "Employee") {
+    if (!payload || payload.role === "Employee") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -47,11 +50,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     await connectToDatabase();
     
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     const payload = verifyAccessToken(token);
-    if (payload.role === "Employee") {
+    if (!payload || payload.role === "Employee") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

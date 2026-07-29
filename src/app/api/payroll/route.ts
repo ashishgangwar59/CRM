@@ -9,7 +9,10 @@ export async function GET(req: Request) {
   try {
     await connectToDatabase();
     
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const payload = verifyAccessToken(token);
 

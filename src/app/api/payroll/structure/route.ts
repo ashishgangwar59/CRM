@@ -8,9 +8,11 @@ export async function GET(req: Request) {
     await connectToDatabase();
     
     // Auth
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // let payload = verifyAccessToken(token); // Manager role check could go here
 
     const { searchParams } = new URL(req.url);
     const employeeId = searchParams.get("employeeId");
@@ -31,7 +33,10 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const data = await req.json();

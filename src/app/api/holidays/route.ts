@@ -6,8 +6,8 @@ export async function GET(req: Request) {
   try {
     await connectToDatabase();
     
-    // Fetch upcoming holidays
-    const holidays = await Holiday.find({ date: { $gte: new Date() } })
+    // Fetch all holidays sorted by date
+    const holidays = await Holiday.find({})
       .sort({ date: 1 })
       .lean();
 
@@ -22,11 +22,14 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     
-    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { verifyAccessToken } = require("@/lib/auth");
     const payload = verifyAccessToken(token);
-    if (payload.role === "Employee") {
+    if (!payload || payload.role === "Employee") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
