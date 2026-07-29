@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award } from "lucide-react";
+import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText } from "lucide-react";
 import PaymentBondModal from "./PaymentBondModal";
+import DebentureFormModal from "./DebentureFormModal";
 
 export default function AdminInvestorsPage() {
   const [investors, setInvestors] = useState<any[]>([]);
@@ -18,6 +19,7 @@ export default function AdminInvestorsPage() {
   // Modal / Detail state
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
   const [bondModalInvestor, setBondModalInvestor] = useState<any>(null);
+  const [debentureModalInvestor, setDebentureModalInvestor] = useState<any>(null);
   const [bondAutoDownload, setBondAutoDownload] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -52,10 +54,16 @@ export default function AdminInvestorsPage() {
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
-        setInvestors(json.data || []);
+        if (Array.isArray(json.data)) {
+          setInvestors(json.data);
+        } else if (json.data) {
+          setInvestors([json.data]);
+        } else {
+          setInvestors([]);
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.error("Fetch Investors Error:", e);
     } finally {
       setLoading(false);
     }
@@ -220,6 +228,14 @@ export default function AdminInvestorsPage() {
           >
             Rejected
           </Button>
+          <Button
+            variant={statusFilter === "DebentureForms" ? "default" : "outline"}
+            onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
+            size="sm"
+            className="text-[#0c1c3d] font-bold border-[#0c1c3d]/30"
+          >
+            <FileText className="w-3.5 h-3.5 mr-1" /> Debenture Forms
+          </Button>
         </div>
       </div>
 
@@ -301,6 +317,15 @@ export default function AdminInvestorsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDebentureModalInvestor(inv)}
+                          className="text-[#0c1c3d] border-[#0c1c3d]/30 hover:bg-[#0c1c3d]/10 font-bold"
+                          title="View Official Sheet Debenture Form"
+                        >
+                          <FileText className="w-3.5 h-3.5 mr-1" /> Form
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -388,9 +413,18 @@ export default function AdminInvestorsPage() {
               <div className="p-4 border border-[#eee] bg-white rounded-lg space-y-3 shadow-sm">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h4 className="font-bold text-sm text-[#134086]">Debenture Application Form Details</h4>
-                  <span className="text-xs font-mono font-bold bg-blue-50 text-[#134086] px-2 py-0.5 rounded border border-blue-200">
-                    App No: {selectedInvestor.debentureForm.applicationNo || "N/A"}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-mono font-bold bg-blue-50 text-[#134086] px-2 py-0.5 rounded border border-blue-200">
+                      App No: {selectedInvestor.debentureForm.applicationNo || "N/A"}
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => setDebentureModalInvestor(selectedInvestor)}
+                      className="bg-[#0c1c3d] hover:bg-[#132a5c] text-white font-bold text-xs h-7 px-2.5"
+                    >
+                      <FileText className="w-3.5 h-3.5 mr-1" /> View Full Sheet Form
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div>
@@ -641,6 +675,18 @@ export default function AdminInvestorsPage() {
           investor={bondModalInvestor}
           autoDownload={bondAutoDownload}
           onClose={() => { setBondModalInvestor(null); setBondAutoDownload(false); }}
+        />
+      )}
+
+      {/* --- Filled Physical Sheet Debenture Application Form Modal --- */}
+      {debentureModalInvestor && (
+        <DebentureFormModal
+          investor={debentureModalInvestor}
+          onClose={() => setDebentureModalInvestor(null)}
+          onUpdate={() => {
+            setDebentureModalInvestor(null);
+            fetchInvestors();
+          }}
         />
       )}
 

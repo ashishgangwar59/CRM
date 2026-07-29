@@ -50,15 +50,22 @@ export interface IInvestor extends Document {
     state?: string;
     pinCode?: string;
     occupation?: string;
-    typeOfDebenture?: "Secured" | "Non-Convertible" | "Redeemable";
+    typeOfDebenture?: string;
+    typeSecured?: boolean;
+    typeNonConvertible?: boolean;
+    typeRedeemable?: boolean;
     faceValue?: number;
     noOfDebentures?: number;
+    numDebenturesWords?: string;
     totalApplicationAmount?: number;
-    modeOfPayment?: "NEFT/RTGS" | "Cheque" | "DD" | "Other";
+    modeOfPayment?: string;
+    paymentModeOther?: string;
+    bankName?: string;
     chequeDdNo?: string;
     chequeDdDate?: string;
     transactionUtrNo?: string;
     drawnOnBank?: string;
+    place?: string;
     passportPhotoUrl?: string;
   };
 
@@ -132,14 +139,21 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       pinCode: { type: String },
       occupation: { type: String },
       typeOfDebenture: { type: String },
+      typeSecured: { type: Boolean, default: true },
+      typeNonConvertible: { type: Boolean, default: false },
+      typeRedeemable: { type: Boolean, default: false },
       faceValue: { type: Number },
       noOfDebentures: { type: Number },
+      numDebenturesWords: { type: String },
       totalApplicationAmount: { type: Number },
       modeOfPayment: { type: String },
+      paymentModeOther: { type: String },
+      bankName: { type: String },
       chequeDdNo: { type: String },
       chequeDdDate: { type: String },
       transactionUtrNo: { type: String },
       drawnOnBank: { type: String },
+      place: { type: String },
       passportPhotoUrl: { type: String },
     },
 

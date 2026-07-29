@@ -3,6 +3,8 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IPayroll extends Document {
   employeeId: mongoose.Types.ObjectId;
   monthYear: string; // e.g., "2026-07"
+  paidDays?: number; // e.g., 15, 20, 30
+  totalDays?: number; // e.g., 30
   
   // Earnings
   earnings: {
@@ -44,6 +46,8 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
   {
     employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
     monthYear: { type: String, required: true },
+    paidDays: { type: Number, default: 30 },
+    totalDays: { type: Number, default: 30 },
     
     earnings: {
       basic: { type: Number, default: 0 },

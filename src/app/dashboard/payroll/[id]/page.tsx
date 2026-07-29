@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Download, Mail, CheckCircle, Lock, ArrowLeft } from "lucide-react";
+import { Download, Mail, CheckCircle, Lock, ArrowLeft, Printer } from "lucide-react";
 
 
 export default function SalarySlipPage() {
@@ -70,49 +70,69 @@ export default function SalarySlipPage() {
     }
   };
 
+  const generateSinglePagePDF = async () => {
+    if (!slipRef.current) return null;
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
+
+    const element = slipRef.current;
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      logging: false,
+    });
+
+    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // Fit strictly on 1 single page (210mm x 297mm)
+    pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+    return pdf;
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      const pdf = await generateSinglePagePDF();
+      if (pdf) {
+        pdf.save(`SalarySlip_${payroll.monthYear}_${payroll.employeeId?.employeeCode || "Slip"}.pdf`);
+      }
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      window.print();
+    }
+  };
+
   const handleEmail = async () => {
     try {
-      const res = await fetch(`/api/payroll/${params.id}/email`, { method: "POST" });
+      let pdfBase64: string | undefined = undefined;
+      try {
+        const pdf = await generateSinglePagePDF();
+        if (pdf) {
+          pdfBase64 = pdf.output("datauristring");
+        }
+      } catch (err) {
+        console.error("Failed to generate PDF string for email attachment", err);
+      }
+
+      const res = await fetch(`/api/payroll/${params.id}/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64 }),
+      });
       const data = await res.json();
       if (data.success) {
         alert(data.message);
       } else {
-        alert(data.error);
+        alert(data.error || "Failed to send email");
       }
     } catch (e) {
       alert("Error sending email");
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!slipRef.current) return;
-
-    try {
-      // Import html2canvas and jspdf dynamically to prevent SSR / hydration failures
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
-
-      const canvas = await html2canvas(slipRef.current, {
-        scale: 2.5,
-        useCORS: true,
-        logging: false,
-        allowTaint: true
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "a4"
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`SalarySlip_${payroll.monthYear}_${payroll.employeeId?.employeeCode || "Slip"}.pdf`);
-    } catch (error) {
-      console.error("PDF generation failed", error);
-      alert("Failed to generate PDF. Please try again.");
     }
   };
 
@@ -121,20 +141,50 @@ export default function SalarySlipPage() {
 
   const emp = payroll.employeeId;
 
+  // Format month name month-wise (e.g., "JULY 2026")
+  const monthNameStr = payroll.monthYear
+    ? new Date(`${payroll.monthYear}-01`).toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase()
+    : payroll.monthYear;
+
   // Verification URL for QR code (In real app, points to public verification page)
   const verificationUrl = `https://crm.company.com/verify-slip/${payroll._id}`;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24">
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          .printable-salary-slip-container,
+          .printable-salary-slip-container * {
+            visibility: visible !important;
+          }
+          .printable-salary-slip-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between print:hidden">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Slip</h1>
-            <p className="text-zinc-500 dark:text-zinc-400">{emp.firstName} {emp.lastName} • {payroll.monthYear}</p>
+            <p className="text-zinc-500 dark:text-zinc-400">{emp.firstName} {emp.lastName} • {monthNameStr} ({payroll.paidDays || 30} Days Salary)</p>
           </div>
         </div>
 
@@ -158,6 +208,9 @@ export default function SalarySlipPage() {
           <Button variant="secondary" onClick={handleDownloadPDF}>
             <Download className="mr-2 h-4 w-4" /> Download PDF
           </Button>
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" /> Print / Save PDF
+          </Button>
           <Button onClick={handleEmail}>
             <Mail className="mr-2 h-4 w-4" /> Email PDF
           </Button>
@@ -165,7 +218,7 @@ export default function SalarySlipPage() {
       </div>
 
       {/* The Printable Slip Area */}
-      <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200" style={{ width: '800px', minHeight: '1131px', margin: '0 auto', padding: '0' }}>
+      <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200 printable-salary-slip-container" style={{ width: '800px', minHeight: '1131px', margin: '0 auto', padding: '0' }}>
         <div ref={slipRef} className="p-5 w-full h-full bg-white relative">
 
           {/* Header Area */}
@@ -182,7 +235,12 @@ export default function SalarySlipPage() {
 
                 </p>
                 <div className="mt-2 flex items-center space-x-3">
-                  <span className="text-xs font-black tracking-widest text-white bg-indigo-900 px-3 py-1 rounded">PAYSLIP FOR {payroll.monthYear}</span>
+                  <span className="text-xs font-black tracking-widest text-white bg-indigo-900 px-3 py-1 rounded">
+                    PAYSLIP FOR {monthNameStr}
+                  </span>
+                  <span className="text-xs font-bold text-indigo-900 border border-indigo-900 px-2.5 py-0.5 rounded">
+                    PAID DAYS: {payroll.paidDays || 30} DAYS
+                  </span>
                 </div>
               </div>
             </div>
@@ -197,22 +255,30 @@ export default function SalarySlipPage() {
             <div className="flex space-x-6">
               {/* Employee Photo */}
 
-              <div className="grid grid-cols-2 gap-x-12 gap-y-2">
+              <div className="grid grid-cols-3 gap-x-8 gap-y-3">
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Employee Name</p>
-                  <p className="font-bold text-lg text-zinc-900">{emp.firstName} {emp.lastName}</p>
+                  <p className="font-bold text-base text-zinc-900">{emp.firstName} {emp.lastName}</p>
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Employee Code</p>
-                  <p className="font-bold text-lg text-zinc-900">{emp.employeeCode}</p>
+                  <p className="font-bold text-base text-zinc-900">{emp.employeeCode}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Pay Month</p>
+                  <p className="font-bold text-base text-indigo-900">{monthNameStr}</p>
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Designation</p>
-                  <p className="font-medium text-zinc-800">{emp.designation}</p>
+                  <p className="font-medium text-zinc-800">{emp.designation || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Department</p>
-                  <p className="font-medium text-zinc-800">{emp.department}</p>
+                  <p className="font-medium text-zinc-800">{emp.department || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Paid Days</p>
+                  <p className="font-bold text-base text-emerald-700">{payroll.paidDays || 30} Days / 30</p>
                 </div>
               </div>
             </div>

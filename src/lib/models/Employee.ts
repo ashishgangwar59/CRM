@@ -9,6 +9,9 @@ export interface IEmployee extends Document {
   email: string;
   officeEmail?: string;
   phone: string;
+  companyPhone?: string;
+  permanentAddress?: string;
+  correspondenceAddress?: string;
   dateOfBirth?: Date;
   gender?: string;
   bloodGroup?: string;
@@ -99,6 +102,9 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
     email: { type: String, required: true, unique: true },
     officeEmail: { type: String },
     phone: { type: String, required: true },
+    companyPhone: { type: String },
+    permanentAddress: { type: String },
+    correspondenceAddress: { type: String },
     dateOfBirth: { type: Date },
     gender: { type: String },
     bloodGroup: { type: String },

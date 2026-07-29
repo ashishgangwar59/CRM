@@ -120,8 +120,12 @@ export default function EmployeeProfilePage() {
                 <p className="font-medium">{employee.email}</p>
               </div>
               <div>
-                <p className="text-zinc-500">Phone</p>
+                <p className="text-zinc-500">Personal Phone</p>
                 <p className="font-medium">{employee.phone}</p>
+              </div>
+              <div>
+                <p className="text-zinc-500">Company Phone No</p>
+                <p className="font-medium">{employee.companyPhone || "-"}</p>
               </div>
               <div>
                 <p className="text-zinc-500">Status</p>
@@ -130,6 +134,14 @@ export default function EmployeeProfilePage() {
               <div>
                 <p className="text-zinc-500">Employee Type</p>
                 <p className="font-medium">{employee.employeeType}</p>
+              </div>
+              <div className="col-span-2 border-t pt-2 mt-2">
+                <p className="text-zinc-500">Permanent Address</p>
+                <p className="font-medium">{employee.permanentAddress || "-"}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-zinc-500">Correspondence Address</p>
+                <p className="font-medium">{employee.correspondenceAddress || "-"}</p>
               </div>
             </div>
           </CardContent>

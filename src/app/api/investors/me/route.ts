@@ -38,8 +38,8 @@ export async function GET(req: Request) {
     const user = await User.findById(payload.userId).lean();
     const userRole = (user?.role || payload?.role || "").toUpperCase().replace(/_/g, "");
 
-    // If Admin / KeyAdmin / Manager / Employee: Return all investors with search
-    if (userRole === "KEYADMIN" || userRole === "ADMIN" || userRole === "MANAGER" || userRole === "EMPLOYEE") {
+    // If Admin / KeyAdmin / SuperAdmin / Manager / Employee: Return all investors list with search
+    if (userRole !== "INVESTOR") {
       const { searchParams } = new URL(req.url);
       const search = searchParams.get("search") || "";
       const status = searchParams.get("status") || "";
@@ -51,9 +51,16 @@ export async function GET(req: Request) {
           { email: { $regex: search, $options: "i" } },
           { phone: { $regex: search, $options: "i" } },
           { investorCode: { $regex: search, $options: "i" } },
+          { "debentureForm.applicationNo": { $regex: search, $options: "i" } },
         ];
       }
-      if (status && status !== "ALL") query.status = status;
+      if (status && status !== "ALL") {
+        if (status === "DebentureForms") {
+          query["debentureForm.applicationNo"] = { $exists: true, $ne: "" };
+        } else {
+          query.status = status;
+        }
+      }
 
       const investors = await Investor.find(query).sort({ createdAt: -1 }).lean();
       return NextResponse.json({ success: true, data: investors });
@@ -163,9 +170,9 @@ export async function PUT(req: Request) {
     const role = (payload.role || "").toUpperCase().replace("_", "");
     const body = await req.json();
 
-    // If Admin/KeyAdmin verifying/editing an investor
-    if (role === "KEYADMIN" || role === "ADMIN" || role === "MANAGER") {
-      const { investorId, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications } = body;
+    // If Admin/KeyAdmin/Manager/Staff verifying/editing an investor
+    if (role !== "INVESTOR") {
+      const { investorId, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm } = body;
 
       const updateData: any = {};
       if (status) updateData.status = status;
@@ -217,6 +224,11 @@ export async function PUT(req: Request) {
       if (fullName) currentInvestor.fullName = fullName;
       if (phone) currentInvestor.phone = phone;
       if (email) currentInvestor.email = email;
+
+      if (debentureForm) {
+        currentInvestor.debentureForm = { ...(currentInvestor.debentureForm ? currentInvestor.toObject().debentureForm : {}), ...debentureForm };
+        currentInvestor.markModified("debentureForm");
+      }
 
       if (status === "Verified") {
         currentInvestor.verifiedBy = new mongoose.Types.ObjectId(payload.userId);

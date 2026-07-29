@@ -21,6 +21,7 @@ export default function PayrollDashboardPage() {
   // Bulk Selection State
   const [selectedPayrolls, setSelectedPayrolls] = useState<string[]>([]);
   const [processingBulk, setProcessingBulk] = useState(false);
+  const [selectedDaysMap, setSelectedDaysMap] = useState<Record<string, number>>({});
 
   const fetchPayrolls = async () => {
     try {
@@ -76,11 +77,12 @@ export default function PayrollDashboardPage() {
 
   const handleGenerate = async (employeeId: string) => {
     setGenerating(true);
+    const paidDays = selectedDaysMap[employeeId] || 30;
     try {
       const res = await fetch("/api/payroll/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId, monthYear })
+        body: JSON.stringify({ employeeId, monthYear, paidDays })
       });
       const data = await res.json();
       if (data.success) {
@@ -212,6 +214,7 @@ export default function PayrollDashboardPage() {
                   </TableHead>
                 )}
                 <TableHead>{isEmployee ? "Month" : "Employee"}</TableHead>
+                <TableHead className="text-center">Paid Days</TableHead>
                 <TableHead className="text-right">Gross</TableHead>
                 <TableHead className="text-right">Deductions</TableHead>
                 <TableHead className="text-right font-bold text-emerald-700">Net Salary</TableHead>
@@ -221,55 +224,64 @@ export default function PayrollDashboardPage() {
             </TableHeader>
             <TableBody>
               {isEmployee || !monthYear ? (
-                payrolls.map((payroll) => (
-                  <TableRow key={payroll._id}>
-                    {!isEmployee && (
-                      <TableCell className="text-center">
-                        {payroll.status === "Approved" ? (
-                          <input 
-                            type="checkbox" 
-                            checked={selectedPayrolls.includes(payroll._id)}
-                            onChange={() => toggleSelection(payroll._id)}
-                            className="rounded border-zinc-300 cursor-pointer"
-                          />
+                payrolls.map((payroll) => {
+                  const monthName = payroll.monthYear ? new Date(`${payroll.monthYear}-01`).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "";
+                  return (
+                    <TableRow key={payroll._id}>
+                      {!isEmployee && (
+                        <TableCell className="text-center">
+                          {payroll.status === "Approved" ? (
+                            <input 
+                              type="checkbox" 
+                              checked={selectedPayrolls.includes(payroll._id)}
+                              onChange={() => toggleSelection(payroll._id)}
+                              className="rounded border-zinc-300 cursor-pointer"
+                            />
+                          ) : (
+                            <input type="checkbox" disabled className="rounded border-zinc-200 cursor-not-allowed opacity-50" />
+                          )}
+                        </TableCell>
+                      )}
+                      <TableCell className="font-medium">
+                        {isEmployee ? (
+                          <div className="font-bold text-zinc-900 dark:text-zinc-50">{monthName || payroll.monthYear}</div>
                         ) : (
-                          <input type="checkbox" disabled className="rounded border-zinc-200 cursor-not-allowed opacity-50" />
+                          <div>
+                            <p className="font-semibold text-zinc-950 dark:text-zinc-50">{payroll.employeeId?.firstName} {payroll.employeeId?.lastName}</p>
+                            <p className="text-xs text-zinc-500">{payroll.employeeId?.employeeCode} • {monthName || payroll.monthYear}</p>
+                          </div>
                         )}
                       </TableCell>
-                    )}
-                    <TableCell className="font-medium">
-                      {isEmployee ? (
-                        payroll.monthYear
-                      ) : (
-                        <div>
-                          <p className="font-semibold text-zinc-950 dark:text-zinc-50">{payroll.employeeId?.firstName} {payroll.employeeId?.lastName}</p>
-                          <p className="text-xs text-zinc-500">{payroll.employeeId?.employeeCode} • {payroll.monthYear}</p>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">₹{payroll.grossSalary.toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-rose-600">-₹{payroll.totalDeductions.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-bold text-emerald-600">₹{payroll.netSalary.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        payroll.status === "Paid" ? "bg-emerald-100 text-emerald-700" :
-                        payroll.status === "Approved" ? "bg-blue-100 text-blue-700" :
-                        payroll.status === "Locked" ? "bg-amber-100 text-amber-700" :
-                        "bg-zinc-100 text-zinc-700"
-                      }`}>
-                        {payroll.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/payroll/${payroll._id}`)}>
-                        View Slip
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      <TableCell className="text-center">
+                        <span className="inline-block px-2.5 py-0.5 rounded bg-zinc-100 text-zinc-800 text-xs font-semibold">
+                          {payroll.paidDays || 30} Days
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">₹{payroll.grossSalary.toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-rose-600">-₹{payroll.totalDeductions.toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-bold text-emerald-600">₹{payroll.netSalary.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          payroll.status === "Paid" ? "bg-emerald-100 text-emerald-700" :
+                          payroll.status === "Approved" ? "bg-blue-100 text-blue-700" :
+                          payroll.status === "Locked" ? "bg-amber-100 text-amber-700" :
+                          "bg-zinc-100 text-zinc-700"
+                        }`}>
+                          {payroll.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/payroll/${payroll._id}`)}>
+                          View Slip
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 employees.map((emp) => {
                   const payroll = payrolls.find(p => p.employeeId?._id === emp._id || p.employeeId === emp._id);
+                  const selectedDays = selectedDaysMap[emp._id] ?? 30;
                   
                   return (
                     <TableRow key={emp._id}>
@@ -291,6 +303,11 @@ export default function PayrollDashboardPage() {
                       </TableCell>
                       {payroll ? (
                         <>
+                          <TableCell className="text-center">
+                            <span className="inline-block px-2.5 py-0.5 rounded bg-zinc-100 text-zinc-800 text-xs font-semibold">
+                              {payroll.paidDays || 30} Days
+                            </span>
+                          </TableCell>
                           <TableCell className="text-right">₹{payroll.grossSalary.toLocaleString()}</TableCell>
                           <TableCell className="text-right text-rose-600">-₹{payroll.totalDeductions.toLocaleString()}</TableCell>
                           <TableCell className="text-right font-bold text-emerald-600">₹{payroll.netSalary.toLocaleString()}</TableCell>
@@ -312,10 +329,27 @@ export default function PayrollDashboardPage() {
                         </>
                       ) : (
                         <>
-                          <TableCell colSpan={3} className="text-center text-zinc-500">Not Generated</TableCell>
+                          <TableCell className="text-center">
+                            <select
+                              value={selectedDays}
+                              onChange={(e) => setSelectedDaysMap({ ...selectedDaysMap, [emp._id]: Number(e.target.value) })}
+                              className="text-xs border border-zinc-300 rounded px-2 py-1 bg-white text-zinc-900 font-medium"
+                            >
+                              <option value={30}>30 Days (1 Month)</option>
+                              <option value={15}>15 Days Salary</option>
+                              <option value={20}>20 Days Salary</option>
+                              <option value={10}>10 Days Salary</option>
+                              <option value={5}>5 Days Salary</option>
+                            </select>
+                          </TableCell>
+                          <TableCell colSpan={3} className="text-center text-zinc-500 text-xs">
+                            Generate {selectedDays} Days Salary
+                          </TableCell>
                           <TableCell></TableCell>
                           <TableCell>
-                            <Button size="sm" onClick={() => handleGenerate(emp._id)} disabled={generating}>Generate</Button>
+                            <Button size="sm" onClick={() => handleGenerate(emp._id)} disabled={generating}>
+                              Generate ({selectedDays}d)
+                            </Button>
                           </TableCell>
                         </>
                       )}

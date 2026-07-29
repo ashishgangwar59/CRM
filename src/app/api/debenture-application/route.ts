@@ -42,14 +42,24 @@ export async function POST(req: Request) {
       panNumber,
       occupation,
       typeOfDebenture,
+      typeSecured,
+      typeNonConvertible,
+      typeRedeemable,
       faceValue,
       noOfDebentures,
+      numDebenturesWords,
       totalApplicationAmount,
       modeOfPayment,
+      paymentModeOther,
+      bankName,
       chequeDdNo,
       chequeDdDate,
       transactionUtrNo,
       drawnOnBank,
+      place,
+      declDay,
+      declMonth,
+      declYear,
       passportPhotoUrl,
       panDocUrl,
       aadharDocUrl,
@@ -57,16 +67,42 @@ export async function POST(req: Request) {
       refEmpCode,
     } = data;
 
-    if (!fullName || !email || !phone) {
-      return NextResponse.json({ error: "Applicant Name, Email, and Mobile number are required." }, { status: 400 });
+    // --- Validation Rules ---
+    if (!fullName || !fullName.trim()) {
+      return NextResponse.json({ error: "Full Name (Applicant) is required." }, { status: 400 });
     }
 
+    if (!email || !email.trim()) {
+      return NextResponse.json({ error: "Email Address is required." }, { status: 400 });
+    }
     const cleanEmail = email.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    }
 
-    // Check if user already exists
+    if (!phone || !phone.trim()) {
+      return NextResponse.json({ error: "Mobile Phone Number is required." }, { status: 400 });
+    }
+    const cleanPhone = phone.trim().replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
+    }
+
+    if (panNumber && panNumber.trim().length > 0 && panNumber.trim().length !== 10) {
+      return NextResponse.json({ error: "PAN Number must be 10 characters." }, { status: 400 });
+    }
+
+    if (!noOfDebentures || Number(noOfDebentures) <= 0) {
+      return NextResponse.json({ error: "No. of Debentures Applied must be greater than 0." }, { status: 400 });
+    }
+
+    const calculatedTotal = Number(faceValue || 1000) * Number(noOfDebentures || 1);
+
+    // Check if user or investor already exists with this email
     const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
-      return NextResponse.json({ error: "Email is already registered in the system." }, { status: 400 });
+      return NextResponse.json({ error: "This Email is already registered in the system." }, { status: 400 });
     }
 
     const existingInvestor = await Investor.findOne({ email: cleanEmail });
@@ -74,7 +110,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "An application with this email already exists." }, { status: 400 });
     }
 
-    // Resolve referral employee if employee code, ID, or email provided
+    // Resolve referral employee if provided
     let referralEmployeeId = undefined;
     let referralEmployeeName = undefined;
     if (refEmpCode) {
@@ -93,7 +129,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create login User account (Default password: Investor@123)
+    // Create login User account for Investor (Default password: Investor@123)
     const hashedPassword = await bcrypt.hash("Investor@123", 10);
     const user = await User.create({
       email: cleanEmail,
@@ -103,45 +139,57 @@ export async function POST(req: Request) {
     });
 
     const investorCode = await getNextInvestorCode();
-    const applicationNo = await getNextApplicationNo();
+    const applicationNo = data.applicationNo && data.applicationNo.trim() ? data.applicationNo.trim() : await getNextApplicationNo();
+
+    const applicationDateStr = declDay && declMonth && declYear
+      ? `${declYear}-${declMonth.padStart(2, '0')}-${declDay.padStart(2, '0')}`
+      : new Date().toISOString().split("T")[0];
 
     const investor = await Investor.create({
       investorCode,
       userId: user._id,
       fullName: fullName.trim(),
       email: cleanEmail,
-      phone: phone.trim(),
-      investmentAmount: Number(totalApplicationAmount || 0),
+      phone: cleanPhone,
+      investmentAmount: calculatedTotal,
       monthlyGrowthPercentage: 2.5,
       status: "Pending",
       referralEmployeeId,
       referralEmployeeName,
       debentureForm: {
         applicationNo,
-        applicationDate: new Date().toISOString().split("T")[0],
-        fatherSpouseName,
-        dob,
-        address,
-        city,
-        state,
-        pinCode,
-        occupation,
-        typeOfDebenture: typeOfDebenture || "Secured",
+        applicationDate: applicationDateStr,
+        fatherSpouseName: fatherSpouseName ? fatherSpouseName.trim() : "",
+        dob: dob || "",
+        address: address ? address.trim() : "",
+        city: city ? city.trim() : "",
+        state: state ? state.trim() : "",
+        pinCode: pinCode ? pinCode.trim() : "",
+        occupation: occupation ? occupation.trim() : "",
+        typeOfDebenture: typeOfDebenture || (typeSecured ? "Secured" : "Debenture"),
+        typeSecured: Boolean(typeSecured),
+        typeNonConvertible: Boolean(typeNonConvertible),
+        typeRedeemable: Boolean(typeRedeemable),
         faceValue: Number(faceValue || 1000),
         noOfDebentures: Number(noOfDebentures || 1),
-        totalApplicationAmount: Number(totalApplicationAmount || 0),
+        numDebenturesWords: numDebenturesWords || "",
+        totalApplicationAmount: calculatedTotal,
         modeOfPayment: modeOfPayment || "NEFT/RTGS",
-        chequeDdNo,
-        chequeDdDate,
-        transactionUtrNo,
-        drawnOnBank,
-        passportPhotoUrl,
+        paymentModeOther: paymentModeOther || "",
+        bankName: bankName || "",
+        chequeDdNo: chequeDdNo || "",
+        chequeDdDate: chequeDdDate || "",
+        transactionUtrNo: transactionUtrNo || "",
+        drawnOnBank: drawnOnBank || "",
+        place: place || "",
+        passportPhotoUrl: passportPhotoUrl || "",
       },
       kycDocs: {
-        panNumber,
-        panDocUrl,
-        aadharDocUrl,
-        bankPassbookUrl,
+        panNumber: panNumber ? panNumber.toUpperCase().trim() : "",
+        panDocUrl: panDocUrl || "",
+        aadharDocUrl: aadharDocUrl || "",
+        bankPassbookUrl: bankPassbookUrl || "",
+        bankName: bankName || "",
       },
       docVerifications: {
         aadhar: aadharDocUrl ? "Pending" : "Pending",
@@ -156,13 +204,16 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Debenture Application submitted successfully!",
+        message: "Debenture Application submitted and stored in Database successfully!",
         data: { applicationNo, investorCode, investor },
       },
       { status: 201 }
     );
   } catch (error: any) {
     console.error("Debenture Application API Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (error.code === 11000) {
+      return NextResponse.json({ error: "This Email or Application Number is already registered." }, { status: 400 });
+    }
+    return NextResponse.json({ error: error.message || "Failed to submit application." }, { status: 400 });
   }
 }

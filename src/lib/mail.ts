@@ -91,15 +91,85 @@ export async function sendWelcomeEmail({
   }
 }
 
+export async function sendSalarySlipEmail({
+  email,
+  employeeName,
+  monthYear,
+  grossSalary,
+  netSalary,
+  pdfBase64,
+}: {
+  email: string;
+  employeeName: string;
+  monthYear: string;
+  grossSalary: number;
+  netSalary: number;
+  pdfBase64?: string;
+}) {
+  const subject = `Salary Slip for ${monthYear} - Niventra Capital`;
+  const textContent = `Hi ${employeeName},\n\nYour salary slip for ${monthYear} has been generated.\n\nGross Salary: ₹${grossSalary.toLocaleString()}\nNet Salary: ₹${netSalary.toLocaleString()}\n\nPlease access your employee portal to view and download your salary slips.\n\nBest regards,\nHR Administration Team`;
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; padding: 24px; border-radius: 8px;">
+      <h2 style="color: #312e81; border-bottom: 2px solid #312e81; padding-bottom: 12px; margin-top: 0;">Salary Slip — ${monthYear}</h2>
+      <p>Hi <strong>${employeeName}</strong>,</p>
+      <p>Your salary slip for <strong>${monthYear}</strong> has been generated.</p>
+      
+      <div style="background-color: #f3f4f6; border-left: 4px solid #312e81; padding: 16px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0 0 4px 0;"><strong>Gross Salary:</strong> ₹${grossSalary.toLocaleString()}</p>
+        <p style="margin: 0;"><strong>Net Pay:</strong> <span style="color: #059669; font-weight: bold;">₹${netSalary.toLocaleString()}</span></p>
+      </div>
+
+      <p style="font-size: 13px; color: #6b7280;">You can log in to your employee portal at any time to view, print, or download your monthly salary slips.</p>
+      
+      <p style="margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 16px; font-size: 13px; color: #6b7280;">
+        Best regards,<br/>
+        <strong>HR & Payroll Administration Team</strong><br/>
+        Niventra Capital Advisory India Pvt. Ltd.
+      </p>
+    </div>
+  `;
+
+  const attachments: any[] = [];
+  if (pdfBase64) {
+    attachments.push({
+      filename: `SalarySlip_${monthYear}.pdf`,
+      content: pdfBase64.replace(/^data:application\/pdf;base64,/, ""),
+      encoding: "base64",
+    });
+  }
+
+  const smtpConfig = await getTransporter();
+
+  if (smtpConfig && smtpConfig.transporter) {
+    try {
+      await smtpConfig.transporter.sendMail({
+        from: smtpConfig.from,
+        to: email,
+        subject,
+        text: textContent,
+        html: htmlContent,
+        attachments,
+      });
+      console.log(`Salary slip email successfully sent to ${email}`);
+    } catch (err) {
+      console.error("Nodemailer send salary slip failed:", err);
+      saveEmailLocally(email, subject, textContent);
+    }
+  } else {
+    saveEmailLocally(email, subject, textContent);
+  }
+}
+
 function saveEmailLocally(email: string, subject: string, content: string) {
   try {
     const dir = path.join(process.cwd(), "scratch", "emails");
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    const filename = `${email.replace(/[@.]/g, "_")}_welcome.txt`;
+    const filename = `${email.replace(/[@.]/g, "_")}_slip.txt`;
     fs.writeFileSync(path.join(dir, filename), `Subject: ${subject}\n\n${content}`);
-    console.log(`[SIMULATED EMAIL] Welcoming credentials written to: scratch/emails/${filename}`);
+    console.log(`[SIMULATED EMAIL] Salary slip email written to: scratch/emails/${filename}`);
   } catch (err) {
     console.error("Failed to save simulated email locally:", err);
   }

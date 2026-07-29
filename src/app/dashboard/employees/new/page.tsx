@@ -26,6 +26,9 @@ export default function NewEmployeePage() {
     email: "",
     officeEmail: "",
     phone: "",
+    companyPhone: "",
+    permanentAddress: "",
+    correspondenceAddress: "",
     dateOfBirth: "",
     gender: "",
     bloodGroup: "",
@@ -210,8 +213,12 @@ export default function NewEmployeePage() {
                     {emailError && <p className="text-xs text-rose-500 mt-1">{emailError}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone *</Label>
+                    <Label htmlFor="phone">Personal Phone *</Label>
                     <Input id="phone" required value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyPhone">Company Phone No</Label>
+                    <Input id="companyPhone" placeholder="Work / Official Phone No" value={formData.companyPhone} onChange={(e) => handleChange("companyPhone", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">Date of Birth</Label>
@@ -220,6 +227,23 @@ export default function NewEmployeePage() {
                   <div className="space-y-2">
                     <Label htmlFor="officeEmail">Office Email</Label>
                     <Input id="officeEmail" type="email" value={formData.officeEmail} onChange={(e) => handleChange("officeEmail", e.target.value)} />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="permanentAddress">Permanent Address</Label>
+                    <Input id="permanentAddress" placeholder="Full Permanent Residential Address" value={formData.permanentAddress} onChange={(e) => handleChange("permanentAddress", e.target.value)} />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="correspondenceAddress">Correspondence / Current Address</Label>
+                      <button
+                        type="button"
+                        onClick={() => handleChange("correspondenceAddress", formData.permanentAddress)}
+                        className="text-xs text-zinc-500 hover:text-zinc-900 underline"
+                      >
+                        Same as Permanent
+                      </button>
+                    </div>
+                    <Input id="correspondenceAddress" placeholder="Full Current / Present Address" value={formData.correspondenceAddress} onChange={(e) => handleChange("correspondenceAddress", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender</Label>
