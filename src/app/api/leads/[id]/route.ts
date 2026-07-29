@@ -49,10 +49,25 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const oldStage = lead.stage;
     const oldStatus = lead.status;
+    const oldOwnerId = lead.ownerId;
     
     // Update fields
     Object.assign(lead, updates);
     await lead.save();
+
+    // Log Activity if owner changed
+    if (updates.ownerId && updates.ownerId.toString() !== (oldOwnerId ? oldOwnerId.toString() : "")) {
+      const { Employee } = await import("@/lib/models/Employee");
+      const employee = await Employee.findById(updates.ownerId).lean();
+      const empName = employee ? `${employee.firstName} ${employee.lastName}` : "Unassigned";
+      
+      await LeadActivity.create({
+        leadId: lead._id,
+        type: "StatusChange",
+        content: `Lead assigned to ${empName}`,
+        createdBy: payload.userId
+      });
+    }
 
     // Log Activity if stage changed
     if (updates.stage && updates.stage !== oldStage) {

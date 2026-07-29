@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus } from "lucide-react";
+import { Calendar, Plus, Edit, Trash2 } from "lucide-react";
 
 export default function HolidaysPage() {
   const [role, setRole] = useState<string | null>(null);
   const [holidays, setHolidays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingHolidayId, setEditingHolidayId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -64,6 +65,7 @@ export default function HolidaysPage() {
       if (data.success) {
         alert("Holiday added successfully!");
         setShowAdd(false);
+        setFormData({ name: "", date: "", type: "Public", description: "" });
         fetchHolidays();
       } else {
         alert(data.error);
@@ -72,6 +74,73 @@ export default function HolidaysPage() {
       alert("Error adding holiday");
     }
   };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingHolidayId) {
+      try {
+        const res = await fetch(`/api/holidays/${editingHolidayId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert("Holiday updated successfully!");
+          setShowAdd(false);
+          setEditingHolidayId(null);
+          setFormData({ name: "", date: "", type: "Public", description: "" });
+          fetchHolidays();
+        } else {
+          alert(data.error);
+        }
+      } catch (e) {
+        alert("Error updating holiday");
+      }
+    } else {
+      handleAdd(e);
+    }
+  };
+
+  const startEdit = (holiday: any) => {
+    // Format ISO date to YYYY-MM-DD
+    const dateObj = new Date(holiday.date);
+    const formattedDate = dateObj.toISOString().split("T")[0];
+    setFormData({
+      name: holiday.name,
+      date: formattedDate,
+      type: holiday.type,
+      description: holiday.description || ""
+    });
+    setEditingHolidayId(holiday._id);
+    setShowAdd(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this holiday?")) return;
+    try {
+      const res = await fetch(`/api/holidays/${id}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Holiday deleted successfully!");
+        fetchHolidays();
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("Error deleting holiday");
+    }
+  };
+
+  const cancelAdd = () => {
+    setShowAdd(false);
+    setEditingHolidayId(null);
+    setFormData({ name: "", date: "", type: "Public", description: "" });
+  };
+
+  const isUserAdmin = role === "ADMIN" || role === "KEY_ADMIN";
 
   if (loading) return <div className="p-8">Loading holiday calendar...</div>;
 
@@ -82,8 +151,8 @@ export default function HolidaysPage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Holiday Calendar</h1>
           <p className="text-zinc-500 dark:text-zinc-400">View upcoming company and public holidays.</p>
         </div>
-        {(role === "ADMIN" || role === "KEY_ADMIN") && (
-          <Button onClick={() => setShowAdd(!showAdd)}>
+        {isUserAdmin && (
+          <Button onClick={() => { setEditingHolidayId(null); setShowAdd(!showAdd); }}>
             <Plus className="mr-2 h-4 w-4" /> Add Holiday
           </Button>
         )}
@@ -92,10 +161,10 @@ export default function HolidaysPage() {
       {showAdd && (
         <Card className="border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/10">
           <CardHeader>
-            <CardTitle>Add New Holiday</CardTitle>
+            <CardTitle>{editingHolidayId ? "Edit Holiday" : "Add New Holiday"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAdd} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Holiday Name</Label>
@@ -123,8 +192,8 @@ export default function HolidaysPage() {
                 </div>
               </div>
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => setShowAdd(false)}>Cancel</Button>
-                <Button type="submit">Save Holiday</Button>
+                <Button variant="outline" type="button" onClick={cancelAdd}>Cancel</Button>
+                <Button type="submit">{editingHolidayId ? "Update Holiday" : "Save Holiday"}</Button>
               </div>
             </form>
           </CardContent>
@@ -133,12 +202,12 @@ export default function HolidaysPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {holidays.map(holiday => (
-          <Card key={holiday._id} className="hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+          <Card key={holiday._id} className="hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors relative group">
             <CardContent className="p-6 flex items-start space-x-4">
               <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400">
                 <Calendar className="h-6 w-6" />
               </div>
-              <div>
+              <div className="flex-1 pr-6">
                 <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">{holiday.name}</h3>
                 <p className="text-zinc-500 dark:text-zinc-400 font-medium">{new Date(holiday.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 <div className="mt-2 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 dark:focus:ring-zinc-300 border-transparent bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50">
@@ -146,6 +215,29 @@ export default function HolidaysPage() {
                 </div>
                 {holiday.description && <p className="text-sm mt-2 text-zinc-600 dark:text-zinc-400">{holiday.description}</p>}
               </div>
+              
+              {isUserAdmin && (
+                <div className="absolute right-4 top-4 flex items-center space-x-1.5">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-8 w-8 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 shadow-xs" 
+                    title="Edit Holiday"
+                    onClick={() => startEdit(holiday)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-8 w-8 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800/80 shadow-xs" 
+                    title="Delete Holiday"
+                    onClick={() => handleDelete(holiday._id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

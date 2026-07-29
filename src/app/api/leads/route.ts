@@ -3,6 +3,15 @@ import { connectToDatabase } from "@/lib/db";
 import { verifyAccessToken } from "@/lib/auth";
 import { Lead } from "@/lib/models/Lead";
 import { LeadActivity } from "@/lib/models/LeadActivity";
+import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
+
+async function getEmployeeIdFromUserId(userId: string): Promise<string | null> {
+  const user = await User.findById(userId).lean();
+  if (!user) return null;
+  const employee = await Employee.findOne({ email: user.email }).lean();
+  return employee ? (employee._id as any).toString() : null;
+}
 
 export async function GET(req: Request) {
   try {
@@ -20,6 +29,7 @@ export async function GET(req: Request) {
     const stage = searchParams.get("stage");
     const source = searchParams.get("source");
     const priority = searchParams.get("priority");
+    const employeeIdFilter = searchParams.get("employeeId"); // Added for employee-wise view
 
     let query: any = {};
     if (search) {
@@ -36,7 +46,13 @@ export async function GET(req: Request) {
     if (priority) query.priority = priority;
 
     if (payload.role === "Employee") {
-      query.ownerId = payload.userId;
+      const employeeId = await getEmployeeIdFromUserId(payload.userId);
+      if (employeeId) {
+        query.ownerId = employeeId;
+      }
+    } else if (employeeIdFilter) {
+      // For Admin/KeyAdmin viewing employee-wise
+      query.ownerId = employeeIdFilter;
     }
 
     const leads = await Lead.find(query)
@@ -61,12 +77,13 @@ export async function POST(req: Request) {
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const body = await req.json();
+    const currentEmployeeId = await getEmployeeIdFromUserId(payload.userId);
 
     const newLead = await Lead.create({
       ...body,
       status: "Open",
       stage: "New",
-      ownerId: payload.userId
+      ownerId: body.ownerId || currentEmployeeId || payload.userId
     });
 
     // Auto-create initial activity

@@ -7,8 +7,10 @@ export interface ISalaryStructure extends Document {
   basic: number;
   hra: number;
   specialAllowance: number;
+  metroAllowance: number;
+  incentive: number;
   
-  // Deductions (Fixed amounts or percentages could be stored, but we'll store fixed amounts for simplicity in MVP)
+  // Deductions
   pf: number;
   esi: number;
   professionalTax: number;
@@ -27,6 +29,8 @@ const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
     basic: { type: Number, default: 0 },
     hra: { type: Number, default: 0 },
     specialAllowance: { type: Number, default: 0 },
+    metroAllowance: { type: Number, default: 0 },
+    incentive: { type: Number, default: 0 },
     
     pf: { type: Number, default: 0 },
     esi: { type: Number, default: 0 },
@@ -38,4 +42,7 @@ const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
   { timestamps: true }
 );
 
-export const SalaryStructure: Model<ISalaryStructure> = mongoose.models.SalaryStructure || mongoose.model("SalaryStructure", SalaryStructureSchema);
+if (mongoose.models.SalaryStructure) {
+  delete mongoose.models.SalaryStructure;
+}
+export const SalaryStructure: Model<ISalaryStructure> = mongoose.model("SalaryStructure", SalaryStructureSchema);

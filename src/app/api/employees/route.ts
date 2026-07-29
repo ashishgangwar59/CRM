@@ -174,8 +174,9 @@ export async function GET(req: Request) {
     if (token) {
       try {
         const payload = verifyAccessToken(token);
+        // Admin is allowed to see all employees
         if (payload.role === "ADMIN") {
-          query.createdBy = payload.userId;
+          // Do not restrict by createdBy
         }
       } catch (e) {
         return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });

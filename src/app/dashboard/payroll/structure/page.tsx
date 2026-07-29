@@ -17,7 +17,8 @@ export default function SalaryStructurePage() {
   const [formData, setFormData] = useState({
     basic: 0,
     hra: 0,
-    specialAllowance: 0,
+    metroAllowance: 0,
+    incentive: 0,
     pf: 0,
     esi: 0,
     professionalTax: 0,
@@ -53,14 +54,15 @@ export default function SalaryStructurePage() {
       setFormData({
         basic: existing.basic || 0,
         hra: existing.hra || 0,
-        specialAllowance: existing.specialAllowance || 0,
+        metroAllowance: existing.metroAllowance ?? existing.specialAllowance ?? 0,
+        incentive: existing.incentive || 0,
         pf: existing.pf || 0,
         esi: existing.esi || 0,
         professionalTax: existing.professionalTax || 0,
         incomeTax: existing.incomeTax || 0,
       });
     } else {
-      setFormData({ basic: 0, hra: 0, specialAllowance: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0 });
+      setFormData({ basic: 0, hra: 0, metroAllowance: 0, incentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0 });
     }
   };
 
@@ -70,7 +72,11 @@ export default function SalaryStructurePage() {
       const res = await fetch("/api/payroll/structure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId: selectedEmp, ...formData })
+        body: JSON.stringify({ 
+          employeeId: selectedEmp, 
+          ...formData,
+          specialAllowance: formData.metroAllowance // sync back for backward compatibility
+        })
       });
       const data = await res.json();
       if (data.success) {
@@ -142,8 +148,12 @@ export default function SalaryStructurePage() {
                       <Input type="number" required value={formData.hra} onChange={e => setFormData({...formData, hra: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Special Allowance (₹)</Label>
-                      <Input type="number" required value={formData.specialAllowance} onChange={e => setFormData({...formData, specialAllowance: Number(e.target.value)})} />
+                      <Label>Metro Allowance (₹)</Label>
+                      <Input type="number" required value={formData.metroAllowance} onChange={e => setFormData({...formData, metroAllowance: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Incentive (₹)</Label>
+                      <Input type="number" required value={formData.incentive} onChange={e => setFormData({...formData, incentive: Number(e.target.value)})} />
                     </div>
                   </div>
                 </div>
@@ -175,7 +185,7 @@ export default function SalaryStructurePage() {
                     <span className="font-semibold text-lg">Gross Monthly Salary</span>
                     <span className="font-bold text-2xl flex items-center">
                       <IndianRupee className="mr-1 h-6 w-6" />
-                      {formData.basic + formData.hra + formData.specialAllowance}
+                      {formData.basic + formData.hra + formData.metroAllowance + formData.incentive}
                     </span>
                   </div>
                 </div>

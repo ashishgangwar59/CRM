@@ -21,6 +21,9 @@ export default function LeadDetailsPage() {
   const [noteContent, setNoteContent] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [role, setRole] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<any[]>([]);
+
   const fetchLeadData = async () => {
     try {
       const res = await fetch(`/api/leads/${params.id}`);
@@ -39,7 +42,36 @@ export default function LeadDetailsPage() {
 
   useEffect(() => {
     fetchLeadData();
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setRole(data.role);
+          if (data.role === "ADMIN" || data.role === "KEY_ADMIN") {
+            fetch("/api/employees")
+              .then(res => res.json())
+              .then(empData => {
+                if (empData.success) {
+                  setEmployees(empData.data);
+                }
+              });
+          }
+        }
+      });
   }, [params.id]);
+
+  const handleAssignOwner = async (employeeId: string) => {
+    try {
+      const res = await fetch(`/api/leads/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: employeeId || null })
+      });
+      if (res.ok) fetchLeadData();
+    } catch (e) {
+      alert("Failed to assign owner");
+    }
+  };
 
   const handleUpdateStage = async (newStage: string) => {
     try {
@@ -137,6 +169,38 @@ export default function LeadDetailsPage() {
         
         {/* Left Col - Details */}
         <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader className="pb-4 border-b border-zinc-100">
+              <CardTitle className="text-lg flex items-center"><User className="mr-2 h-5 w-5 text-indigo-500" /> Lead Owner</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {role === "ADMIN" || role === "KEY_ADMIN" ? (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-zinc-500 uppercase">Assigned Employee</label>
+                  <select 
+                    className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                    value={lead.ownerId?._id || lead.ownerId || ""}
+                    onChange={(e) => handleAssignOwner(e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {employees.map((emp: any) => (
+                      <option key={emp._id} value={emp._id}>
+                        {emp.firstName} {emp.lastName} ({emp.employeeCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-zinc-500 uppercase">Assigned To</p>
+                  <p className="font-semibold text-zinc-800 dark:text-zinc-200">
+                    {lead.ownerId ? `${lead.ownerId.firstName} ${lead.ownerId.lastName}` : "Unassigned"}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-4 border-b border-zinc-100">
               <CardTitle className="text-lg flex items-center"><User className="mr-2 h-5 w-5 text-indigo-500" /> Contact Info</CardTitle>

@@ -9,6 +9,7 @@ export interface IPayroll extends Document {
     basic: number;
     hra: number;
     specialAllowance: number;
+    metroAllowance: number;
     bonus: number;
     incentive: number;
     overtimeAmount: number;
@@ -47,6 +48,7 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
       basic: { type: Number, default: 0 },
       hra: { type: Number, default: 0 },
       specialAllowance: { type: Number, default: 0 },
+      metroAllowance: { type: Number, default: 0 },
       bonus: { type: Number, default: 0 },
       incentive: { type: Number, default: 0 },
       overtimeAmount: { type: Number, default: 0 },
@@ -80,4 +82,7 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
 // Prevent duplicate payrolls for the same month for an employee
 PayrollSchema.index({ employeeId: 1, monthYear: 1 }, { unique: true });
 
-export const Payroll: Model<IPayroll> = mongoose.models.Payroll || mongoose.model("Payroll", PayrollSchema);
+if (mongoose.models.Payroll) {
+  delete mongoose.models.Payroll;
+}
+export const Payroll: Model<IPayroll> = mongoose.model("Payroll", PayrollSchema);

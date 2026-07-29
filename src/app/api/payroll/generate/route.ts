@@ -52,7 +52,10 @@ export async function POST(req: Request) {
 
     // 4. Calculations
     const standardDaysInMonth = 30; // Simplify for MVP. Real app would calculate exact days.
-    const perDaySalary = (structure.basic + structure.hra + structure.specialAllowance) / standardDaysInMonth;
+    const metroAllowance = structure.metroAllowance || structure.specialAllowance || 0;
+    const incentive = structure.incentive || 0;
+    
+    const perDaySalary = (structure.basic + structure.hra + metroAllowance + incentive) / standardDaysInMonth;
     
     const unpaidLeaveDeduction = Number((lopDays * perDaySalary).toFixed(2));
     
@@ -61,11 +64,10 @@ export async function POST(req: Request) {
     const overtimeAmount = Number((totalOvertimeHours * hourlyRate).toFixed(2));
 
     const bonus = 0;
-    const incentive = 0;
     const loan = 0;
     const advance = 0;
 
-    const earningsTotal = structure.basic + structure.hra + structure.specialAllowance + bonus + incentive + overtimeAmount;
+    const earningsTotal = structure.basic + structure.hra + metroAllowance + bonus + incentive + overtimeAmount;
     const deductionsTotal = structure.pf + structure.esi + structure.professionalTax + structure.incomeTax + loan + advance + unpaidLeaveDeduction;
     
     const grossSalary = earningsTotal;
@@ -78,7 +80,8 @@ export async function POST(req: Request) {
         earnings: {
           basic: structure.basic,
           hra: structure.hra,
-          specialAllowance: structure.specialAllowance,
+          specialAllowance: structure.specialAllowance || 0,
+          metroAllowance,
           bonus,
           incentive,
           overtimeAmount

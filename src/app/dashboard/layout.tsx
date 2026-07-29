@@ -130,12 +130,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-between px-8 shrink-0">
+          <div>
+            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              Welcome back, <span className="text-zinc-900 dark:text-zinc-50 font-semibold">{empCode || role || "User"}</span>
+            </span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-800 dark:text-zinc-200">
+              {role}
+            </span>
+          </div>
+        </header>
+
+        {/* Scrollable Middle Part */}
+        <main className="flex-1 overflow-y-auto p-8 bg-zinc-50 dark:bg-zinc-900/40">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
