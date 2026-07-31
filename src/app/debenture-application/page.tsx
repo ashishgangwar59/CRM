@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, UserCheck } from "lucide-react";
+import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 function DebentureFormContent() {
   const searchParams = useSearchParams();
@@ -97,6 +98,66 @@ function DebentureFormContent() {
     }
     setCameraActive(false);
   };
+
+  // Mobile QR Code Signature States
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrToken, setQrToken] = useState("");
+  const [qrUrl, setQrUrl] = useState("");
+  const [pollingQr, setPollingQr] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const startQrSignature = async () => {
+    try {
+      const res = await fetch("/api/signature-session/create", { method: "POST" });
+      const data = await res.json();
+      if (data.success && data.sessionToken) {
+        const fullQrUrl = `${window.location.origin}/signature-pad/${data.sessionToken}`;
+        setQrToken(data.sessionToken);
+        setQrUrl(fullQrUrl);
+        setShowQrModal(true);
+        setPollingQr(true);
+      } else {
+        alert("Failed to generate QR code session.");
+      }
+    } catch (e) {
+      alert("Error starting QR code signature session.");
+    }
+  };
+
+  useEffect(() => {
+    if (!pollingQr || !qrToken) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/signature-session/${qrToken}`);
+        const data = await res.json();
+        if (data.success && data.status === "COMPLETED" && data.signatureUrl) {
+          setForm((prev) => ({ ...prev, signatureUrl: data.signatureUrl }));
+          setPollingQr(false);
+          setShowQrModal(false);
+
+          // Draw signature onto canvas preview
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              ctx?.clearRect(0, 0, canvas.width, canvas.height);
+              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = data.signatureUrl;
+          }
+
+          alert("Signature successfully captured from mobile device!");
+        }
+      } catch (e) {
+        console.error("Polling QR signature error:", e);
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [pollingQr, qrToken]);
 
   const dataURItoBlob = (dataURI: string): Blob => {
     const byteString = atob(dataURI.split(",")[1]);
@@ -1422,9 +1483,18 @@ function DebentureFormContent() {
             <div className="sig-pad-wrap">
               <canvas className="sig-pad" ref={canvasRef} width={220} height={60}></canvas>
               <div style={{ fontWeight: 600, marginTop: "2px" }}>Signature of Applicant</div>
-              <button type="button" className="sig-clear" onClick={clearSignature}>
-                Clear signature
-              </button>
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <button type="button" className="sig-clear" onClick={clearSignature}>
+                  Clear signature
+                </button>
+                <button
+                  type="button"
+                  onClick={startQrSignature}
+                  className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                >
+                  <QrCode className="w-3 h-3 mr-1" /> Sign via Mobile QR
+                </button>
+              </div>
             </div>
           </div>
           <div style={{ fontSize: "12px", marginTop: "10px" }}>
@@ -1664,6 +1734,70 @@ function DebentureFormContent() {
                 className="px-5 py-2 text-xs font-bold text-white bg-[#0c1c3d] hover:bg-[#132a5c] rounded shadow flex items-center gap-1.5"
               >
                 📸 Take Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Signature Scanner Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 text-center border-2 border-[#0c1c3d] shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-bold text-sm text-[#0c1c3d] flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-amber-500" /> Scan QR to Sign on Phone
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQrModal(false);
+                  setPollingQr(false);
+                }}
+                className="text-zinc-500 hover:text-black font-bold text-sm px-2 py-0.5 rounded hover:bg-zinc-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center space-y-3">
+              {qrUrl ? (
+                <div className="p-3 bg-white rounded-lg shadow-sm border border-slate-200">
+                  <QRCodeSVG value={qrUrl} size={180} level="M" />
+                </div>
+              ) : (
+                <div className="h-[180px] flex items-center justify-center text-xs text-zinc-400">
+                  Generating QR Code...
+                </div>
+              )}
+
+              <div className="flex items-center text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" /> Waiting for mobile signature...
+              </div>
+            </div>
+
+            <p className="text-[11px] text-zinc-500 leading-snug">
+              Point your smartphone camera at this QR code. Draw your signature on your phone screen and tap Submit.
+            </p>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="text"
+                readOnly
+                value={qrUrl}
+                className="text-[10px] flex-1 bg-zinc-100 border border-zinc-300 rounded px-2 py-1 truncate text-zinc-600"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(qrUrl);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2000);
+                }}
+                className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded hover:bg-indigo-100 flex items-center gap-1"
+              >
+                {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                {copiedLink ? "Copied" : "Copy Link"}
               </button>
             </div>
           </div>
