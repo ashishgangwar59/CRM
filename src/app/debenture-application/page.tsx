@@ -98,6 +98,17 @@ function DebentureFormContent() {
     setCameraActive(false);
   };
 
+  const dataURItoBlob = (dataURI: string): Blob => {
+    const byteString = atob(dataURI.split(",")[1]);
+    const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+  };
+
   const captureSnapshot = async () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
@@ -108,18 +119,38 @@ function DebentureFormContent() {
     if (!ctx) return;
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
     stopCamera();
 
     try {
-      const resBlob = await fetch(dataUrl);
-      const blob = await resBlob.blob();
-      const file = new File([blob], `passport_photo_${Date.now()}.jpg`, { type: "image/jpeg" });
-      const formData = new FormData();
-      formData.append("file", file);
+      // 1. Try pure JavaScript Blob conversion (works cross-platform on phone/tablet)
+      let blob: Blob | null = null;
+      try {
+        blob = dataURItoBlob(dataUrl);
+      } catch (err) {
+        console.error("dataURItoBlob failed:", err);
+      }
 
-      const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
+      if (blob) {
+        const file = new File([blob], `passport_photo_${Date.now()}.jpg`, { type: "image/jpeg" });
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
+        const json = await res.json();
+        if (json.success) {
+          setForm((prev) => ({ ...prev, passportPhotoUrl: json.url }));
+          return;
+        }
+      }
+
+      // 2. Base64 JSON fallback for WebViews or browsers where Blob fails
+      const res = await fetch("/api/employees/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64: dataUrl, fileName: `live_photo_${Date.now()}.jpg` })
+      });
       const json = await res.json();
       if (json.success) {
         setForm((prev) => ({ ...prev, passportPhotoUrl: json.url }));
@@ -127,7 +158,8 @@ function DebentureFormContent() {
         alert(json.error || "Failed to upload live photo.");
       }
     } catch (e) {
-      alert("Error saving live photo.");
+      console.error(e);
+      alert("Error saving live photo. Please try again.");
     }
   };
 

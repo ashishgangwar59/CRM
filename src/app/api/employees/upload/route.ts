@@ -5,6 +5,44 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   try {
+    const contentType = req.headers.get("content-type") || "";
+
+    // Handle base64 JSON payload (for mobile/tablet live photo captures)
+    if (contentType.includes("application/json")) {
+      const { base64, fileName: requestedName } = await req.json();
+      if (!base64) {
+        return NextResponse.json({ error: "No base64 image data received." }, { status: 400 });
+      }
+
+      const matches = base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      let buffer: Buffer;
+      let ext = ".jpg";
+
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1];
+        if (mimeType.includes("png")) ext = ".png";
+        else if (mimeType.includes("webp")) ext = ".webp";
+        else if (mimeType.includes("pdf")) ext = ".pdf";
+        buffer = Buffer.from(matches[2], "base64");
+      } else {
+        buffer = Buffer.from(base64, "base64");
+      }
+
+      const uploadsDir = path.join(process.cwd(), "public/uploads");
+      try {
+        await mkdir(uploadsDir, { recursive: true });
+      } catch (e) {
+        // Ignore if directory exists
+      }
+
+      const fileName = `${uuidv4()}${ext}`;
+      const filePath = path.join(uploadsDir, fileName);
+      await writeFile(filePath, buffer);
+
+      return NextResponse.json({ success: true, url: `/uploads/${fileName}`, name: requestedName || fileName });
+    }
+
+    // Handle standard FormData upload
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
