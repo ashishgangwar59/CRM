@@ -3,6 +3,24 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+// Helper to safely write file or fallback to Base64 Data URL on read-only server filesystems (e.g. Vercel/Docker)
+async function saveFileOrFallback(buffer: Buffer, extension: string, originalName: string, mimeType: string) {
+  const fileName = `${uuidv4()}${extension}`;
+  try {
+    const uploadsDir = path.join(process.cwd(), "public/uploads");
+    await mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, fileName);
+    await writeFile(filePath, buffer);
+    return { success: true, url: `/uploads/${fileName}`, name: originalName || fileName };
+  } catch (fsErr: any) {
+    console.warn("Local disk write failed (server filesystem restriction), falling back to Data URL:", fsErr?.message || fsErr);
+    // Fallback to Data URL for serverless/read-only hosting environments
+    const safeMime = mimeType || (extension === ".pdf" ? "application/pdf" : extension === ".png" ? "image/png" : "image/jpeg");
+    const base64Url = `data:${safeMime};base64,${buffer.toString("base64")}`;
+    return { success: true, url: base64Url, name: originalName || fileName };
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -17,9 +35,10 @@ export async function POST(req: Request) {
       const matches = base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
       let buffer: Buffer;
       let ext = ".jpg";
+      let mimeType = "image/jpeg";
 
       if (matches && matches.length === 3) {
-        const mimeType = matches[1];
+        mimeType = matches[1];
         if (mimeType.includes("png")) ext = ".png";
         else if (mimeType.includes("webp")) ext = ".webp";
         else if (mimeType.includes("pdf")) ext = ".pdf";
@@ -28,18 +47,8 @@ export async function POST(req: Request) {
         buffer = Buffer.from(base64, "base64");
       }
 
-      const uploadsDir = path.join(process.cwd(), "public/uploads");
-      try {
-        await mkdir(uploadsDir, { recursive: true });
-      } catch (e) {
-        // Ignore if directory exists
-      }
-
-      const fileName = `${uuidv4()}${ext}`;
-      const filePath = path.join(uploadsDir, fileName);
-      await writeFile(filePath, buffer);
-
-      return NextResponse.json({ success: true, url: `/uploads/${fileName}`, name: requestedName || fileName });
+      const result = await saveFileOrFallback(buffer, ext, requestedName || "photo.jpg", mimeType);
+      return NextResponse.json(result);
     }
 
     // Handle standard FormData upload
@@ -82,26 +91,11 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public/uploads");
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (e) {
-      // Ignore if directory already exists
-    }
+    const result = await saveFileOrFallback(buffer, ext, file.name, file.type || "application/octet-stream");
 
-    // Generate unique filename to prevent collisions
-    const fileName = `${uuidv4()}${ext}`;
-    const filePath = path.join(uploadsDir, fileName);
-
-    await writeFile(filePath, buffer);
-    
-    const fileUrl = `/uploads/${fileName}`;
-
-    return NextResponse.json({ success: true, url: fileUrl, name: file.name });
-  } catch (error) {
+    return NextResponse.json(result);
+  } catch (error: any) {
     console.error("Upload Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal server error during upload." }, { status: 500 });
   }
 }
