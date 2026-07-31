@@ -87,9 +87,10 @@ export function InvestorDashboard() {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
-    // Client-side PDF check
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      setMsg({ type: "error", text: "Invalid file type. Only PDF documents are allowed." });
+    // Client-side PDF & Image check
+    const isImageOrPdf = file.type.startsWith("image/") || file.type === "application/pdf" || /\.(pdf|jpg|jpeg|png|webp)$/i.test(file.name);
+    if (!isImageOrPdf) {
+      setMsg({ type: "error", text: "Invalid file type. Only PDF documents and image files (JPG, PNG, WEBP) are allowed." });
       return;
     }
 

@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Filter, Calendar, Users, CheckSquare, Square, RefreshCw, CalendarDays, Check, Upload } from "lucide-react";
+import { Search, Plus, Filter, Calendar, Users, CheckSquare, Square, RefreshCw, CalendarDays, Check, Upload, Download, Lock, Unlock, CheckCircle, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -27,6 +27,8 @@ export default function LeadsDashboardPage() {
   const [stage, setStage] = useState("");
   const [priority, setPriority] = useState("");
   const [employeeIdFilter, setEmployeeIdFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState(""); // today, yesterday, this_week, custom
+  const [customDate, setCustomDate] = useState("");
 
   // Distribution State
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
@@ -40,6 +42,95 @@ export default function LeadsDashboardPage() {
 
   // Day-wise selection state
   const [selectedDayAndEmployee, setSelectedDayAndEmployee] = useState<{ employeeId: string; date: Date } | null>(null);
+
+  // CSV Sample Export
+  const downloadSampleCSV = () => {
+    const headers = ["FIRST_NAME", "SECOND_NAME", "MOBILE", "COMPANY", "ADDRESS1", "ADDRESS2", "ADDRESS3", "CITY", "STATE", "PINCODE", "REMARK"];
+    const rows = [
+      ["Rajesh", "Sharma", "9876543210", "Apex Solutions", "Plot 42", "Phase 2", "", "Delhi", "Delhi", "110059", "Interested in CRM software"],
+      ["Anita", "Verma", "9123456789", "Niventra Capital", "Block B", "Suite 101", "", "Mumbai", "Maharashtra", "400001", "Requested call back"]
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "lead_import_sample.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export current filtered leads to CSV
+  const exportLeadsCSV = () => {
+    if (leads.length === 0) {
+      alert("No leads available to export.");
+      return;
+    }
+    const headers = ["First Name", "Last Name", "Email", "Phone", "Company", "Source", "Stage", "Status", "Priority", "Deal Value", "Owner", "Locked", "Created At"];
+    const rows = leads.map(l => [
+      l.firstName || "",
+      l.lastName || "",
+      l.email || "",
+      l.phone || "",
+      l.company || "",
+      l.source || "",
+      l.stage || "",
+      l.status || "",
+      l.priority || "",
+      l.dealValue || 0,
+      l.ownerId ? `${l.ownerId.firstName} ${l.ownerId.lastName}` : "Unassigned",
+      l.isLocked ? "Locked" : "Unlocked",
+      l.createdAt ? new Date(l.createdAt).toLocaleDateString() : ""
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `leads_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Admin Mark as Done
+  const handleMarkDone = async (e: React.MouseEvent, leadId: string) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markDone" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchLeads();
+      } else {
+        alert(data.error || "Failed to mark lead as done.");
+      }
+    } catch (e) {
+      alert("Error marking lead as done.");
+    }
+  };
+
+  // Admin Lock / Unlock Toggle
+  const handleToggleLock = async (e: React.MouseEvent, leadId: string, currentLockState: boolean) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggleLock", isLocked: !currentLockState })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchLeads();
+      } else {
+        alert(data.error || "Failed to toggle lock status.");
+      }
+    } catch (e) {
+      alert("Error toggling lock status.");
+    }
+  };
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -101,6 +192,9 @@ export default function LeadsDashboardPage() {
       if (priority) query.append("priority", priority);
       if (employeeIdFilter) query.append("employeeId", employeeIdFilter);
 
+      const effectiveDateFilter = dateFilter === "custom" ? customDate : dateFilter;
+      if (effectiveDateFilter) query.append("dateFilter", effectiveDateFilter);
+
       const res = await fetch(`/api/leads?${query.toString()}`);
       const data = await res.json();
       if (data.success) {
@@ -119,7 +213,7 @@ export default function LeadsDashboardPage() {
 
   useEffect(() => {
     fetchLeads();
-  }, [status, stage, priority, employeeIdFilter]); // Search requires explicit submission
+  }, [status, stage, priority, employeeIdFilter, dateFilter, customDate]); // Search requires explicit submission
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,7 +304,7 @@ export default function LeadsDashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Lead Management</h1>
           <p className="text-zinc-500 dark:text-zinc-400">Track pipeline stages, assign leads, and monitor workloads.</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isUserAdmin && (
             <div className="flex border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5 bg-zinc-50 dark:bg-zinc-950">
               <button 
@@ -227,6 +321,19 @@ export default function LeadsDashboardPage() {
               </button>
             </div>
           )}
+
+          {/* Sample CSV Download Button */}
+          <Button variant="outline" size="sm" onClick={downloadSampleCSV} title="Download Sample CSV Template">
+            <Download className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+            Sample CSV
+          </Button>
+
+          {/* Export CSV Button */}
+          <Button variant="outline" size="sm" onClick={exportLeadsCSV} title="Export Current Filtered Leads to CSV">
+            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
+            Export CSV
+          </Button>
+
           {isUserAdmin && (
             <>
               <input 
@@ -238,37 +345,92 @@ export default function LeadsDashboardPage() {
               />
               <Button 
                 variant="outline" 
+                size="sm"
                 onClick={() => csvInputRef.current?.click()} 
                 disabled={importing}
               >
-                <Upload className="mr-2 h-4 w-4" /> 
+                <Upload className="mr-1.5 h-3.5 w-3.5" /> 
                 {importing ? "Importing..." : "Import CSV"}
               </Button>
             </>
           )}
           <Link href="/dashboard/leads/new">
-            <Button><Plus className="mr-2 h-4 w-4" /> Add Lead</Button>
+            <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> Add Lead</Button>
           </Link>
         </div>
       </div>
 
       {activeTab === "pipeline" ? (
         <>
+          {/* Quick Summary KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+              <p className="text-xs font-semibold text-zinc-500 uppercase">Total Leads</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mt-1">{leads.length}</p>
+            </div>
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+              <p className="text-xs font-semibold text-zinc-500 uppercase">🔒 Distributed & Locked</p>
+              <p className="text-2xl font-bold text-amber-600 mt-1">{leads.filter(l => l.isLocked).length}</p>
+            </div>
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+              <p className="text-xs font-semibold text-zinc-500 uppercase">✔️ Marked Done</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">{leads.filter(l => l.status === "Done" || l.status === "Closed Won").length}</p>
+            </div>
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+              <p className="text-xs font-semibold text-zinc-500 uppercase">📅 Today / Scheduled</p>
+              <p className="text-2xl font-bold text-indigo-600 mt-1">
+                {leads.filter(l => {
+                  const todayStr = new Date().toDateString();
+                  return (l.createdAt && new Date(l.createdAt).toDateString() === todayStr) ||
+                         (l.nextFollowUp && new Date(l.nextFollowUp).toDateString() === todayStr);
+                }).length}
+              </p>
+            </div>
+          </div>
+
           <Card>
             <CardContent className="p-4">
-              <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+              <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
                 <div className="md:col-span-2 space-y-1">
                   <label className="text-xs font-semibold text-zinc-500 uppercase">Search</label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
                     <Input 
-                      placeholder="Search by name, company, email..." 
+                      placeholder="Search by name, company, email, phone..." 
                       className="pl-9"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
                   </div>
                 </div>
+
+                {/* Day-Wise Date Filter */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-zinc-500 uppercase">Date Filter</label>
+                  <select 
+                    className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" 
+                    value={dateFilter} 
+                    onChange={e => setDateFilter(e.target.value)}
+                  >
+                    <option value="">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="this_week">This Week</option>
+                    <option value="custom">Custom Date...</option>
+                  </select>
+                </div>
+
+                {dateFilter === "custom" && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-500 uppercase">Select Date</label>
+                    <Input 
+                      type="date" 
+                      value={customDate} 
+                      onChange={e => setCustomDate(e.target.value)} 
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-500 uppercase">Stage</label>
                   <select className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" value={stage} onChange={e => setStage(e.target.value)}>
@@ -285,6 +447,7 @@ export default function LeadsDashboardPage() {
                   <select className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" value={status} onChange={e => setStatus(e.target.value)}>
                     <option value="">All Statuses</option>
                     <option value="Open">Open</option>
+                    <option value="Done">Done ✔️</option>
                     <option value="Closed Won">Closed Won</option>
                     <option value="Closed Lost">Closed Lost</option>
                   </select>
@@ -304,7 +467,7 @@ export default function LeadsDashboardPage() {
                     </select>
                   </div>
                 )}
-                <div className="md:col-span-5 flex justify-end">
+                <div className="md:col-span-6 flex justify-end">
                   <Button type="submit" variant="secondary">Filter Pipeline</Button>
                 </div>
               </form>
@@ -327,23 +490,25 @@ export default function LeadsDashboardPage() {
                         </button>
                       </TableHead>
                     )}
+                    <TableHead>Lock</TableHead>
                     <TableHead>Lead Name</TableHead>
                     <TableHead>Company</TableHead>
-                    <TableHead>Stage</TableHead>
+                    <TableHead>Stage / Status</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead>Next Follow-Up</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={isUserAdmin ? 8 : 7} className="text-center py-8">Loading...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={isUserAdmin ? 9 : 8} className="text-center py-8">Loading...</TableCell></TableRow>
                   ) : leads.length === 0 ? (
-                    <TableRow><TableCell colSpan={isUserAdmin ? 8 : 7} className="text-center py-8 text-zinc-500">No leads found matching your criteria.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={isUserAdmin ? 9 : 8} className="text-center py-8 text-zinc-500">No leads found matching your criteria.</TableCell></TableRow>
                   ) : (
                     leads.map((lead) => {
                       const isSelected = selectedLeadIds.includes(lead._id);
+                      const isDone = lead.status === "Done" || lead.status === "Closed Won";
                       return (
                         <TableRow key={lead._id} className={`hover:bg-zinc-50/50 cursor-pointer ${isSelected ? "bg-indigo-50/30 dark:bg-indigo-950/10" : ""}`} onClick={() => router.push(`/dashboard/leads/${lead._id}`)}>
                           {isUserAdmin && (
@@ -357,19 +522,45 @@ export default function LeadsDashboardPage() {
                               </button>
                             </TableCell>
                           )}
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            {isUserAdmin ? (
+                              <button 
+                                onClick={(e) => handleToggleLock(e, lead._id, !!lead.isLocked)} 
+                                title={lead.isLocked ? "Click to Unlock Lead" : "Click to Lock Lead"}
+                                className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                              >
+                                {lead.isLocked ? (
+                                  <Lock className="w-4 h-4 text-rose-500" />
+                                ) : (
+                                  <Unlock className="w-4 h-4 text-zinc-400 hover:text-zinc-600" />
+                                )}
+                              </button>
+                            ) : (
+                              lead.isLocked ? <span title="Distributed & Locked by Admin"><Lock className="w-4 h-4 text-rose-500" /></span> : <Unlock className="w-4 h-4 text-zinc-300" />
+                            )}
+                          </TableCell>
                           <TableCell>
                             <p className="font-bold text-zinc-900 dark:text-zinc-50">{lead.firstName} {lead.lastName}</p>
                             <p className="text-xs text-zinc-500">{lead.email || lead.phone}</p>
                           </TableCell>
                           <TableCell className="font-medium text-zinc-700 dark:text-zinc-300">{lead.company || "-"}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                              lead.stage === "New" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-                              lead.stage === "Qualified" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                              "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                            }`}>
-                              {lead.stage}
-                            </span>
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                lead.stage === "New" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                                lead.stage === "Qualified" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                                "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                              }`}>
+                                {lead.stage}
+                              </span>
+                              {isDone ? (
+                                <span className="inline-flex items-center text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  <CheckCircle className="w-3 h-3 mr-1" /> Done
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-zinc-400 uppercase font-semibold">{lead.status}</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <span className={`text-xs font-bold ${
@@ -380,7 +571,14 @@ export default function LeadsDashboardPage() {
                             </span>
                           </TableCell>
                           <TableCell className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            {lead.ownerId ? `${lead.ownerId.firstName} ${lead.ownerId.lastName}` : <span className="text-zinc-400 font-normal">Unassigned</span>}
+                            {lead.ownerId ? (
+                              <span className="flex items-center">
+                                {lead.ownerId.firstName} {lead.ownerId.lastName}
+                                {lead.isLocked && <span title="Distributed & Locked"><Lock className="w-3 h-3 text-rose-500 ml-1 inline" /></span>}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 font-normal">Unassigned</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {lead.nextFollowUp ? (
@@ -392,7 +590,12 @@ export default function LeadsDashboardPage() {
                               <span className="text-xs text-zinc-400">Not set</span>
                             )}
                           </TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
+                          <TableCell className="text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                            {isUserAdmin && !isDone && (
+                              <Button size="sm" variant="outline" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" onClick={(e) => handleMarkDone(e, lead._id)}>
+                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> Mark Done
+                              </Button>
+                            )}
                             <Button size="sm" variant="ghost" onClick={() => router.push(`/dashboard/leads/${lead._id}`)}>
                               View
                             </Button>

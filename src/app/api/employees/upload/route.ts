@@ -12,10 +12,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file received." }, { status: 400 });
     }
 
-    // PDF validation: check file type & extension
-    const ext = path.extname(file.name).toLowerCase();
-    if (file.type !== "application/pdf" && ext !== ".pdf") {
-      return NextResponse.json({ error: "Only PDF documents are allowed." }, { status: 400 });
+    // Allowed extensions and MIME types for documents & photos
+    const allowedExts = [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".gif"];
+    const allowedMimeTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/jpg"
+    ];
+
+    let ext = path.extname(file.name || "").toLowerCase();
+    if (!ext) {
+      if (file.type === "image/png") ext = ".png";
+      else if (file.type === "image/jpeg" || file.type === "image/jpg") ext = ".jpg";
+      else if (file.type === "image/webp") ext = ".webp";
+      else if (file.type === "application/pdf") ext = ".pdf";
+      else ext = ".jpg";
+    }
+
+    const isTypeValid = allowedMimeTypes.includes(file.type) || allowedExts.includes(ext);
+    if (!isTypeValid) {
+      return NextResponse.json({ error: "Only PDF documents and image files (JPG, PNG, WEBP) are allowed." }, { status: 400 });
     }
 
     // 15MB size validation (15 * 1024 * 1024 bytes)

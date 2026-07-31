@@ -8,7 +8,7 @@ export interface ILead extends Document {
   company?: string;
   
   source: "Facebook" | "Google" | "Website" | "Referral" | "Walk In" | "Employee Reference";
-  status: "Open" | "Closed Won" | "Closed Lost";
+  status: "Open" | "Closed Won" | "Closed Lost" | "Done";
   stage: "New" | "Contacted" | "Qualified" | "Proposal" | "Negotiation";
   priority: "Low" | "Medium" | "High";
   dealValue: number;
@@ -16,6 +16,10 @@ export interface ILead extends Document {
   ownerId?: mongoose.Types.ObjectId;
   nextFollowUp?: Date;
   
+  isLocked?: boolean;
+  markedDoneBy?: mongoose.Types.ObjectId;
+  markedDoneAt?: Date;
+
   address1?: string;
   address2?: string;
   address3?: string;
@@ -41,7 +45,7 @@ const LeadSchema: Schema<ILead> = new Schema(
       enum: ["Facebook", "Google", "Website", "Referral", "Walk In", "Employee Reference"], 
       default: "Website" // Make default so simple CSV imports succeed without source column
     },
-    status: { type: String, enum: ["Open", "Closed Won", "Closed Lost"], default: "Open" },
+    status: { type: String, enum: ["Open", "Closed Won", "Closed Lost", "Done"], default: "Open" },
     stage: { type: String, enum: ["New", "Contacted", "Qualified", "Proposal", "Negotiation"], default: "New" },
     priority: { type: String, enum: ["Low", "Medium", "High"], default: "Medium" },
     dealValue: { type: Number, default: 0 },
@@ -49,6 +53,10 @@ const LeadSchema: Schema<ILead> = new Schema(
     ownerId: { type: Schema.Types.ObjectId, ref: "Employee", required: false },
     nextFollowUp: { type: Date },
     
+    isLocked: { type: Boolean, default: false },
+    markedDoneBy: { type: Schema.Types.ObjectId, ref: "User" },
+    markedDoneAt: { type: Date },
+
     address1: { type: String },
     address2: { type: String },
     address3: { type: String },

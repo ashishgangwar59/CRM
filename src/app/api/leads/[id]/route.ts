@@ -47,11 +47,57 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const lead = await Lead.findById(id);
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
+    const isUserAdmin = payload.role === "ADMIN" || payload.role === "KEY_ADMIN";
+
+    // If lead is locked and non-admin tries to reassign or change lock status, reject
+    if (lead.isLocked && !isUserAdmin && (updates.ownerId || updates.isLocked !== undefined)) {
+      return NextResponse.json({ error: "This distributed lead is locked by Admin and cannot be modified." }, { status: 403 });
+    }
+
     const oldStage = lead.stage;
     const oldStatus = lead.status;
     const oldOwnerId = lead.ownerId;
     
-    // Update fields
+    // Action: Mark Done by Admin / KeyAdmin
+    if (updates.action === "markDone" || updates.status === "Done") {
+      lead.status = "Done";
+      lead.stage = "Qualified";
+      lead.isLocked = true;
+      lead.markedDoneBy = payload.userId as any;
+      lead.markedDoneAt = new Date();
+
+      await lead.save();
+
+      await LeadActivity.create({
+        leadId: lead._id,
+        type: "StatusChange",
+        content: "Lead marked as Done ✔️ by Admin.",
+        createdBy: payload.userId
+      });
+
+      await logAudit(req, payload.userId, "Lead Marked Done", "CRM", `Marked lead ${lead.firstName} ${lead.lastName} as Done`, { status: oldStatus }, { status: "Done" });
+      return NextResponse.json({ success: true, message: "Lead marked as Done successfully", data: lead });
+    }
+
+    // Action: Toggle Lock status by Admin / KeyAdmin
+    if (updates.action === "toggleLock" || updates.isLocked !== undefined) {
+      if (!isUserAdmin) {
+        return NextResponse.json({ error: "Only Admin can lock or unlock leads." }, { status: 403 });
+      }
+      lead.isLocked = updates.isLocked !== undefined ? updates.isLocked : !lead.isLocked;
+      await lead.save();
+
+      await LeadActivity.create({
+        leadId: lead._id,
+        type: "StatusChange",
+        content: `Lead ${lead.isLocked ? "locked 🔒" : "unlocked 🔓"} by Admin.`,
+        createdBy: payload.userId
+      });
+
+      return NextResponse.json({ success: true, message: `Lead ${lead.isLocked ? "locked" : "unlocked"} successfully`, data: lead });
+    }
+
+    // Update general fields
     Object.assign(lead, updates);
     await lead.save();
 

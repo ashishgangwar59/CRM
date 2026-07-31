@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       const lead = await Lead.findById(assignment.leadId);
       if (lead) {
         lead.ownerId = new mongoose.Types.ObjectId(assignment.employeeId) as any;
+        lead.isLocked = true; // Lock lead upon distribution to prevent unapproved edits
         if (targetDate) {
           lead.nextFollowUp = targetDate;
         }

@@ -30,6 +30,7 @@ export async function GET(req: Request) {
     const source = searchParams.get("source");
     const priority = searchParams.get("priority");
     const employeeIdFilter = searchParams.get("employeeId"); // Added for employee-wise view
+    const dateFilter = searchParams.get("dateFilter"); // today, yesterday, this_week, custom
 
     let query: any = {};
     if (search) {
@@ -37,13 +38,38 @@ export async function GET(req: Request) {
         { firstName: { $regex: search, $options: "i" } },
         { lastName: { $regex: search, $options: "i" } },
         { company: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } }
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } }
       ];
     }
     if (status) query.status = status;
     if (stage) query.stage = stage;
     if (source) query.source = source;
     if (priority) query.priority = priority;
+
+    if (dateFilter) {
+      const now = new Date();
+      if (dateFilter === "today") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        query.$or = [{ createdAt: { $gte: start, $lte: end } }, { nextFollowUp: { $gte: start, $lte: end } }];
+      } else if (dateFilter === "yesterday") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+        query.$or = [{ createdAt: { $gte: start, $lte: end } }, { nextFollowUp: { $gte: start, $lte: end } }];
+      } else if (dateFilter === "this_week") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+        query.$or = [{ createdAt: { $gte: start } }, { nextFollowUp: { $gte: start } }];
+      } else if (dateFilter.includes("-")) {
+        // Custom date YYYY-MM-DD
+        const targetDate = new Date(dateFilter);
+        if (!isNaN(targetDate.getTime())) {
+          const start = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+          const end = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+          query.$or = [{ createdAt: { $gte: start, $lte: end } }, { nextFollowUp: { $gte: start, $lte: end } }];
+        }
+      }
+    }
 
     if (payload.role === "Employee") {
       const employeeId = await getEmployeeIdFromUserId(payload.userId);
