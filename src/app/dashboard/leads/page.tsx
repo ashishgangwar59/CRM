@@ -45,6 +45,10 @@ export default function LeadsDashboardPage() {
 
   // CSV Sample Export
   const downloadSampleCSV = () => {
+    if (!isUserAdmin) {
+      alert("Permission denied. Only Admin can download sample CSV template.");
+      return;
+    }
     const headers = ["FIRST_NAME", "SECOND_NAME", "MOBILE", "COMPANY", "ADDRESS1", "ADDRESS2", "ADDRESS3", "CITY", "STATE", "PINCODE", "REMARK"];
     const rows = [
       ["Rajesh", "Sharma", "9876543210", "Apex Solutions", "Plot 42", "Phase 2", "", "Delhi", "Delhi", "110059", "Interested in CRM software"],
@@ -62,6 +66,10 @@ export default function LeadsDashboardPage() {
 
   // Export current filtered leads to CSV
   const exportLeadsCSV = () => {
+    if (!isUserAdmin) {
+      alert("Permission denied. Only Admin can export leads to CSV.");
+      return;
+    }
     if (leads.length === 0) {
       alert("No leads available to export.");
       return;
@@ -322,20 +330,20 @@ export default function LeadsDashboardPage() {
             </div>
           )}
 
-          {/* Sample CSV Download Button */}
-          <Button variant="outline" size="sm" onClick={downloadSampleCSV} title="Download Sample CSV Template">
-            <Download className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
-            Sample CSV
-          </Button>
-
-          {/* Export CSV Button */}
-          <Button variant="outline" size="sm" onClick={exportLeadsCSV} title="Export Current Filtered Leads to CSV">
-            <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
-            Export CSV
-          </Button>
-
           {isUserAdmin && (
             <>
+              {/* Sample CSV Download Button */}
+              <Button variant="outline" size="sm" onClick={downloadSampleCSV} title="Download Sample CSV Template">
+                <Download className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                Sample CSV
+              </Button>
+
+              {/* Export CSV Button */}
+              <Button variant="outline" size="sm" onClick={exportLeadsCSV} title="Export Current Filtered Leads to CSV">
+                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
+                Export CSV
+              </Button>
+
               <input 
                 type="file" 
                 ref={csvInputRef} 
