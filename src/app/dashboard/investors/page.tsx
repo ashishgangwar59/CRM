@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText } from "lucide-react";
+import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download } from "lucide-react";
 import PaymentBondModal from "./PaymentBondModal";
 import DebentureFormModal from "./DebentureFormModal";
 
@@ -15,7 +15,7 @@ export default function AdminInvestorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  
+
   // Modal / Detail state
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
   const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
@@ -324,11 +324,10 @@ export default function AdminInvestorsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${
-                          inv.status === "Verified" ? "bg-[#00a65a] text-white" :
-                          inv.status === "Rejected" ? "bg-rose-600 text-white" :
-                          "bg-orange-500 text-white"
-                        }`}>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${inv.status === "Verified" ? "bg-[#00a65a] text-white" :
+                            inv.status === "Rejected" ? "bg-rose-600 text-white" :
+                              "bg-orange-500 text-white"
+                          }`}>
                           {inv.status}
                         </span>
                         {inv.docVerifications && (
@@ -432,11 +431,10 @@ export default function AdminInvestorsPage() {
               </div>
               <div>
                 <p className="text-xs text-zinc-500 font-semibold uppercase">Status</p>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-white ${
-                  selectedInvestor.status === "Verified" ? "bg-[#00a65a]" :
-                  selectedInvestor.status === "Rejected" ? "bg-rose-600" :
-                  "bg-orange-500"
-                }`}>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-white ${selectedInvestor.status === "Verified" ? "bg-[#00a65a]" :
+                    selectedInvestor.status === "Rejected" ? "bg-rose-600" :
+                      "bg-orange-500"
+                  }`}>
                   {selectedInvestor.status}
                 </span>
               </div>
@@ -500,7 +498,7 @@ export default function AdminInvestorsPage() {
             {/* Uploaded Documents Check List with One-by-One Verification */}
             <div className="space-y-3">
               <h3 className="font-bold text-sm uppercase tracking-wider text-zinc-500">Uploaded KYC Documents & One-by-One Verification</h3>
-              
+
               <div className="grid grid-cols-1 gap-3 text-sm">
                 {[
                   { key: "aadhar", title: "Aadhar Card", sub: selectedInvestor.kycDocs?.aadharNumber, url: selectedInvestor.kycDocs?.aadharDocUrl, req: true },
@@ -545,11 +543,10 @@ export default function AdminInvestorsPage() {
                           {docItem.req && <span className="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${
-                            currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
-                            currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
-                            "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                          }`}>
+                          <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
+                              currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
+                                "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                            }`}>
                             {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
                             {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
                             Status: {currentStatus}
@@ -577,13 +574,12 @@ export default function AdminInvestorsPage() {
                             size="sm"
                             disabled={submitting || !docItem.url}
                             onClick={() => handleDocVerify(docItem.key, "Approved")}
-                            className={`font-bold h-8 px-3 text-xs ${
-                              !docItem.url
+                            className={`font-bold h-8 px-3 text-xs ${!docItem.url
                                 ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                                 : currentStatus === "Approved"
-                                ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
-                                : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
-                            }`}
+                                  ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
+                                  : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
+                              }`}
                           >
                             <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
                           </Button>
@@ -592,13 +588,12 @@ export default function AdminInvestorsPage() {
                             variant="outline"
                             disabled={submitting || !docItem.url}
                             onClick={() => handleDocVerify(docItem.key, "Rejected")}
-                            className={`h-8 px-3 text-xs font-bold ${
-                              !docItem.url
+                            className={`h-8 px-3 text-xs font-bold ${!docItem.url
                                 ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
                                 : currentStatus === "Rejected"
-                                ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
-                                : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
-                            }`}
+                                  ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
+                                  : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
+                              }`}
                           >
                             <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
                           </Button>
@@ -674,18 +669,16 @@ export default function AdminInvestorsPage() {
                   <div className="flex justify-end gap-3">
                     <Button
                       variant="outline"
-                      className={`bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100 font-bold ${
-                        !hasUploadedDocs ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                      className={`bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100 font-bold ${!hasUploadedDocs ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                       onClick={() => setShowRejectBox(!showRejectBox)}
                       disabled={submitting || !hasUploadedDocs}
                     >
                       Reject Investor Docs
                     </Button>
                     <Button
-                      className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${
-                        !hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                      className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                       onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
                       disabled={submitting || !hasAllMandatoryUploaded}
                     >
