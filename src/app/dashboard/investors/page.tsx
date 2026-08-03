@@ -18,6 +18,40 @@ export default function AdminInvestorsPage() {
   
   // Modal / Detail state
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
+
+  const isPdf = (url: string) => {
+    if (!url) return false;
+    return url.startsWith("data:application/pdf") || url.toLowerCase().includes(".pdf");
+  };
+
+  const openInNewWindow = (url: string) => {
+    if (!url) return;
+    if (url.startsWith("data:")) {
+      try {
+        const arr = url.split(",");
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open(blobUrl, "_blank");
+        if (!win) {
+          alert("Popup blocked! Please allow popups for this site.");
+        }
+      } catch (e) {
+        console.error(e);
+        window.open(url, "_blank");
+      }
+    } else {
+      window.open(url, "_blank");
+    }
+  };
   const [bondModalInvestor, setBondModalInvestor] = useState<any>(null);
   const [debentureModalInvestor, setDebentureModalInvestor] = useState<any>(null);
   const [bondAutoDownload, setBondAutoDownload] = useState(false);
@@ -525,9 +559,13 @@ export default function AdminInvestorsPage() {
 
                       <div className="flex items-center gap-3">
                         {docItem.url ? (
-                          <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                            <ExternalLink className="w-3.5 h-3.5" /> View File
-                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDoc({ title: docItem.title, url: docItem.url })}
+                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View File
+                          </button>
                         ) : (
                           <span className="text-xs text-rose-500 font-semibold bg-rose-950/40 px-2.5 py-1 rounded border border-rose-800">
                             Missing / Not Uploaded
@@ -772,6 +810,53 @@ export default function AdminInvestorsPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Document Viewer Modal for Admin & KeyAdmin */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 print:hidden animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-zinc-200 dark:border-zinc-800">
+            {/* Header */}
+            <div className="bg-zinc-950 text-white px-5 py-3.5 flex justify-between items-center border-b border-zinc-800">
+              <span className="font-extrabold text-sm text-indigo-400 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-indigo-400" /> {previewDoc.title}
+              </span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  onClick={() => openInNewWindow(previewDoc.url)}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1" /> Open / Download
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="text-zinc-400 hover:text-white font-bold text-xl px-2 leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Body Viewer */}
+            <div className="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-zinc-950 min-h-[400px]">
+              {isPdf(previewDoc.url) ? (
+                <iframe
+                  src={previewDoc.url}
+                  className="w-full h-[76vh] rounded-lg border border-zinc-800 bg-white shadow-xl"
+                  title={previewDoc.title}
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.title}
+                  className="max-h-[76vh] max-w-full object-contain rounded-lg shadow-2xl border border-zinc-800 bg-white p-2"
+                />
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, Save, X, ExternalLink } from "lucide-react";
+import { Printer, Save, X, ExternalLink, Eye, Download, FileText } from "lucide-react";
 
 interface DebentureFormModalProps {
   investor: any;
@@ -14,7 +14,48 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   const form = investor.debentureForm || {};
   const kyc = investor.kycDocs || {};
 
+  // Comprehensive URL resolution for photo, signature, and KYC documents
+  const passportPhotoUrl = form.passportPhotoUrl || kyc.passportPhotoUrl || investor.passportPhotoUrl || investor.photoUrl || kyc.photoUrl || "";
+  const signatureUrl = form.signatureUrl || kyc.signatureUrl || investor.signatureUrl || "";
+  const panDocUrl = kyc.panDocUrl || form.panDocUrl || investor.panDocUrl || "";
+  const aadharDocUrl = kyc.aadharDocUrl || form.aadharDocUrl || investor.aadharDocUrl || "";
+  const bankPassbookUrl = kyc.bankPassbookUrl || form.bankPassbookUrl || investor.bankPassbookUrl || "";
+
   const [saving, setSaving] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
+
+  const isPdf = (url: string) => {
+    if (!url) return false;
+    return url.startsWith("data:application/pdf") || url.toLowerCase().includes(".pdf");
+  };
+
+  const openInNewWindow = (url: string) => {
+    if (!url) return;
+    if (url.startsWith("data:")) {
+      try {
+        const arr = url.split(",");
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open(blobUrl, "_blank");
+        if (!win) {
+          alert("Popup blocked! Please allow popups for this site.");
+        }
+      } catch (e) {
+        console.error(e);
+        window.open(url, "_blank");
+      }
+    } else {
+      window.open(url, "_blank");
+    }
+  };
   const [officeData, setOfficeData] = useState({
     officeReceivedOn: form.officeReceivedOn || new Date().toISOString().split("T")[0],
     officeReceivedBy: form.officeReceivedBy || "Admin",
@@ -534,11 +575,13 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                   </div>
                 </div>
 
-                <div className="photo-box">
-                  {form.passportPhotoUrl ? (
-                    <img src={form.passportPhotoUrl} alt="Passport Photo" />
+                <div className="photo-box flex flex-col items-center justify-center overflow-hidden border-2 border-[#0c1c3d] bg-white">
+                  {passportPhotoUrl ? (
+                    <img src={passportPhotoUrl} alt="Passport Photo" className="w-full h-full object-cover" />
                   ) : (
-                    <span>No Photo<br />Attached</span>
+                    <span className="text-[10px] text-zinc-500 font-bold text-center leading-tight">
+                      No Photo<br />Attached
+                    </span>
                   )}
                 </div>
               </div>
@@ -546,6 +589,18 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div style={{ marginTop: "14px", borderTop: "1px solid #e3c98a", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px" }}>
                 <div>
                   Digital Signature: <span className="font-mono font-bold text-[#0c1c3d]">{investor.fullName} ✔</span>
+                  {signatureUrl && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <img src={signatureUrl} alt="Applicant Signature" className="h-8 max-w-[140px] object-contain border bg-white rounded p-0.5" />
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDoc({ title: "Applicant Signature", url: signatureUrl })}
+                        className="text-[10px] font-bold text-indigo-700 hover:underline print:hidden flex items-center gap-0.5"
+                      >
+                        <Eye className="w-3 h-3" /> View
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div>
                   Referred By: <span className="font-bold text-[#134086]">{investor.referralEmployeeName || "Direct"}</span>
@@ -556,30 +611,57 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             {/* SECTION 4 DOCUMENTS */}
             <div className="section-header">4. ATTACHED KYC DOCUMENTS</div>
             <div className="box">
-              <div className="grid grid-cols-3 gap-2 text-xs print:hidden">
-                <div className="p-2 border rounded bg-white flex items-center justify-between">
-                  <span>PAN Card</span>
-                  {kyc.panDocUrl ? (
-                    <a href={kyc.panDocUrl} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> View
-                    </a>
-                  ) : <span className="text-rose-500">Missing</span>}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs print:hidden">
+                <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
+                  <span className="font-bold text-zinc-800">1. PAN Card</span>
+                  {panDocUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc({ title: "PAN Card Document", url: panDocUrl })}
+                      className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+                  ) : <span className="text-rose-500 font-semibold text-[11px]">Missing</span>}
                 </div>
-                <div className="p-2 border rounded bg-white flex items-center justify-between">
-                  <span>Aadhaar Card</span>
-                  {kyc.aadharDocUrl ? (
-                    <a href={kyc.aadharDocUrl} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> View
-                    </a>
-                  ) : <span className="text-rose-500">Missing</span>}
+
+                <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
+                  <span className="font-bold text-zinc-800">2. Aadhaar Card</span>
+                  {aadharDocUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc({ title: "Aadhaar Card Document", url: aadharDocUrl })}
+                      className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+                  ) : <span className="text-rose-500 font-semibold text-[11px]">Missing</span>}
                 </div>
-                <div className="p-2 border rounded bg-white flex items-center justify-between">
-                  <span>Bank Proof</span>
-                  {kyc.bankPassbookUrl ? (
-                    <a href={kyc.bankPassbookUrl} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold flex items-center gap-1">
-                      <ExternalLink className="w-3 h-3" /> View
-                    </a>
-                  ) : <span className="text-rose-500">Missing</span>}
+
+                <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
+                  <span className="font-bold text-zinc-800">3. Bank Proof</span>
+                  {bankPassbookUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc({ title: "Bank Passbook / Cheque", url: bankPassbookUrl })}
+                      className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+                  ) : <span className="text-rose-500 font-semibold text-[11px]">Missing</span>}
+                </div>
+
+                <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
+                  <span className="font-bold text-zinc-800">4. Photo</span>
+                  {passportPhotoUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc({ title: "Applicant Passport Photo", url: passportPhotoUrl })}
+                      className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+                  ) : <span className="text-rose-500 font-semibold text-[11px]">Missing</span>}
                 </div>
               </div>
             </div>
@@ -719,6 +801,53 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
           </div>
         </div>
       </div>
+
+      {/* In-App Document Viewer Modal for Admin & KeyAdmin */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 print:hidden animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-zinc-300">
+            {/* Header */}
+            <div className="bg-[#0c1c3d] text-white px-5 py-3 flex justify-between items-center border-b border-[#c9972f]">
+              <span className="font-extrabold text-sm text-[#e8b84b] flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#c9972f]" /> {previewDoc.title}
+              </span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  onClick={() => openInNewWindow(previewDoc.url)}
+                  className="bg-[#c9972f] hover:bg-[#e8b84b] text-zinc-950 font-bold text-xs"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1" /> Open / Download
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="text-zinc-400 hover:text-white font-bold text-xl px-2 leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Body Viewer */}
+            <div className="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-zinc-900/90 min-h-[400px]">
+              {isPdf(previewDoc.url) ? (
+                <iframe
+                  src={previewDoc.url}
+                  className="w-full h-[76vh] rounded-lg border border-zinc-700 bg-white shadow-xl"
+                  title={previewDoc.title}
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.title}
+                  className="max-h-[76vh] max-w-full object-contain rounded-lg shadow-2xl border border-zinc-700 bg-white p-2"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
