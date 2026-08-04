@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 10 minutes expiration
 
     // Save/Update OTP in DB
     await Otp.findOneAndUpdate(
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
 
     // Send live SMS only in production (or if SMS keys are configured in dev)
     if (!isDev) {
-      const smsMessage = `Your CRM login OTP is ${otpCode}. Valid for 5 minutes.`;
+      const smsMessage = `Your Niventra verification code is ${otpCode}. It is valid for 10 minutes. Do not share this code with anyone.`;
       await notificationService.sendSMS(cleanPhone, smsMessage, otpCode);
     }
 
