@@ -64,6 +64,7 @@ export interface ISystemSettings extends Document {
       twilioAccountSid: string;
       twilioAuthToken: string;
       twilioPhoneNumber: string;
+      twilioVerifyServiceSid: string;
       msg91AuthKey: string;
       msg91SenderId: string;
     };
@@ -170,6 +171,7 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
         twilioAccountSid: { type: String, default: "" },
         twilioAuthToken: { type: String, default: "" },
         twilioPhoneNumber: { type: String, default: "" },
+        twilioVerifyServiceSid: { type: String, default: "" },
         msg91AuthKey: { type: String, default: "" },
         msg91SenderId: { type: String, default: "" },
       }

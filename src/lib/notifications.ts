@@ -1,6 +1,35 @@
 import { NotificationLog } from "./models/NotificationLog";
 import { Employee } from "./models/Employee";
+import { SystemSettings } from "./models/SystemSettings";
 import mongoose from "mongoose";
+
+/** Load SMS/Twilio credentials from DB Settings first, fallback to process.env */
+async function getSmsGatewayConfig() {
+  try {
+    const settings = await SystemSettings.findOne().lean();
+    const db = settings?.integrations?.smsGateway;
+    return {
+      twilioSid:         (db?.twilioAccountSid         || process.env.TWILIO_ACCOUNT_SID        || "").trim(),
+      twilioToken:       (db?.twilioAuthToken           || process.env.TWILIO_AUTH_TOKEN          || "").trim(),
+      twilioFrom:        (db?.twilioPhoneNumber         || process.env.TWILIO_PHONE_NUMBER        || "").trim(),
+      verifyServiceSid:  (db?.twilioVerifyServiceSid    || process.env.TWILIO_VERIFY_SERVICE_SID  || "").trim(),
+      msg91AuthKey:      (db?.msg91AuthKey              || process.env.MSG91_AUTH_KEY             || "").trim(),
+      msg91TemplateId:   (                                process.env.MSG91_TEMPLATE_ID           || "").trim(),
+      msg91SenderId:     (db?.msg91SenderId             || process.env.MSG91_SENDER_ID            || "").trim(),
+    };
+  } catch {
+    // DB not available yet (cold start) – fall back to env only
+    return {
+      twilioSid:         (process.env.TWILIO_ACCOUNT_SID        || "").trim(),
+      twilioToken:       (process.env.TWILIO_AUTH_TOKEN          || "").trim(),
+      twilioFrom:        (process.env.TWILIO_PHONE_NUMBER        || "").trim(),
+      verifyServiceSid:  (process.env.TWILIO_VERIFY_SERVICE_SID  || "").trim(),
+      msg91AuthKey:      (process.env.MSG91_AUTH_KEY             || "").trim(),
+      msg91TemplateId:   (process.env.MSG91_TEMPLATE_ID          || "").trim(),
+      msg91SenderId:     (process.env.MSG91_SENDER_ID            || "").trim(),
+    };
+  }
+}
 
 class NotificationEngine {
   
@@ -13,26 +42,22 @@ class NotificationEngine {
   }
 
   public async sendSMS(phone: string, message: string, otpCode?: string): Promise<boolean> {
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+    const cfg = await getSmsGatewayConfig();
+    const { twilioSid, twilioToken, twilioFrom, msg91AuthKey, msg91TemplateId, msg91SenderId } = cfg;
 
-    const msg91AuthKey = process.env.MSG91_AUTH_KEY;
-    const msg91TemplateId = process.env.MSG91_TEMPLATE_ID;
-    const msg91SenderId = process.env.MSG91_SENDER_ID;
-
-    // Normalize phone for Twilio (requires + prefix)
-    let twilioPhone = phone.trim();
+    // Normalize phone for Twilio (requires E.164 + prefix)
+    let twilioPhone = phone.trim().replace(/\s+/g, "");
     if (!twilioPhone.startsWith("+")) {
-      // If it looks like a standard 10 digit Indian number without prefix, default to +91
       if (twilioPhone.length === 10) {
         twilioPhone = "+91" + twilioPhone;
+      } else if (twilioPhone.length === 12 && twilioPhone.startsWith("91")) {
+        twilioPhone = "+" + twilioPhone;
       } else {
         twilioPhone = "+" + twilioPhone;
       }
     }
 
-    // Normalize phone for MSG91 (requires country code without +)
+    // Normalize phone for MSG91 (country code without +)
     let msg91Phone = phone.trim().replace("+", "");
     if (msg91Phone.length === 10) {
       msg91Phone = "91" + msg91Phone;
@@ -79,8 +104,8 @@ class NotificationEngine {
             recipients: [
               {
                 mobiles: msg91Phone,
-                message: message, // MSG91 fallback
-                otp: otpCode || "" // Pass variables if needed
+                message: message,
+                otp: otpCode || ""
               }
             ]
           })
@@ -103,22 +128,26 @@ class NotificationEngine {
   }
 
   public async sendVerificationOTP(phone: string): Promise<{ success: boolean; verifyServiceUsed: boolean }> {
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+    const cfg = await getSmsGatewayConfig();
+    const { twilioSid, twilioToken, verifyServiceSid } = cfg;
 
     if (!twilioSid || !twilioToken || !verifyServiceSid) {
       return { success: false, verifyServiceUsed: false };
     }
 
-    let twilioPhone = phone.trim();
+    // Normalize phone to E.164 format required by Twilio
+    let twilioPhone = phone.trim().replace(/\s+/g, "");
     if (!twilioPhone.startsWith("+")) {
       if (twilioPhone.length === 10) {
         twilioPhone = "+91" + twilioPhone;
+      } else if (twilioPhone.length === 12 && twilioPhone.startsWith("91")) {
+        twilioPhone = "+" + twilioPhone;
       } else {
         twilioPhone = "+" + twilioPhone;
       }
     }
+
+    console.log(`[Twilio Verify Send] Attempting to send OTP to: ${twilioPhone}`);
 
     try {
       const authString = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
@@ -135,35 +164,39 @@ class NotificationEngine {
       });
       const data = await response.json();
       if (response.ok) {
-        console.log(`[Twilio Verify Send] To: ${twilioPhone}, Service: ${verifyServiceSid}, Status: ${data.status}`);
+        console.log(`[Twilio Verify Send] SUCCESS → To: ${twilioPhone}, Status: ${data.status}, SID: ${data.sid}`);
         return { success: true, verifyServiceUsed: true };
       } else {
-        console.error("[Twilio Verify Send Error]", data);
+        console.error(`[Twilio Verify Send ERROR] HTTP ${response.status} → Code: ${data?.code}, Message: ${data?.message}`);
         return { success: false, verifyServiceUsed: true };
       }
     } catch (err) {
-      console.error("[Twilio Verify Send Exception]", err);
+      console.error("[Twilio Verify Send EXCEPTION]", err);
       return { success: false, verifyServiceUsed: true };
     }
   }
 
-  public async checkVerificationOTP(phone: string, code: string): Promise<{ success: boolean; verifyServiceUsed: boolean; approved: boolean }> {
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+  public async checkVerificationOTP(phone: string, code: string): Promise<{ success: boolean; verifyServiceUsed: boolean; approved: boolean; apiError: boolean; errorMessage?: string }> {
+    const cfg = await getSmsGatewayConfig();
+    const { twilioSid, twilioToken, verifyServiceSid } = cfg;
 
     if (!twilioSid || !twilioToken || !verifyServiceSid) {
-      return { success: false, verifyServiceUsed: false, approved: false };
+      return { success: false, verifyServiceUsed: false, approved: false, apiError: false };
     }
 
-    let twilioPhone = phone.trim();
+    // Normalize phone to E.164 format (must exactly match what was used in send)
+    let twilioPhone = phone.trim().replace(/\s+/g, "");
     if (!twilioPhone.startsWith("+")) {
       if (twilioPhone.length === 10) {
         twilioPhone = "+91" + twilioPhone;
+      } else if (twilioPhone.length === 12 && twilioPhone.startsWith("91")) {
+        twilioPhone = "+" + twilioPhone;
       } else {
         twilioPhone = "+" + twilioPhone;
       }
     }
+
+    console.log(`[Twilio Verify Check] Checking OTP for: ${twilioPhone}`);
 
     try {
       const authString = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
@@ -175,20 +208,25 @@ class NotificationEngine {
         },
         body: new URLSearchParams({
           To: twilioPhone,
-          Code: code
+          Code: code.trim()
         })
       });
       const data = await response.json();
+
       if (response.ok) {
-        console.log(`[Twilio Verify Check] To: ${twilioPhone}, Service: ${verifyServiceSid}, Status: ${data.status}`);
-        return { success: true, verifyServiceUsed: true, approved: data.status === "approved" };
+        const isApproved = data.status === "approved";
+        console.log(`[Twilio Verify Check] HTTP ${response.status} → Status: ${data.status}, Approved: ${isApproved}`);
+        // success = true, apiError = false, approved depends on status
+        return { success: true, verifyServiceUsed: true, approved: isApproved, apiError: false };
       } else {
-        console.error("[Twilio Verify Check Error]", data);
-        return { success: false, verifyServiceUsed: true, approved: false };
+        // HTTP error from Twilio (auth failed, rate limit, invalid service, etc.)
+        console.error(`[Twilio Verify Check ERROR] HTTP ${response.status} → Code: ${data?.code}, Message: ${data?.message}`);
+        // apiError = true signals routes to fallback to DB check instead of hard-rejecting
+        return { success: false, verifyServiceUsed: true, approved: false, apiError: true, errorMessage: data?.message };
       }
     } catch (err) {
-      console.error("[Twilio Verify Check Exception]", err);
-      return { success: false, verifyServiceUsed: true, approved: false };
+      console.error("[Twilio Verify Check EXCEPTION]", err);
+      return { success: false, verifyServiceUsed: true, approved: false, apiError: true, errorMessage: String(err) };
     }
   }
 

@@ -405,6 +405,11 @@ export default function SettingsPage() {
                         <Label>Twilio Phone Number</Label>
                         <Input value={settings.integrations.smsGateway?.twilioPhoneNumber || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, twilioPhoneNumber: e.target.value}}})} />
                       </div>
+                      <div className="space-y-2">
+                        <Label>Twilio Verify Service SID</Label>
+                        <Input placeholder="VAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value={(settings.integrations.smsGateway as any)?.twilioVerifyServiceSid || ""} onChange={e => setSettings({...settings, integrations: {...settings.integrations, smsGateway: {...settings.integrations.smsGateway, twilioVerifyServiceSid: e.target.value} as any}})} />
+                        <p className="text-xs text-zinc-400">Required for Twilio Verify OTP (recommended over standard SMS)</p>
+                      </div>
                       
                       <div className="space-y-2 md:col-span-2 border-t pt-4 mt-2">
                         <Label>MSG91 Auth Key</Label>

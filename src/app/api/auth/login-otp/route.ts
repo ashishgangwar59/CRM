@@ -26,9 +26,14 @@ export async function POST(req: Request) {
     let verifyUsed = false;
 
     const verifyCheck = await notificationService.checkVerificationOTP(cleanPhone, otp);
-    if (verifyCheck.verifyServiceUsed) {
+    if (verifyCheck.verifyServiceUsed && !verifyCheck.apiError) {
+      // Twilio Verify responded cleanly — use its result
       verifyUsed = true;
       verified = verifyCheck.approved;
+    } else if (verifyCheck.verifyServiceUsed && verifyCheck.apiError) {
+      // Twilio Verify API itself failed (network, auth error, rate limit, etc.)
+      // Fall through to DB fallback check below
+      console.warn("[Login OTP] Twilio Verify API error — falling back to DB check:", verifyCheck.errorMessage);
     }
 
     if (verifyUsed) {

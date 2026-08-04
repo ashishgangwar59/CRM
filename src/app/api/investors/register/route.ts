@@ -32,9 +32,13 @@ export async function POST(req: Request) {
     let verifyUsed = false;
 
     const verifyCheck = await notificationService.checkVerificationOTP(cleanPhone, otp);
-    if (verifyCheck.verifyServiceUsed) {
+    if (verifyCheck.verifyServiceUsed && !verifyCheck.apiError) {
+      // Twilio Verify responded cleanly — use its result
       verifyUsed = true;
       verified = verifyCheck.approved;
+    } else if (verifyCheck.verifyServiceUsed && verifyCheck.apiError) {
+      // Twilio Verify API itself failed — fall through to DB fallback
+      console.warn("[Register OTP] Twilio Verify API error — falling back to DB check:", verifyCheck.errorMessage);
     }
 
     if (verifyUsed) {
