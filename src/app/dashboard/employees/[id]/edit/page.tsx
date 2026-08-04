@@ -488,7 +488,7 @@ export default function EditEmployeePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Leads", "Reports", "Profile",
-                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Notifications", "Settings"
+                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2 p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900 border">
                       <input

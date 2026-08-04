@@ -223,10 +223,6 @@ export default function InvoicePage() {
                   <Label className="text-xs text-zinc-500">Invoice Date</Label>
                   <Input type="date" value={invoiceDate} readOnly className="h-8 text-xs bg-zinc-100 dark:bg-zinc-800 cursor-not-allowed" />
                 </div>
-                <div>
-                  <Label className="text-xs text-zinc-500">Due Date</Label>
-                  <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-8 text-xs" />
-                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs text-zinc-500">State</Label>
@@ -836,7 +832,11 @@ export default function InvoicePage() {
                     </div>
                     <div>
                       <span className="k">Branch</span>
-                      <span className="v">Niventra Capital Advisory India Pvt Ltd</span>
+                      <span className="v">
+                        SCO 16, Sector 14,Urban Estate
+                        Gurgaon - 122001
+                        Haryana Inidia
+                      </span>
                     </div>
                   </div>
                 </div>

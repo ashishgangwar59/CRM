@@ -505,7 +505,7 @@ export default function NewEmployeePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Leads", "Reports", "Profile",
-                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Notifications", "Settings", "Debenture Form"
+                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2">
                       <input 
