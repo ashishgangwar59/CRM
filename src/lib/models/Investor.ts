@@ -58,6 +58,7 @@ export interface IInvestor extends Document {
     noOfDebentures?: number;
     numDebenturesWords?: string;
     totalApplicationAmount?: number;
+    totalApplicationAmountWords?: string;
     modeOfPayment?: string;
     paymentModeOther?: string;
     bankName?: string;
@@ -146,6 +147,7 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       noOfDebentures: { type: Number },
       numDebenturesWords: { type: String },
       totalApplicationAmount: { type: Number },
+      totalApplicationAmountWords: { type: String },
       modeOfPayment: { type: String },
       paymentModeOther: { type: String },
       bankName: { type: String },

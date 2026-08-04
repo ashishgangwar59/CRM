@@ -59,6 +59,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Invoice Form", href: "/dashboard/invoice", icon: FileText, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee", "INVESTOR"] },
   ];

@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { Investor } from "@/lib/models/Investor";
 import { Counter } from "@/lib/models/Counter";
+import { Otp } from "@/lib/models/Otp";
 import bcrypt from "bcryptjs";
 
 async function getNextInvestorCode() {
@@ -17,11 +18,25 @@ async function getNextInvestorCode() {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    const { fullName, email, phone, password } = await req.json();
+    const { fullName, email, phone, password, otp } = await req.json();
 
-    if (!fullName || !email || !phone || !password) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    if (!fullName || !email || !phone || !password || !otp) {
+      return NextResponse.json({ error: "All fields including verification OTP are required" }, { status: 400 });
     }
+
+    // Verify OTP code
+    const otpRecord = await Otp.findOne({ phone: phone.trim() });
+    if (!otpRecord) {
+      return NextResponse.json({ error: "Verification OTP not found or expired. Please request a new code." }, { status: 400 });
+    }
+
+    const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
+    if (otpRecord.otp !== otp.trim() && !isMockBypass) {
+      return NextResponse.json({ error: "Incorrect verification code. Please check your phone." }, { status: 400 });
+    }
+
+    // Delete OTP on successful verification
+    await Otp.deleteOne({ _id: otpRecord._id });
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {

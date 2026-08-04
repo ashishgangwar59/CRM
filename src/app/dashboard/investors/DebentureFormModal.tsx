@@ -64,6 +64,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
     officeRemark: form.officeRemark || "Verified & Processed",
     officeStatus: form.officeStatus || (investor.status === "Verified" ? "Accepted" : "Accepted"),
     officeAllottedNo: form.officeAllottedNo || `DEB-${investor.investorCode?.replace("INV-", "") || "0001"}`,
+    totalApplicationAmount: form.totalApplicationAmount || investor.investmentAmount || 1000,
+    totalApplicationAmountWords: form.totalApplicationAmountWords || "",
     verifiedName: form.verifiedName || "Admin Verifier",
     verifiedDesignation: form.verifiedDesignation || "Senior Manager - Operations",
     verifiedSignDate: form.verifiedSignDate || new Date().toISOString().split("T")[0],
@@ -107,7 +109,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-4xl max-h-[96vh] overflow-y-auto relative shadow-2xl">
-        
+
         {/* Top Control Header Bar (Hidden during print) */}
         <div className="sticky top-0 z-20 bg-[#0c1c3d] text-white px-6 py-3.5 flex justify-between items-center border-b border-[#c9972f] print:hidden">
           <div className="flex items-center space-x-3">
@@ -435,7 +437,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 Dwarka Mor, New Delhi &ndash; 110059, India
               </div>
               <div className="contact-row">
-                <span>&#128222; 8920313143</span>
+                <span>&#128222; 011 4051 5660</span>
                 <span>&#9993; info@niventracapitaladvisory.com</span>
                 <span>&#127760; www.niventracapitaladvisory.com</span>
               </div>
@@ -538,8 +540,13 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div className="field-row">
                 <div className="field-label">Total Application Amount</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a" }}>
-                  ₹{(investor.investmentAmount || form.totalApplicationAmount || 0).toLocaleString()}
+                <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <span>₹{(investor.investmentAmount || form.totalApplicationAmount || 0).toLocaleString()}</span>
+                  {form.totalApplicationAmountWords && (
+                    <span className="text-xs text-zinc-500 font-normal">
+                      ({form.totalApplicationAmountWords})
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="field-row">
@@ -692,6 +699,22 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                     type="number"
                     value={officeData.officeAmountReceived}
                     onChange={(e) => setOfficeData({ ...officeData, officeAmountReceived: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="row">
+                  <span className="lbl">Total App Amount (Figures):</span>
+                  ₹<input
+                    type="number"
+                    value={officeData.totalApplicationAmount}
+                    onChange={(e) => setOfficeData({ ...officeData, totalApplicationAmount: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="row">
+                  <span className="lbl">Total App Amount (Words):</span>
+                  <input
+                    type="text"
+                    value={officeData.totalApplicationAmountWords}
+                    onChange={(e) => setOfficeData({ ...officeData, totalApplicationAmountWords: e.target.value })}
                   />
                 </div>
                 <div className="row">

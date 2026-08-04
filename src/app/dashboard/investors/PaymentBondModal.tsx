@@ -557,7 +557,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                     fontStyle: "italic",
                     fontWeight: "400",
                     wordBreak: "break-word",
-                  }}>📞 CUSTOMER CARE: +91 8920313143</div>
+                  }}>📞 CUSTOMER CARE: 011 4051 5660</div>
                   <div
                     style={{
                       textAlign: "center",

@@ -36,6 +36,7 @@ function DebentureFormContent() {
     noOfDebentures: 1,
     numDebenturesWords: "One",
     totalApplicationAmount: 1000,
+    totalApplicationAmountWords: "One Thousand Only",
     modeOfPayment: "NEFT/RTGS",
     paymentModeOther: "",
     chequeDdNo: "",
@@ -301,13 +302,65 @@ function DebentureFormContent() {
     if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
+  const numberToWords = (num: number, isCurrency = false): string => {
+    if (num === 0) return isCurrency ? "Rupees Zero Only" : "Zero";
+    if (isNaN(num) || num < 0) return "";
+
+    const ones = [
+      "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+      "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"
+    ];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+    const convertLessThanOneThousand = (n: number): string => {
+      if (n === 0) return "";
+      let temp = "";
+      if (n >= 100) {
+        temp += ones[Math.floor(n / 100)] + " Hundred ";
+        n %= 100;
+      }
+      if (n >= 20) {
+        temp += tens[Math.floor(n / 10)] + " ";
+        n %= 10;
+      }
+      if (n > 0) {
+        temp += ones[n] + " ";
+      }
+      return temp.trim();
+    };
+
+    let str = "";
+    let n = Math.floor(num);
+
+    if (n >= 10000000) { // Crore
+      str += convertLessThanOneThousand(Math.floor(n / 10000000)) + " Crore ";
+      n %= 10000000;
+    }
+    if (n >= 100000) { // Lakh
+      str += convertLessThanOneThousand(Math.floor(n / 100000)) + " Lakh ";
+      n %= 100000;
+    }
+    if (n >= 1000) { // Thousand
+      str += convertLessThanOneThousand(Math.floor(n / 1000)) + " Thousand ";
+      n %= 1000;
+    }
+    if (n > 0) {
+      str += convertLessThanOneThousand(n);
+    }
+
+    const result = str.trim();
+    return isCurrency ? `Rupees ${result} Only` : result;
+  };
+
   const handleDebentureCalc = (qty: number, faceVal: number) => {
     const total = qty * faceVal;
     setForm((prev) => ({
       ...prev,
       noOfDebentures: qty,
       faceValue: faceVal,
+      numDebenturesWords: numberToWords(qty),
       totalApplicationAmount: total,
+      totalApplicationAmountWords: numberToWords(total, true),
     }));
   };
 
@@ -990,7 +1043,7 @@ function DebentureFormContent() {
             Dwarka Mor, New Delhi &ndash; 110059, India
           </div>
           <div className="contact-row">
-            <span>&#128222; 8920313143</span>
+            <span>&#128222; 011 4051 5660</span>
             <span>&#9993; info@niventracapitaladvisory.com</span>
             <span>&#127760; www.niventracapitaladvisory.com</span>
           </div>
@@ -1280,7 +1333,7 @@ function DebentureFormContent() {
                 type="text"
                 name="numDebenturesWords"
                 value={form.numDebenturesWords}
-                onChange={(e) => setForm({ ...form, numDebenturesWords: e.target.value })}
+                readOnly
               />
               <small className="faded">(In Words)</small>
             </div>
@@ -1293,12 +1346,20 @@ function DebentureFormContent() {
               <input
                 type="number"
                 name="totalAmount"
-                style={{ maxWidth: "260px", fontWeight: "bold" }}
+                style={{ maxWidth: "150px", fontWeight: "bold" }}
                 min="0"
                 value={form.totalApplicationAmount}
                 readOnly
               />
-              <small className="faded">(Face Value x No. of Debenture)</small>
+              <small className="faded">(In Figures)</small>
+              <input
+                type="text"
+                name="totalAmountWords"
+                placeholder="Rupees One Thousand Only"
+                value={form.totalApplicationAmountWords}
+                readOnly
+              />
+              <small className="faded">(In Words)</small>
             </div>
           </div>
           <div className="field-row">
@@ -1653,6 +1714,7 @@ function DebentureFormContent() {
               faceValue: 1000,
               noOfDebentures: 1,
               totalApplicationAmount: 1000,
+              totalApplicationAmountWords: "One Thousand Only",
               chequeDdNo: "",
               chequeDdDate: "",
               transactionUtrNo: "",

@@ -122,8 +122,8 @@ export function InvestorDashboard() {
     setSaving(true);
     setMsg(null);
 
-    if (!kycDocs.aadharDocUrl || !kycDocs.panDocUrl || !kycDocs.marksheet10thUrl || !kycDocs.marksheet12thUrl || !kycDocs.bankPassbookUrl) {
-      setMsg({ type: "error", text: "Please upload mandatory docs: Aadhar, PAN, 10th Marksheet, 12th Marksheet & Bank Passbook." });
+    if (!kycDocs.aadharDocUrl || !kycDocs.panDocUrl || !kycDocs.bankPassbookUrl) {
+      setMsg({ type: "error", text: "Please upload mandatory docs: Aadhar, PAN, and Bank Passbook." });
       setSaving(false);
       return;
     }
@@ -321,8 +321,8 @@ export function InvestorDashboard() {
             {[
               { field: "aadharDocUrl", label: "Aadhar Card Document", req: true, numField: "aadharNumber", numPlaceholder: "Enter 12-digit Aadhar Number", numVal: kycDocs.aadharNumber, numKey: "aadharNumber", statusKey: "aadhar" },
               { field: "panDocUrl", label: "PAN Card Document", req: true, numField: "panNumber", numPlaceholder: "Enter 10-digit PAN Number", numVal: kycDocs.panNumber, numKey: "panNumber", statusKey: "pan" },
-              { field: "marksheet10thUrl", label: "10th Marksheet PDF", req: true, statusKey: "marksheet10th" },
-              { field: "marksheet12thUrl", label: "12th Marksheet PDF", req: true, statusKey: "marksheet12th" },
+              { field: "marksheet10thUrl", label: "10th Marksheet PDF (Optional)", req: false, statusKey: "marksheet10th" },
+              { field: "marksheet12thUrl", label: "12th Marksheet PDF (Optional)", req: false, statusKey: "marksheet12th" },
               { field: "graduationUrl", label: "Graduation Marksheet (Optional)", req: false, statusKey: "graduation" },
               { field: "postGraduationUrl", label: "Post Graduation Marksheet (Optional)", req: false, statusKey: "postGraduation" },
             ].map((item) => {

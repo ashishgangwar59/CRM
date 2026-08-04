@@ -203,8 +203,8 @@ export async function PUT(req: Request) {
         currentInvestor.docVerifications = mergedDocs;
         currentInvestor.markModified("docVerifications");
 
-        // Auto check if mandatory docs (aadhar, pan, marksheet10th, marksheet12th, bankPassbook) are all Approved
-        const mandatoryList = ["aadhar", "pan", "marksheet10th", "marksheet12th", "bankPassbook"];
+        // Auto check if mandatory docs (aadhar, pan, bankPassbook) are all Approved
+        const mandatoryList = ["aadhar", "pan", "bankPassbook"];
         const anyRejected = mandatoryList.some(doc => mergedDocs[doc as keyof typeof mergedDocs] === "Rejected");
         const allApproved = mandatoryList.every(doc => mergedDocs[doc as keyof typeof mergedDocs] === "Approved");
 
@@ -260,7 +260,7 @@ export async function PUT(req: Request) {
 
     if (kycDocs) {
       investor.kycDocs = { ...investor.kycDocs, ...kycDocs };
-      
+
       // Initialize docVerifications if missing
       if (!investor.docVerifications) {
         investor.docVerifications = {

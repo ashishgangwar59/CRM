@@ -333,7 +333,7 @@ export default function AdminInvestorsPage() {
                         {inv.docVerifications && (
                           <p className="text-[11px] text-zinc-500 font-medium">
                             Docs: <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                              {["aadhar", "pan", "marksheet10th", "marksheet12th", "bankPassbook"].filter(k => inv.docVerifications?.[k as keyof typeof inv.docVerifications] === "Approved").length} / 5
+                              {["aadhar", "pan", "bankPassbook"].filter(k => inv.docVerifications?.[k as keyof typeof inv.docVerifications] === "Approved").length} / 3
                             </span> Approved
                           </p>
                         )}
@@ -503,8 +503,8 @@ export default function AdminInvestorsPage() {
                 {[
                   { key: "aadhar", title: "Aadhar Card", sub: selectedInvestor.kycDocs?.aadharNumber, url: selectedInvestor.kycDocs?.aadharDocUrl, req: true },
                   { key: "pan", title: "PAN Card", sub: selectedInvestor.kycDocs?.panNumber, url: selectedInvestor.kycDocs?.panDocUrl, req: true },
-                  { key: "marksheet10th", title: "10th Marksheet", sub: "Mandatory Doc", url: selectedInvestor.kycDocs?.marksheet10thUrl, req: true },
-                  { key: "marksheet12th", title: "12th Marksheet", sub: "Mandatory Doc", url: selectedInvestor.kycDocs?.marksheet12thUrl, req: true },
+                  { key: "marksheet10th", title: "10th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet10thUrl, req: false },
+                  { key: "marksheet12th", title: "12th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet12thUrl, req: false },
                   { key: "graduation", title: "Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.graduationUrl, req: false },
                   { key: "postGraduation", title: "Post Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.postGraduationUrl, req: false },
                   { key: "bankPassbook", title: "Bank Passbook / Cheque", sub: `Bank: ${selectedInvestor.kycDocs?.bankName || "N/A"} | Ac: ${selectedInvestor.kycDocs?.accountNumber || "N/A"} | IFSC: ${selectedInvestor.kycDocs?.ifscCode || "N/A"}`, url: selectedInvestor.kycDocs?.bankPassbookUrl, req: true },
