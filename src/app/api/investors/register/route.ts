@@ -4,6 +4,7 @@ import { User } from "@/lib/models/User";
 import { Investor } from "@/lib/models/Investor";
 import { Counter } from "@/lib/models/Counter";
 import { Otp } from "@/lib/models/Otp";
+import { notificationService } from "@/lib/notifications";
 import bcrypt from "bcryptjs";
 
 async function getNextInvestorCode() {
@@ -24,19 +25,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "All fields including verification OTP are required" }, { status: 400 });
     }
 
-    // Verify OTP code
-    const otpRecord = await Otp.findOne({ phone: phone.trim() });
-    if (!otpRecord) {
-      return NextResponse.json({ error: "Verification OTP not found or expired. Please request a new code." }, { status: 400 });
+    const cleanPhone = phone.trim();
+
+    // Try verifying with Twilio Verify first
+    let verified = false;
+    let verifyUsed = false;
+
+    const verifyCheck = await notificationService.checkVerificationOTP(cleanPhone, otp);
+    if (verifyCheck.verifyServiceUsed) {
+      verifyUsed = true;
+      verified = verifyCheck.approved;
     }
 
-    const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
-    if (otpRecord.otp !== otp.trim() && !isMockBypass) {
-      return NextResponse.json({ error: "Incorrect verification code. Please check your phone." }, { status: 400 });
-    }
+    if (verifyUsed) {
+      if (!verified) {
+        return NextResponse.json({ error: "Incorrect verification code. Please check your phone." }, { status: 400 });
+      }
+    } else {
+      // Verify OTP code (Local fallback)
+      const otpRecord = await Otp.findOne({ phone: cleanPhone });
+      if (!otpRecord) {
+        return NextResponse.json({ error: "Verification OTP not found or expired. Please request a new code." }, { status: 400 });
+      }
 
-    // Delete OTP on successful verification
-    await Otp.deleteOne({ _id: otpRecord._id });
+      const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
+      if (otpRecord.otp !== otp.trim() && !isMockBypass) {
+        return NextResponse.json({ error: "Incorrect verification code. Please check your phone." }, { status: 400 });
+      }
+
+      // Delete OTP on successful verification
+      await Otp.deleteOne({ _id: otpRecord._id });
+    }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {

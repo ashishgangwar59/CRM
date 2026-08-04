@@ -102,6 +102,96 @@ class NotificationEngine {
     return true;
   }
 
+  public async sendVerificationOTP(phone: string): Promise<{ success: boolean; verifyServiceUsed: boolean }> {
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+    if (!twilioSid || !twilioToken || !verifyServiceSid) {
+      return { success: false, verifyServiceUsed: false };
+    }
+
+    let twilioPhone = phone.trim();
+    if (!twilioPhone.startsWith("+")) {
+      if (twilioPhone.length === 10) {
+        twilioPhone = "+91" + twilioPhone;
+      } else {
+        twilioPhone = "+" + twilioPhone;
+      }
+    }
+
+    try {
+      const authString = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
+      const response = await fetch(`https://verify.twilio.com/v2/Services/${verifyServiceSid}/Verifications`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${authString}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          To: twilioPhone,
+          Channel: "sms"
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        console.log(`[Twilio Verify Send] To: ${twilioPhone}, Service: ${verifyServiceSid}, Status: ${data.status}`);
+        return { success: true, verifyServiceUsed: true };
+      } else {
+        console.error("[Twilio Verify Send Error]", data);
+        return { success: false, verifyServiceUsed: true };
+      }
+    } catch (err) {
+      console.error("[Twilio Verify Send Exception]", err);
+      return { success: false, verifyServiceUsed: true };
+    }
+  }
+
+  public async checkVerificationOTP(phone: string, code: string): Promise<{ success: boolean; verifyServiceUsed: boolean; approved: boolean }> {
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+    if (!twilioSid || !twilioToken || !verifyServiceSid) {
+      return { success: false, verifyServiceUsed: false, approved: false };
+    }
+
+    let twilioPhone = phone.trim();
+    if (!twilioPhone.startsWith("+")) {
+      if (twilioPhone.length === 10) {
+        twilioPhone = "+91" + twilioPhone;
+      } else {
+        twilioPhone = "+" + twilioPhone;
+      }
+    }
+
+    try {
+      const authString = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
+      const response = await fetch(`https://verify.twilio.com/v2/Services/${verifyServiceSid}/VerificationCheck`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${authString}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          To: twilioPhone,
+          Code: code
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        console.log(`[Twilio Verify Check] To: ${twilioPhone}, Service: ${verifyServiceSid}, Status: ${data.status}`);
+        return { success: true, verifyServiceUsed: true, approved: data.status === "approved" };
+      } else {
+        console.error("[Twilio Verify Check Error]", data);
+        return { success: false, verifyServiceUsed: true, approved: false };
+      }
+    } catch (err) {
+      console.error("[Twilio Verify Check Exception]", err);
+      return { success: false, verifyServiceUsed: true, approved: false };
+    }
+  }
+
   private async mockSendSMS(phone: string, message: string): Promise<boolean> {
     return this.sendSMS(phone, message);
   }

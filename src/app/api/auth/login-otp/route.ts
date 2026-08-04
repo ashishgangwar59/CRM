@@ -7,6 +7,7 @@ import { User } from "@/lib/models/User";
 import { Session } from "@/lib/models/Session";
 import { LoginHistory } from "@/lib/models/LoginHistory";
 import { signAccessToken, signRefreshToken } from "@/lib/auth";
+import { notificationService } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 
 export async function POST(req: Request) {
@@ -15,25 +16,41 @@ export async function POST(req: Request) {
     const { phone, otp, rememberMe, deviceInfo } = await req.json();
 
     if (!phone || !otp) {
-      return NextResponse.json({ error: "Phone number and OTP are required" }, { status: 400 });
+      return NextResponse.json({ error: "Mobile number and OTP are required" }, { status: 400 });
     }
 
     const cleanPhone = phone.trim();
 
-    // 1. Verify OTP from DB
-    const otpRecord = await Otp.findOne({ phone: cleanPhone });
-    if (!otpRecord) {
-      return NextResponse.json({ error: "Invalid OTP or request expired" }, { status: 401 });
+    // Try verifying with Twilio Verify first
+    let verified = false;
+    let verifyUsed = false;
+
+    const verifyCheck = await notificationService.checkVerificationOTP(cleanPhone, otp);
+    if (verifyCheck.verifyServiceUsed) {
+      verifyUsed = true;
+      verified = verifyCheck.approved;
     }
 
-    // In production, we enforce exact match. For development, we allow '123456' as a universal testing bypass code
-    const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
-    if (otpRecord.otp !== otp && !isMockBypass) {
-      return NextResponse.json({ error: "Incorrect OTP code. Please try again." }, { status: 401 });
-    }
+    if (verifyUsed) {
+      if (!verified) {
+        return NextResponse.json({ error: "Incorrect OTP code. Please try again." }, { status: 401 });
+      }
+    } else {
+      // 1. Verify OTP from DB (Local fallback)
+      const otpRecord = await Otp.findOne({ phone: cleanPhone });
+      if (!otpRecord) {
+        return NextResponse.json({ error: "Invalid OTP or request expired" }, { status: 401 });
+      }
 
-    // Delete OTP once used
-    await Otp.deleteOne({ _id: otpRecord._id });
+      // In production, we enforce exact match. For development, we allow '123456' as a universal testing bypass code
+      const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
+      if (otpRecord.otp !== otp && !isMockBypass) {
+        return NextResponse.json({ error: "Incorrect OTP code. Please try again." }, { status: 401 });
+      }
+
+      // Delete OTP once used
+      await Otp.deleteOne({ _id: otpRecord._id });
+    }
 
     // 2. Identify account
     let userEmail = "";

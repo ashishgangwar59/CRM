@@ -47,8 +47,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Phone number is already associated with an account" }, { status: 400 });
     }
 
-    // 3. Generate verification OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Try sending with Twilio Verify first
+    const verifyResult = await notificationService.sendVerificationOTP(cleanPhone);
+    if (verifyResult.verifyServiceUsed) {
+      if (verifyResult.success) {
+        return NextResponse.json({
+          success: true,
+          message: "Verification OTP sent successfully via Twilio Verify",
+          debugOtp: "Sent via Twilio Verify API"
+        });
+      } else {
+        return NextResponse.json({ error: "Failed to send OTP code via Twilio Verify. Please check configuration." }, { status: 500 });
+      }
+    }
+
+    const isDev = process.env.NODE_ENV !== "production";
+
+    // In development (without Twilio Verify), use a fixed OTP '123456' — no SMS needed
+    let otpCode: string;
+    if (isDev) {
+      otpCode = "123456";
+      console.log(`[DEV MODE] Fixed Registration OTP for ${cleanPhone}: 123456`);
+    } else {
+      otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     // Save/Update OTP
@@ -58,14 +81,16 @@ export async function POST(req: Request) {
       { upsert: true, new: true }
     );
 
-    // Send SMS via service
-    const smsMessage = `Your CRM verification code is ${otpCode}. Valid for 5 minutes.`;
-    await notificationService.sendSMS(cleanPhone, smsMessage, otpCode);
+    // Send live SMS only in production
+    if (!isDev) {
+      const smsMessage = `Your CRM verification code is ${otpCode}. Valid for 5 minutes.`;
+      await notificationService.sendSMS(cleanPhone, smsMessage, otpCode);
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Verification OTP sent successfully",
-      debugOtp: process.env.NODE_ENV !== "production" ? otpCode : undefined
+      message: isDev ? "[DEV] OTP is 123456 (fixed dev code)" : "Verification OTP sent successfully",
+      debugOtp: isDev ? otpCode : undefined
     });
   } catch (error) {
     console.error("Send Registration OTP Error:", error);
