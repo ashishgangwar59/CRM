@@ -45,13 +45,25 @@ export function AdminDashboard() {
       </div>
 
       {/* Row 1: Global KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="bg-zinc-950 text-white">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-zinc-400">Total Employees</p>
                 <h3 className="text-3xl font-bold mt-1">{k.totalEmployees}</h3>
+              </div>
+              <div className="p-2 bg-zinc-800 rounded-lg text-zinc-300"><Users className="w-5 h-5" /></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900 text-white">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-zinc-400">Total Investors</p>
+                <h3 className="text-3xl font-bold mt-1">{k.totalInvestors || 0}</h3>
               </div>
               <div className="p-2 bg-zinc-800 rounded-lg text-zinc-300"><Users className="w-5 h-5" /></div>
             </div>
@@ -84,6 +96,21 @@ export function AdminDashboard() {
                 </h3>
               </div>
               <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><TrendingUp className="w-5 h-5" /></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-amber-950 text-[#c5a059] border-amber-900 shadow-lg shadow-amber-900/20">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-amber-300">Total Investments</p>
+                <h3 className="text-3xl font-bold mt-1 flex items-center">
+                  <IndianRupee className="w-6 h-6 mr-1 text-amber-400" />
+                  {(k.totalInvestment || 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="p-2 bg-amber-900 rounded-lg text-amber-300"><IndianRupee className="w-5 h-5" /></div>
             </div>
           </CardContent>
         </Card>

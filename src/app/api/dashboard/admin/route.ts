@@ -6,6 +6,8 @@ import { Attendance } from "@/lib/models/Attendance";
 import { CompanyWallet } from "@/lib/models/CompanyWallet";
 import { Payroll } from "@/lib/models/Payroll";
 import { Lead } from "@/lib/models/Lead";
+import { Investor } from "@/lib/models/Investor";
+
 
 function getToken(req: Request): string | null {
   const cookieHeader = req.headers.get("cookie");
@@ -129,6 +131,11 @@ export async function GET(req: Request) {
       }
     });
 
+    // 3.5 Investors & Total Investment
+    const allInvestors = await Investor.find().lean();
+    const totalInvestors = allInvestors.length;
+    const totalInvestment = allInvestors.reduce((acc, inv) => acc + (inv.investmentAmount || 0), 0);
+
     // 4. Charts (Monthly Trends - mocked historical for UI demonstration if real data is sparse)
     // In a real app, this would be an aggregation pipeline grouping by month over the last 6 months.
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -214,7 +221,9 @@ export async function GET(req: Request) {
           visitorsToday: 0,
           openLeads,
           wonLeads,
-          revenue
+          revenue,
+          totalInvestors,
+          totalInvestment
         },
         todaysAttendanceList,
         charts: {
