@@ -23,7 +23,6 @@ export default function InvoicePage() {
   // Invoice state
   const [invoiceNo, setInvoiceNo] = useState("NCA/2026-27/001");
   const [invoiceDate, setInvoiceDate] = useState("");
-  const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]);
 
   useEffect(() => {
     const year = new Date().getFullYear();
@@ -61,8 +60,8 @@ export default function InvoicePage() {
       sacCode: "9971",
       qty: 1,
       rate: 100000,
-      cgstRate: 9,
-      sgstRate: 9,
+      cgstRate: 0,
+      sgstRate: 0,
       igstRate: 0,
     },
   ]);
@@ -126,24 +125,20 @@ export default function InvoicePage() {
   // Calculations
   const calculateTotals = () => {
     let totalTaxableValue = 0;
-    let totalCgst = 0;
-    let totalSgst = 0;
     let totalIgst = 0;
 
     items.forEach((item) => {
       const taxable = item.qty * item.rate;
       totalTaxableValue += taxable;
-      totalCgst += taxable * (item.cgstRate / 100);
-      totalSgst += taxable * (item.sgstRate / 100);
       totalIgst += taxable * (item.igstRate / 100);
     });
 
-    const grandTotal = totalTaxableValue + totalCgst + totalSgst + totalIgst;
+    const grandTotal = totalTaxableValue + totalIgst;
 
     return {
       totalTaxableValue,
-      totalCgst,
-      totalSgst,
+      totalCgst: 0,
+      totalSgst: 0,
       totalIgst,
       grandTotal,
       grandTotalWords: numberToWords(grandTotal),
@@ -162,8 +157,8 @@ export default function InvoicePage() {
         sacCode: "9971",
         qty: 1,
         rate: 50000,
-        cgstRate: 9,
-        sgstRate: 9,
+        cgstRate: 0,
+        sgstRate: 0,
         igstRate: 0,
       },
     ]);
@@ -309,15 +304,7 @@ export default function InvoicePage() {
                     <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-8 text-xs font-semibold text-right" />
                   </div>
                   <div className="md:col-span-2.5 flex items-center gap-2">
-                    <div className="w-16">
-                      <Label className="text-[10px] text-zinc-400">CGST %</Label>
-                      <Input type="number" value={item.cgstRate} onChange={(e) => handleUpdateItem(item.id, "cgstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
-                    </div>
-                    <div className="w-16">
-                      <Label className="text-[10px] text-zinc-400">SGST %</Label>
-                      <Input type="number" value={item.sgstRate} onChange={(e) => handleUpdateItem(item.id, "sgstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
-                    </div>
-                    <div className="w-16">
+                    <div className="w-full">
                       <Label className="text-[10px] text-zinc-400">IGST %</Label>
                       <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
                     </div>
@@ -714,7 +701,7 @@ export default function InvoicePage() {
               <div className="contact-block">
                 <div>
                   <span className="icon">📞</span>
-                  <span>+91 89203 13143</span>
+                  <span>011 4051 5660</span>
                 </div>
                 <div>
                   <span className="icon">✉️</span>
@@ -759,10 +746,6 @@ export default function InvoicePage() {
                 <div className="row">
                   <span className="k">Invoice Date</span>
                   <span className="v">{invoiceDate}</span>
-                </div>
-                <div className="row">
-                  <span className="k">Due Date</span>
-                  <span className="v">{dueDate}</span>
                 </div>
                 <div className="row">
                   <span className="k">Reverse Charge</span>
@@ -859,18 +842,6 @@ export default function InvoicePage() {
                     <span className="k">Taxable Value</span>
                     <span className="v">₹{totals.totalTaxableValue.toLocaleString()}</span>
                   </div>
-                  {totals.totalCgst > 0 && (
-                    <div className="row">
-                      <span className="k">CGST</span>
-                      <span className="v">₹{totals.totalCgst.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {totals.totalSgst > 0 && (
-                    <div className="row">
-                      <span className="k">SGST / UTGST</span>
-                      <span className="v">₹{totals.totalSgst.toLocaleString()}</span>
-                    </div>
-                  )}
                   {totals.totalIgst > 0 && (
                     <div className="row">
                       <span className="k">IGST</span>
