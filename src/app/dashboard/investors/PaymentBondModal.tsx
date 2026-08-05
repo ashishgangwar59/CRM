@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, ShieldCheck, X, Printer } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface PaymentBondModalProps {
   investor: any;
@@ -358,7 +358,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                     {/* <div className="w-32 flex flex-col items-end">
                     <div className="flex items-center space-x-2">
                       <div className="text-center">
-                        <QRCodeCanvas
+                        <QRCodeSVG
                           value={`BOND:${bondNo}|INV:${investor.fullName}|AMT:${principalAmount}|DATE:${issueDateStr}`}
                           size={56}
                           bgColor="#ffffff"
@@ -507,7 +507,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                     {downloadUrl && (
                       <div className="text-center flex flex-col items-center">
                         <div className="bg-white p-1 rounded border border-amber-200 shadow-xs">
-                          <QRCodeCanvas
+                          <QRCodeSVG
                             value={downloadUrl}
                             size={64}
                             level="H"
