@@ -33,6 +33,13 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   const autoDownloaded = useRef(false);
   const [maturityPeriodMonths, setMaturityPeriodMonths] = useState<number>(1);
   const [autoDownloadStatus, setAutoDownloadStatus] = useState<"idle" | "pending" | "done">("idle");
+  const [downloadUrl, setDownloadUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setDownloadUrl(`${window.location.protocol}//${window.location.host}/api/investors/download-bond?id=${investor._id}`);
+    }
+  }, [investor._id]);
 
   const principalAmount = investor.investmentAmount || investor.debentureForm?.totalApplicationAmount || 0;
   const growthRate = investor.monthlyGrowthPercentage || 2;
@@ -246,11 +253,11 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   }, [autoDownload, handlePrintPDF]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl max-w-4xl w-full p-4 space-y-4 shadow-2xl my-auto">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl max-w-4xl w-full flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
 
         {/* Modal Header Bar */}
-        <div className="flex justify-between items-center border-b border-zinc-800 pb-3 px-2">
+        <div className="flex justify-between items-center border-b border-zinc-800 pb-4 px-4 pt-4 shrink-0 bg-zinc-900 rounded-t-xl">
           <div className="flex items-center space-x-2 text-emerald-400 font-bold">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
             <span className="text-lg text-white">Payment Bond Certificate</span>
@@ -273,79 +280,82 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
           </div>
         </div>
 
-        {/* Auto-download status banner */}
-        {autoDownloadStatus === "pending" && (
-          <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-2.5 text-amber-300 text-sm font-semibold animate-pulse">
-            <Download className="w-4 h-4 shrink-0" />
-            Generating your Payment Bond PDF... please wait
-          </div>
-        )}
-        {autoDownloadStatus === "done" && (
-          <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-emerald-300 text-sm font-semibold">
-            <ShieldCheck className="w-4 h-4 shrink-0" />
-            PDF Downloaded Successfully! Bond saved to your device.
-          </div>
-        )}
+        {/* Modal Body (Scrollable) */}
+        <div className="overflow-y-auto p-4 flex-1 space-y-4">
 
-        {/* Printable Bond Container */}
-        <div className="overflow-x-auto flex justify-center py-2 bg-zinc-950 rounded-lg">
-          <div
-            ref={bondRef}
-            className="relative bg-[#fdfbf7] text-slate-900 shadow-2xl overflow-hidden font-serif"
-            style={{
-              width: "794px",
-              minHeight: "1123px",
-              padding: "24px",
-              boxSizing: "border-box"
-            }}
-          >
-            {/* Outer Royal Gold & Navy Border Frame */}
-            <div className="w-full h-full border-[8px] border-[#0a192f] p-2 relative rounded-sm shadow-inner bg-[#fffdfa]">
-              <div className="w-full h-full border-2 border-[#c5a059] p-4 relative">
+          {/* Auto-download status banner */}
+          {autoDownloadStatus === "pending" && (
+            <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-2.5 text-amber-300 text-sm font-semibold animate-pulse">
+              <Download className="w-4 h-4 shrink-0" />
+              Generating your Payment Bond PDF... please wait
+            </div>
+          )}
+          {autoDownloadStatus === "done" && (
+            <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-emerald-300 text-sm font-semibold">
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              PDF Downloaded Successfully! Bond saved to your device.
+            </div>
+          )}
 
-                {/* Background Watermark NC Emblem */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none select-none">
-                  <div className="text-[280px] font-black text-[#0a192f] tracking-tighter">NC</div>
-                </div>
+          {/* Printable Bond Container */}
+          <div className="overflow-x-auto flex justify-center py-2 bg-zinc-950 rounded-lg">
+            <div
+              ref={bondRef}
+              className="relative bg-[#fdfbf7] text-slate-900 shadow-2xl overflow-hidden font-serif"
+              style={{
+                width: "794px",
+                minHeight: "1123px",
+                padding: "24px",
+                boxSizing: "border-box"
+              }}
+            >
+              {/* Outer Royal Gold & Navy Border Frame */}
+              <div className="w-full h-full border-[8px] border-[#0a192f] p-2 relative rounded-sm shadow-inner bg-[#fffdfa]">
+                <div className="w-full h-full border-2 border-[#c5a059] p-4 relative">
 
-                {/* Top Header Layout */}
-                <div className="flex justify-between items-center mb-3 border-b border-[#c5a059]/40 pb-3">
-
-                  {/* Left Gold Emblem Ribbon */}
-                  <div className="w-28 text-center flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#dfb76c] via-[#c5a059] to-[#997327] p-[2px] shadow-md flex items-center justify-center">
-                      <div className="w-full h-full rounded-full border border-amber-100 flex flex-col items-center justify-center bg-gradient-to-b from-[#b8860b] to-[#785404] text-white p-1 text-center">
-                        <span className="text-[7px] font-bold leading-tight uppercase tracking-tighter text-amber-100">BUILDING WEALTH</span>
-                        <span className="text-[7px] font-bold leading-tight uppercase tracking-tighter text-amber-100">CREATING FUTURES</span>
-                      </div>
-                    </div>
+                  {/* Background Watermark NC Emblem */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none select-none">
+                    <div className="text-[280px] font-black text-[#0a192f] tracking-tighter">NC</div>
                   </div>
 
-                  {/* Center Brand Heading */}
-                  <div className="text-center flex-1 px-2">
-                    <div className="flex justify-center mb-1">
-                      {/* Brand Icon Logo */}
-                      <div className="w-18 h-18 rounded-full bg-[#0a192f] flex items-center justify-center border-2 border-[#c5a059] shadow-md">
-                        <img src={logoBase64}
-                          style={{
-                            width: "64px",
-                            height: "64px",
-                            objectFit: "contain",
-                            display: "block"
-                          }}
-                          alt="Logo" className="w-full h-full rounded-full object-cover" crossOrigin="anonymous" />
+                  {/* Top Header Layout */}
+                  <div className="flex justify-between items-center mb-3 border-b border-[#c5a059]/40 pb-3">
+
+                    {/* Left Gold Emblem Ribbon */}
+                    <div className="w-28 text-center flex flex-col items-center">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#dfb76c] via-[#c5a059] to-[#997327] p-[2px] shadow-md flex items-center justify-center">
+                        <div className="w-full h-full rounded-full border border-amber-100 flex flex-col items-center justify-center bg-gradient-to-b from-[#b8860b] to-[#785404] text-white p-1 text-center">
+                          <span className="text-[7px] font-bold leading-tight uppercase tracking-tighter text-amber-100">BUILDING WEALTH</span>
+                          <span className="text-[7px] font-bold leading-tight uppercase tracking-tighter text-amber-100">CREATING FUTURES</span>
+                        </div>
                       </div>
                     </div>
-                    <h1 className="text-2xl font-black tracking-tight text-[#0a192f] font-serif uppercase">
-                      NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.
-                    </h1>
-                    <p className="text-[10px] tracking-widest font-sans font-bold text-[#c5a059] uppercase mt-0.5">
-                      — INVEST TODAY • PROSPER TOMORROW —
-                    </p>
-                  </div>
 
-                  {/* Right Gold Trust Shield & QR Code */}
-                  <div className="w-32 flex flex-col items-end">
+                    {/* Center Brand Heading */}
+                    <div className="text-center flex-1 px-2">
+                      <div className="flex justify-center mb-1">
+                        {/* Brand Icon Logo */}
+                        <div className="w-18 h-18 rounded-full bg-[#0a192f] flex items-center justify-center border-2 border-[#c5a059] shadow-md">
+                          <img src={logoBase64}
+                            style={{
+                              width: "64px",
+                              height: "64px",
+                              objectFit: "contain",
+                              display: "block"
+                            }}
+                            alt="Logo" className="w-full h-full rounded-full object-cover" crossOrigin="anonymous" />
+                        </div>
+                      </div>
+                      <h1 className="text-2xl font-black tracking-tight text-[#0a192f] font-serif uppercase">
+                        NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.
+                      </h1>
+                      <p className="text-[10px] tracking-widest font-sans font-bold text-[#c5a059] uppercase mt-0.5">
+                        — INVEST TODAY • PROSPER TOMORROW —
+                      </p>
+                    </div>
+
+                    {/* Right Gold Trust Shield & QR Code */}
+                    {/* <div className="w-32 flex flex-col items-end">
                     <div className="flex items-center space-x-2">
                       <div className="text-center">
                         <QRCodeCanvas
@@ -359,207 +369,193 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                         <span className="text-[7px] font-sans font-bold text-slate-600 block mt-0.5">SCAN TO VERIFY</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Bond Header Metadata */}
-                <div className="flex justify-between items-center text-xs font-sans font-bold text-slate-800 mb-2 px-2 border-y border-amber-200/60 py-1.5 bg-amber-50/40">
-                  <div className="space-y-0.5">
-                    <p><span className="text-slate-500">BOND NO.</span> : <span className="text-rose-700 font-mono font-bold text-sm">{bondNo}</span></p>
-                    <p><span className="text-slate-500">ISSUE DATE</span> : <span>{issueDateStr}</span></p>
+                  </div> */}
                   </div>
 
-                  <div className="text-center">
-                    <h2 className="text-2xl font-black text-[#c5a059] tracking-wider font-serif uppercase drop-shadow-xs">
-                      PAYMENT BOND
-                    </h2>
-                    <div className="inline-block bg-[#134086] text-[#c5a059] text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest mt-0.5">
-                      ✦ INVESTMENT ACKNOWLEDGEMENT ✦
+                  {/* Bond Header Metadata */}
+                  <div className="flex justify-between items-center text-xs font-sans font-bold text-slate-800 mb-2 px-2 border-y border-amber-200/60 py-1.5 bg-amber-50/40">
+                    <div className="space-y-0.5">
+                      <p><span className="text-slate-500">BOND NO.</span> : <span className="text-rose-700 font-mono font-bold text-sm">{bondNo}</span></p>
+                      <p><span className="text-slate-500">ISSUE DATE</span> : <span>{issueDateStr}</span></p>
+                    </div>
+
+                    <div className="text-center">
+                      <h2 className="text-2xl font-black text-[#c5a059] tracking-wider font-serif uppercase drop-shadow-xs">
+                        PAYMENT BOND
+                      </h2>
+                      <div className="inline-block bg-[#134086] text-[#c5a059] text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest mt-0.5">
+                        ✦ INVESTMENT ACKNOWLEDGEMENT ✦
+                      </div>
+                    </div>
+
+                    <div className="text-right space-y-0.5">
+                      <p><span className="text-slate-500">REFERENCE NO.</span> : <span>{refNo}</span></p>
                     </div>
                   </div>
 
-                  <div className="text-right space-y-0.5">
-                    <p><span className="text-slate-500">REFERENCE NO.</span> : <span>{refNo}</span></p>
+                  {/* Certificate Main Receipt Statement */}
+                  <div className="text-center px-6 py-2 my-2 font-serif text-xs leading-relaxed text-slate-800 italic bg-white border border-amber-100 rounded">
+                    This is to certify that <strong className="text-[#0a192f] not-italic">NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</strong> has received an amount of <strong className="text-slate-900 not-italic">₹{principalAmount.toLocaleString()}/- ({numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
                   </div>
-                </div>
 
-                {/* Certificate Main Receipt Statement */}
-                <div className="text-center px-6 py-2 my-2 font-serif text-xs leading-relaxed text-slate-800 italic bg-white border border-amber-100 rounded">
-                  This is to certify that <strong className="text-[#0a192f] not-italic">NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</strong> has received an amount of <strong className="text-slate-900 not-italic">₹{principalAmount.toLocaleString()}/- ({numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
-                </div>
+                  {/* Grid Section: Investor Info & Investment Details */}
+                  <div className="grid grid-cols-2 gap-4 my-3">
 
-                {/* Grid Section: Investor Info & Investment Details */}
-                <div className="grid grid-cols-2 gap-4 my-3">
+                    {/* Left Column: Investor Information */}
+                    <div className="border border-amber-200 rounded-md overflow-hidden bg-white shadow-xs">
+                      <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
+                        ✦ INVESTOR INFORMATION ✦
+                      </div>
+                      <div className="p-3 text-xs font-sans space-y-2">
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Investor Name</span>
+                          <span className="font-bold text-slate-900 uppercase">{investor.fullName}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Father's Name</span>
+                          <span className="font-bold text-slate-900 uppercase">{fatherName}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Address</span>
+                          <span className="font-bold text-slate-900 text-right max-w-[160px] truncate">{address}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Mobile No.</span>
+                          <span className="font-bold text-slate-900">{investor.phone}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-medium">Email ID</span>
+                          <span className="font-bold text-slate-900">{investor.email}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                  {/* Left Column: Investor Information */}
-                  <div className="border border-amber-200 rounded-md overflow-hidden bg-white shadow-xs">
+                    {/* Right Column: Investment Details */}
+                    <div className="border border-amber-200 rounded-md overflow-hidden bg-white shadow-xs">
+                      <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
+                        ✦ INVESTMENT DETAILS ✦
+                      </div>
+                      <div className="p-3 text-xs font-sans space-y-2">
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Principal Amount</span>
+                          <span className="font-bold text-slate-900">₹{principalAmount.toLocaleString()}/-</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Investment Date</span>
+                          <span className="font-bold text-slate-900">{issueDateStr}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Maturity Period</span>
+                          <span className="font-bold text-slate-900">{maturityPeriodMonths} {maturityPeriodMonths === 1 ? "Month" : "Months"}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500 font-medium">Maturity Date</span>
+                          <span className="font-bold text-slate-900">{maturityDateStr}</span>
+                        </div>
+                        <div className="flex justify-between pt-0.5">
+                          <span className="text-slate-700 font-bold">Amount Payable on Maturity</span>
+                          <span className="font-black text-rose-700 text-sm">₹{maturityAmount.toLocaleString()}/-</span>
+                        </div>
+                        <p className="text-[9px] text-rose-600 font-semibold italic text-right">
+                          (Rupees {numberToWords(maturityAmount)} Only)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms & Conditions Section */}
+                  <div className="border border-amber-200/80 rounded-md overflow-hidden bg-amber-50/20 my-3">
                     <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
-                      ✦ INVESTOR INFORMATION ✦
+                      ✦ TERMS & CONDITIONS ✦
                     </div>
-                    <div className="p-3 text-xs font-sans space-y-2">
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Investor Name</span>
-                        <span className="font-bold text-slate-900 uppercase">{investor.fullName}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Father's Name</span>
-                        <span className="font-bold text-slate-900 uppercase">{fatherName}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Address</span>
-                        <span className="font-bold text-slate-900 text-right max-w-[160px] truncate">{address}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Mobile No.</span>
-                        <span className="font-bold text-slate-900">{investor.phone}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500 font-medium">Email ID</span>
-                        <span className="font-bold text-slate-900">{investor.email}</span>
-                      </div>
+                    <div className="p-3 text-[9px] font-sans text-slate-700 grid grid-cols-2 gap-x-4 gap-y-1.5 leading-tight">
+                      <p>1. This Bond is issued by NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD. as an acknowledgement of receipt of the above amount.</p>
+                      <p>4. This Bond is non-transferable unless approved in writing by the Company.</p>
+                      <p>2. On successful completion of the one-month period, the Company shall pay the maturity amount stated above, subject to the terms of this Bond.</p>
+                      <p>5. Any alteration or overwriting without the Company's authorization shall render this Bond invalid.</p>
+                      <p>3. Payment shall be made through NEFT/RTGS/IMPS/Cheque or any other approved banking mode.</p>
+                      <p>6. Any dispute shall be subject to the jurisdiction of the competent courts.</p>
                     </div>
                   </div>
 
-                  {/* Right Column: Investment Details */}
-                  <div className="border border-amber-200 rounded-md overflow-hidden bg-white shadow-xs">
-                    <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
-                      ✦ INVESTMENT DETAILS ✦
+                  {/* Bottom Signatures & Company Seals */}
+                  <div className="flex justify-between items-end pt-4 mt-4 border-t border-amber-200">
+
+                    {/* Left: Round Company Stamp */}
+                    <div className="text-center">
+                      <div className="w-20 h-20 rounded-full overflow-hidden mx-auto opacity-90 shadow-sm">
+                        <img
+                          style={{
+                            textAlign: "center",
+                            fontFamily: "Arial, Helvetica, sans-serif",
+                            fontSize: "8px",
+                            lineHeight: "10px",
+                            fontStyle: "italic",
+                            fontWeight: "400",
+                            wordBreak: "break-word",
+                          }}
+                          src={sealBase64}
+                          alt="Company Seal"
+                          className="w-full h-full object-cover"
+
+                        />
+                      </div>
+                      <p className="text-[8px] font-sans font-bold text-slate-500 mt-1">COMPANY SEAL</p>
                     </div>
-                    <div className="p-3 text-xs font-sans space-y-2">
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Principal Amount</span>
-                        <span className="font-bold text-slate-900">₹{principalAmount.toLocaleString()}/-</span>
+
+                    {/* SCAN TO VERIFY & DOWNLOAD QR Code */}
+                    {downloadUrl && (
+                      <div className="text-center flex flex-col items-center">
+                        <div className="bg-white p-1 rounded border border-amber-200 shadow-xs">
+                          <QRCodeCanvas
+                            value={downloadUrl}
+                            size={64}
+                            level="H"
+                            includeMargin={false}
+                          />
+                        </div>
+                        <p className="text-[7px] font-sans font-bold text-slate-600 mt-1 uppercase tracking-wider">
+                          SCAN TO DOWNLOAD
+                        </p>
                       </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Investment Date</span>
-                        <span className="font-bold text-slate-900">{issueDateStr}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Maturity Period</span>
-                        <span className="font-bold text-slate-900">{maturityPeriodMonths} {maturityPeriodMonths === 1 ? "Month" : "Months"}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-slate-100 pb-1">
-                        <span className="text-slate-500 font-medium">Maturity Date</span>
-                        <span className="font-bold text-slate-900">{maturityDateStr}</span>
-                      </div>
-                      <div className="flex justify-between pt-0.5">
-                        <span className="text-slate-700 font-bold">Amount Payable on Maturity</span>
-                        <span className="font-black text-rose-700 text-sm">₹{maturityAmount.toLocaleString()}/-</span>
-                      </div>
-                      <p className="text-[9px] text-rose-600 font-semibold italic text-right">
-                        (Rupees {numberToWords(maturityAmount)} Only)
-                      </p>
+                    )}
+
+                    {/* Center Assurance Text */}
+                    <div className="text-center max-w-[200px] text-[8px] font-sans text-slate-500 italic"
+                      style={{
+                        maxWidth: "200px",
+                        textAlign: "center",
+                        fontFamily: "Arial, Helvetica, sans-serif",
+                        fontSize: "8px",
+                        lineHeight: "10px",
+                        color: "#64748b",
+                        fontStyle: "italic",
+                        fontWeight: "400",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      The Company hereby certifies that this Bond has been issued under its authority and shall be governed by the terms and conditions mentioned herein.
                     </div>
-                  </div>
-                </div>
 
-                {/* Terms & Conditions Section */}
-                <div className="border border-amber-200/80 rounded-md overflow-hidden bg-amber-50/20 my-3">
-                  <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
-                    ✦ TERMS & CONDITIONS ✦
-                  </div>
-                  <div className="p-3 text-[9px] font-sans text-slate-700 grid grid-cols-2 gap-x-4 gap-y-1.5 leading-tight">
-                    <p>1. This Bond is issued by NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD. as an acknowledgement of receipt of the above amount.</p>
-                    <p>4. This Bond is non-transferable unless approved in writing by the Company.</p>
-                    <p>2. On successful completion of the one-month period, the Company shall pay the maturity amount stated above, subject to the terms of this Bond.</p>
-                    <p>5. Any alteration or overwriting without the Company's authorization shall render this Bond invalid.</p>
-                    <p>3. Payment shall be made through NEFT/RTGS/IMPS/Cheque or any other approved banking mode.</p>
-                    <p>6. Any dispute shall be subject to the jurisdiction of the competent courts.</p>
-                  </div>
-                </div>
+                    {/* Right: Director Signature & Authority */}
+                    <div className="text-center">
+                      <p className="text-[9px] font-sans font-bold text-slate-800 mb-1">For NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</p>
 
-                {/* Bottom Signatures & Company Seals */}
-                <div className="flex justify-between items-end pt-4 mt-4 border-t border-amber-200">
-
-                  {/* Left: Round Company Stamp */}
-                  <div className="text-center">
-                    <div className="w-20 h-20 rounded-full overflow-hidden mx-auto opacity-90 shadow-sm">
-                      <img
-                        style={{
-                          textAlign: "center",
-                          fontFamily: "Arial, Helvetica, sans-serif",
-                          fontSize: "8px",
-                          lineHeight: "10px",
-                          fontStyle: "italic",
-                          fontWeight: "400",
-                          wordBreak: "break-word",
-                        }}
-                        src={sealBase64}
-                        alt="Company Seal"
-                        className="w-full h-full object-cover"
-
-                      />
-                    </div>
-                    <p className="text-[8px] font-sans font-bold text-slate-500 mt-1">COMPANY SEAL</p>
-                  </div>
-
-                  {/* Center Assurance Text */}
-                  <div className="text-center max-w-[200px] text-[8px] font-sans text-slate-500 italic"
-                    style={{
-                      maxWidth: "200px",
-                      textAlign: "center",
-                      fontFamily: "Arial, Helvetica, sans-serif",
-                      fontSize: "8px",
-                      lineHeight: "10px",
-                      color: "#64748b",
-                      fontStyle: "italic",
-                      fontWeight: "400",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    The Company hereby certifies that this Bond has been issued under its authority and shall be governed by the terms and conditions mentioned herein.
-                  </div>
-
-                  {/* Right: Director Signature & Authority */}
-                  <div className="text-center">
-                    <p className="text-[9px] font-sans font-bold text-slate-800 mb-1">For NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</p>
-
-                    {/* Cursive Signature Graphic */}
-                    <div className="h-10 flex items-center justify-center font-serif text-xl font-bold italic text-indigo-950 tracking-wider">
-                      Deepak Dayal
-                    </div>
-                    <div className="border-t border-slate-400 w-36 mx-auto pt-0.5">
-                      <p className="text-[10px] font-sans font-black text-slate-900 uppercase">DEEPAK DAYAL</p>
-                      <p className="text-[8px] font-sans font-bold text-slate-600 uppercase">DIRECTOR / AUTHORIZED SIGNATORY</p>
+                      {/* Cursive Signature Graphic */}
+                      <div className="h-10 flex items-center justify-center font-serif text-xl font-bold italic text-indigo-950 tracking-wider">
+                        Deepak Dayal
+                      </div>
+                      <div className="border-t border-slate-400 w-36 mx-auto pt-0.5">
+                        <p className="text-[10px] font-sans font-black text-slate-900 uppercase">DEEPAK DAYAL</p>
+                        <p className="text-[8px] font-sans font-bold text-slate-600 uppercase">DIRECTOR / AUTHORIZED SIGNATORY</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom Contact Bar */}
-                <div className="mt-35 bg-[#134086] text-white text-[8px] font-sans font-semibold py-2 px-4 flex justify-between items-center border-t-2 border-[#c5a059]">
-                  {/* <div className="absolute bottom-0 left-0 right-0 bg-[#134086] text-white text-[8px] font-sans font-semibold py-1.5 px-4 flex justify-between items-center border-t-2 border-[#c5a059]"> */}
-                  <div style={{
-                    textAlign: "center",
-                    fontFamily: "Arial, Helvetica, sans-serif",
-                    fontSize: "8px",
-                    lineHeight: "10px",
-                    color: "#fff",
-                    fontStyle: "italic",
-                    fontWeight: "400",
-                    wordBreak: "break-word",
-                  }}>📍 REGISTERED OFFICE: DWARIKA MOR</div>
-                  <div style={{
-                    textAlign: "center",
-                    fontFamily: "Arial, Helvetica, sans-serif",
-                    fontSize: "8px",
-                    lineHeight: "10px",
-                    color: "#fff",
-                    fontStyle: "italic",
-                    fontWeight: "400",
-                    wordBreak: "break-word",
-                  }}>🌐 WEBSITE: www.niventracapitaladvisory.com</div>
-                  <div style={{
-                    textAlign: "center",
-                    fontFamily: "Arial, Helvetica, sans-serif",
-                    fontSize: "8px",
-                    lineHeight: "10px",
-                    color: "#fff",
-                    fontStyle: "italic",
-                    fontWeight: "400",
-                    wordBreak: "break-word",
-                  }}>📞 CUSTOMER CARE: 011 4051 5660</div>
-                  <div
-                    style={{
+                  {/* Bottom Contact Bar */}
+                  <div className="mt-35 bg-[#134086] text-white text-[8px] font-sans font-semibold py-2 px-4 flex justify-between items-center border-t-2 border-[#c5a059]">
+                    {/* <div className="absolute bottom-0 left-0 right-0 bg-[#134086] text-white text-[8px] font-sans font-semibold py-1.5 px-4 flex justify-between items-center border-t-2 border-[#c5a059]"> */}
+                    <div style={{
                       textAlign: "center",
                       fontFamily: "Arial, Helvetica, sans-serif",
                       fontSize: "8px",
@@ -568,13 +564,46 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                       fontStyle: "italic",
                       fontWeight: "400",
                       wordBreak: "break-word",
-                    }}
-                  >✉️ EMAIL: info@niventracapitaladvisory.com</div>
-                </div>
+                    }}>📍 REGISTERED OFFICE: DWARIKA MOR</div>
+                    <div style={{
+                      textAlign: "center",
+                      fontFamily: "Arial, Helvetica, sans-serif",
+                      fontSize: "8px",
+                      lineHeight: "10px",
+                      color: "#fff",
+                      fontStyle: "italic",
+                      fontWeight: "400",
+                      wordBreak: "break-word",
+                    }}>🌐 WEBSITE: www.niventracapitaladvisory.com</div>
+                    <div style={{
+                      textAlign: "center",
+                      fontFamily: "Arial, Helvetica, sans-serif",
+                      fontSize: "8px",
+                      lineHeight: "10px",
+                      color: "#fff",
+                      fontStyle: "italic",
+                      fontWeight: "400",
+                      wordBreak: "break-word",
+                    }}>📞 CUSTOMER CARE: 011 4051 5660</div>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        fontFamily: "Arial, Helvetica, sans-serif",
+                        fontSize: "8px",
+                        lineHeight: "10px",
+                        color: "#fff",
+                        fontStyle: "italic",
+                        fontWeight: "400",
+                        wordBreak: "break-word",
+                      }}
+                    >✉️ EMAIL: info@niventracapitaladvisory.com</div>
+                  </div>
 
+                </div>
               </div>
             </div>
           </div>
+
         </div>
 
       </div>

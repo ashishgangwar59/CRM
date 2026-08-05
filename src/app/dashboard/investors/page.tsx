@@ -266,7 +266,7 @@ export default function AdminInvestorsPage() {
             variant={statusFilter === "DebentureForms" ? "default" : "outline"}
             onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
             size="sm"
-            className="text-[#0c1c3d] font-bold border-[#0c1c3d]/30"
+            className="text-white bg-[#0c1c3d] border-[#0c1c3d]/30"
           >
             <FileText className="w-3.5 h-3.5 mr-1" /> Debenture Forms
           </Button>
@@ -325,8 +325,8 @@ export default function AdminInvestorsPage() {
                     <TableCell>
                       <div className="space-y-1">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${inv.status === "Verified" ? "bg-[#00a65a] text-white" :
-                            inv.status === "Rejected" ? "bg-rose-600 text-white" :
-                              "bg-orange-500 text-white"
+                          inv.status === "Rejected" ? "bg-rose-600 text-white" :
+                            "bg-orange-500 text-white"
                           }`}>
                           {inv.status}
                         </span>
@@ -354,7 +354,7 @@ export default function AdminInvestorsPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => setDebentureModalInvestor(inv)}
-                          className="text-[#0c1c3d] border-[#0c1c3d]/30 hover:bg-[#0c1c3d]/10 font-bold"
+                          className="text-white border-[#0c1c3d]/30  font-bold"
                           title="View Official Sheet Debenture Form"
                         >
                           <FileText className="w-3.5 h-3.5 mr-1" /> Form
@@ -404,14 +404,16 @@ export default function AdminInvestorsPage() {
       {/* --- View & Verify KYC Modal --- */}
       {selectedInvestor && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 text-zinc-900 dark:text-zinc-100 shadow-2xl">
-            <div className="flex justify-between items-start border-b pb-4 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden text-zinc-900 dark:text-zinc-100 shadow-2xl">
+            <div className="flex justify-between items-start border-b pb-4 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <div>
                 <h2 className="text-2xl font-bold">{selectedInvestor.fullName}</h2>
                 <p className="text-xs text-zinc-500 font-mono">{selectedInvestor.investorCode} • {selectedInvestor.email} • {selectedInvestor.phone}</p>
               </div>
               <Button variant="ghost" onClick={() => setSelectedInvestor(null)}>✕</Button>
             </div>
+
+            <div className="overflow-y-auto flex-1 p-6 space-y-6">
 
             {/* Financial & Referral Details */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -432,8 +434,8 @@ export default function AdminInvestorsPage() {
               <div>
                 <p className="text-xs text-zinc-500 font-semibold uppercase">Status</p>
                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-white ${selectedInvestor.status === "Verified" ? "bg-[#00a65a]" :
-                    selectedInvestor.status === "Rejected" ? "bg-rose-600" :
-                      "bg-orange-500"
+                  selectedInvestor.status === "Rejected" ? "bg-rose-600" :
+                    "bg-orange-500"
                   }`}>
                   {selectedInvestor.status}
                 </span>
@@ -544,8 +546,8 @@ export default function AdminInvestorsPage() {
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
-                              currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
-                                "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                            currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
+                              "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                             }`}>
                             {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
                             {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
@@ -575,10 +577,10 @@ export default function AdminInvestorsPage() {
                             disabled={submitting || !docItem.url}
                             onClick={() => handleDocVerify(docItem.key, "Approved")}
                             className={`font-bold h-8 px-3 text-xs ${!docItem.url
-                                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                                : currentStatus === "Approved"
-                                  ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
-                                  : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
+                              ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                              : currentStatus === "Approved"
+                                ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
+                                : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
                               }`}
                           >
                             <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
@@ -589,10 +591,10 @@ export default function AdminInvestorsPage() {
                             disabled={submitting || !docItem.url}
                             onClick={() => handleDocVerify(docItem.key, "Rejected")}
                             className={`h-8 px-3 text-xs font-bold ${!docItem.url
-                                ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
-                                : currentStatus === "Rejected"
-                                  ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
-                                  : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
+                              ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
+                              : currentStatus === "Rejected"
+                                ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
+                                : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
                               }`}
                           >
                             <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
@@ -696,6 +698,7 @@ export default function AdminInvestorsPage() {
                 </div>
               );
             })()}
+            </div>
           </div>
         </div>
       )}
@@ -724,11 +727,12 @@ export default function AdminInvestorsPage() {
       {/* --- Add Investor Modal --- */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-3 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Add New Investor</h2>
               <Button variant="ghost" onClick={() => setShowAddModal(false)}>✕</Button>
             </div>
+            <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
             {msg && <p className="text-xs text-rose-500">{msg}</p>}
 
@@ -761,6 +765,7 @@ export default function AdminInvestorsPage() {
                 </Button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
@@ -768,11 +773,12 @@ export default function AdminInvestorsPage() {
       {/* --- Edit Investor Modal --- */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-3 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Edit Investor Profile</h2>
               <Button variant="ghost" onClick={() => setShowEditModal(false)}>✕</Button>
             </div>
+            <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
             <form onSubmit={handleEditSave} className="space-y-3">
               <div className="space-y-1">
@@ -803,6 +809,7 @@ export default function AdminInvestorsPage() {
                 </Button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

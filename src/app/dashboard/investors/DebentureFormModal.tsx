@@ -107,8 +107,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-4xl max-h-[96vh] overflow-y-auto relative shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden relative shadow-2xl">
 
         {/* Top Control Header Bar (Hidden during print) */}
         <div className="sticky top-0 z-20 bg-[#0c1c3d] text-white px-6 py-3.5 flex justify-between items-center border-b border-[#c9972f] print:hidden">
@@ -150,8 +150,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
           </div>
         </div>
 
-        {/* Printable Form Sheet */}
-        <div className="p-4 sm:p-6 print:p-0">
+        {/* Modal Body (Scrollable) */}
+        <div className="overflow-y-auto flex-1 p-4 sm:p-6 print:p-0">
           <style jsx global>{`
             :root {
               --navy: #0c1c3d;

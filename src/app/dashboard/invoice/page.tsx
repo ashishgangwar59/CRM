@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Printer, RefreshCw, FileText } from "lucide-react";
+import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2 } from "lucide-react";
 
 interface InvoiceItem {
   id: string;
@@ -23,17 +23,17 @@ export default function InvoicePage() {
   // Invoice state
   const [invoiceNo, setInvoiceNo] = useState("NCA/2026-27/001");
   const [invoiceDate, setInvoiceDate] = useState("");
-
-  useEffect(() => {
-    const year = new Date().getFullYear();
-    const nextYear = (year + 1).toString().slice(-2);
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    setInvoiceNo(`NCA/${year}-${nextYear}/${rand}`);
-    setInvoiceDate(new Date().toISOString().split("T")[0]);
-  }, []);
   const [reverseCharge, setReverseCharge] = useState("No");
   const [state, setState] = useState("Delhi");
   const [stateCode, setStateCode] = useState("07");
+
+  // Tab & Saved Invoice states
+  const [activeTab, setActiveTab] = useState<"editor" | "list">("editor");
+  const [savedInvoices, setSavedInvoices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Bill To state
   const [billToName, setBillToName] = useState("Niventra Investor Partner");
@@ -65,6 +65,129 @@ export default function InvoicePage() {
       igstRate: 0,
     },
   ]);
+
+  // Load invoice list on mount
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/invoices");
+      const data = await res.json();
+      if (data.success) {
+        setSavedInvoices(data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    const nextYear = (year + 1).toString().slice(-2);
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    setInvoiceNo(`NCA/${year}-${nextYear}/${rand}`);
+    setInvoiceDate(new Date().toISOString().split("T")[0]);
+    fetchInvoices();
+  }, []);
+
+  const handleSaveInvoice = async () => {
+    setSaving(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+    try {
+      const res = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceNo,
+          invoiceDate,
+          reverseCharge,
+          state,
+          stateCode,
+          billToName,
+          billToAddress,
+          billToState,
+          billToStateCode,
+          items
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage("Invoice saved successfully!");
+        fetchInvoices();
+        setActiveTab("list");
+      } else {
+        setErrorMessage(data.error || "Failed to save invoice");
+      }
+    } catch (err) {
+      setErrorMessage("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLoadInvoice = (inv: any) => {
+    setInvoiceNo(inv.invoiceNo);
+    setInvoiceDate(inv.invoiceDate);
+    setReverseCharge(inv.reverseCharge || "No");
+    setState(inv.state || "Delhi");
+    setStateCode(inv.stateCode || "07");
+    setBillToName(inv.billToName);
+    setBillToAddress(inv.billToAddress);
+    setBillToState(inv.billToState || "Delhi");
+    setBillToStateCode(inv.billToStateCode || "07");
+
+    // Ensure all items conform to interface
+    const formattedItems = inv.items.map((item: any) => ({
+      id: item._id || item.id || Date.now().toString(),
+      title: item.title,
+      desc: item.desc || "",
+      sacCode: item.sacCode || "",
+      qty: item.qty,
+      rate: item.rate,
+      cgstRate: item.cgstRate || 0,
+      sgstRate: item.sgstRate || 0,
+      igstRate: item.igstRate || 0,
+    }));
+    setItems(formattedItems);
+    setActiveTab("editor");
+  };
+
+  const handleLoadAndPrint = (inv: any) => {
+    handleLoadInvoice(inv);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const handleResetForm = () => {
+    const year = new Date().getFullYear();
+    const nextYear = (year + 1).toString().slice(-2);
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    setInvoiceNo(`NCA/${year}-${nextYear}/${rand}`);
+    setInvoiceDate(new Date().toISOString().split("T")[0]);
+    setReverseCharge("No");
+    setState("Delhi");
+    setStateCode("07");
+    setBillToName("Niventra Investor Partner");
+    setBillToAddress("12, Connaught Place, New Delhi");
+    setBillToState("Delhi");
+    setBillToStateCode("07");
+    setItems([
+      {
+        id: "1",
+        title: "Portfolio Management Fee",
+        desc: "Financial planning and investment retainer fee for Q2 FY2026-27",
+        sacCode: "9971",
+        qty: 1,
+        rate: 100000,
+        cgstRate: 0,
+        sgstRate: 0,
+        igstRate: 0,
+      },
+    ]);
+  };
 
   // Number to Words Converter (Indian Numbering System)
   const numberToWords = (num: number): string => {
@@ -186,142 +309,267 @@ export default function InvoicePage() {
 
   return (
     <div className="space-y-6">
+      {/* Tab Switcher - Hidden during print */}
+      <div className="flex border-b border-zinc-200 dark:border-zinc-800 print:hidden gap-2">
+        <Button
+          variant={activeTab === "editor" ? "default" : "ghost"}
+          onClick={() => setActiveTab("editor")}
+          className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 ${activeTab === "editor"
+            ? "border-indigo-650 bg-[#0d2452] text-white hover:bg-[#0d2452] hover:text-white"
+            : "border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+        >
+          <FileText className="w-4 h-4 mr-1.5" /> Create / Edit Invoice
+        </Button>
+        <Button
+          variant={activeTab === "list" ? "default" : "ghost"}
+          onClick={() => {
+            fetchInvoices();
+            setActiveTab("list");
+          }}
+          className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 border-indigo-650 bg-[#0d2452] text-white hover:bg-[#0d2452]`}
+        >
+          <List className="w-4 h-4 mr-1.5" /> Saved Invoices ({savedInvoices.length})
+        </Button>
+      </div>
+
       {/* Editor Controls Section - Hidden during print */}
       <Card className="print:hidden border border-zinc-200 dark:border-zinc-800 shadow-xl bg-white dark:bg-zinc-950">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-zinc-150 dark:border-zinc-850">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0 pb-4 border-b border-zinc-150 dark:border-zinc-850">
           <div>
             <CardTitle className="text-xl font-bold flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-              <FileText className="w-5 h-5 text-indigo-650" /> Invoice Form Editor
+              <FileText className="w-5 h-5 text-indigo-650" /> Invoice Management
             </CardTitle>
             <CardDescription className="text-xs text-zinc-500 mt-1">
-              Create and generate professional GST Tax Invoices. Enter details below to see live preview.
+              {activeTab === "list"
+                ? "View and print previously saved invoices."
+                : "Create new professional tax invoices, save them to the system, and export as PDF."}
             </CardDescription>
           </div>
-          <Button
-            onClick={handlePrint}
-            className="bg-[#0d2452] hover:bg-[#0a1c3f] text-white font-semibold text-xs flex items-center gap-1.5 shadow"
-          >
-            <Printer className="w-3.5 h-3.5" /> Print / Save PDF
-          </Button>
-        </CardHeader>
-        <CardContent className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Meta Section */}
-            <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
-              <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">1. Invoice Meta Info</h3>
-              <div className="space-y-2">
-                <div>
-                  <Label className="text-xs text-zinc-500">Invoice No (Auto-Generated)</Label>
-                  <Input value={invoiceNo} readOnly className="h-8 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 cursor-not-allowed" />
-                </div>
-                <div>
-                  <Label className="text-xs text-zinc-500">Invoice Date</Label>
-                  <Input type="date" value={invoiceDate} readOnly className="h-8 text-xs bg-zinc-100 dark:bg-zinc-800 cursor-not-allowed" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs text-zinc-500">State</Label>
-                    <Input value={state} onChange={(e) => setState(e.target.value)} className="h-8 text-xs" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-zinc-500">State Code</Label>
-                    <Input value={stateCode} onChange={(e) => setStateCode(e.target.value)} className="h-8 text-xs" />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs text-zinc-500">Reverse Charge Applicable?</Label>
-                  <select
-                    value={reverseCharge}
-                    onChange={(e) => setReverseCharge(e.target.value)}
-                    className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs shadow-sm focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-950"
-                  >
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Bill To Section */}
-            <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
-              <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">2. Bill To Details</h3>
-              <div className="space-y-2">
-                <div>
-                  <Label className="text-xs text-zinc-500">Client Name</Label>
-                  <Input value={billToName} onChange={(e) => setBillToName(e.target.value)} className="h-8 text-xs font-semibold" />
-                </div>
-                <div>
-                  <Label className="text-xs text-zinc-500">Client Address</Label>
-                  <textarea
-                    value={billToAddress}
-                    onChange={(e) => setBillToAddress(e.target.value)}
-                    className="flex min-h-[50px] w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs shadow-sm focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-950"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs text-zinc-500">Client State</Label>
-                    <Input value={billToState} onChange={(e) => setBillToState(e.target.value)} className="h-8 text-xs" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-zinc-500">Client State Code</Label>
-                    <Input value={billToStateCode} onChange={(e) => setBillToStateCode(e.target.value)} className="h-8 text-xs" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Items Editor */}
-          <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
-            <div className="flex justify-between items-center border-b pb-1.5">
-              <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">4. Invoice Line Items</h3>
-              <Button size="sm" variant="outline" onClick={handleAddItem} className="h-7 text-xs bg-white text-zinc-900 hover:bg-zinc-50">
-                <Plus className="w-3.5 h-3.5 mr-1" /> Add Line Item
+          {activeTab === "editor" && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                onClick={handleResetForm}
+                variant="outline"
+                className="h-8 text-xs font-semibold flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Reset Form
+              </Button>
+              <Button
+                onClick={handleSaveInvoice}
+                disabled={saving}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 flex items-center gap-1.5 shadow"
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Save Invoice
+              </Button>
+              <Button
+                onClick={handlePrint}
+                className="bg-[#0d2452] hover:bg-[#0a1c3f] text-white font-semibold text-xs h-8 flex items-center gap-1.5 shadow"
+              >
+                <Printer className="w-3.5 h-3.5" /> Print / Save PDF
               </Button>
             </div>
-            <div className="space-y-3">
-              {items.map((item, index) => (
-                <div key={item.id} className="p-3 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-250 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                  <div className="md:col-span-3">
-                    <Label className="text-[10px] text-zinc-500">Service / Product Title</Label>
-                    <Input value={item.title} onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)} className="h-8 text-xs font-medium" />
-                  </div>
-                  <div className="md:col-span-3">
-                    <Label className="text-[10px] text-zinc-500">Description</Label>
-                    <Input value={item.desc} onChange={(e) => handleUpdateItem(item.id, "desc", e.target.value)} className="h-8 text-xs" />
-                  </div>
-                  <div className="md:col-span-1">
-                    <Label className="text-[10px] text-zinc-500">SAC / HSN</Label>
-                    <Input value={item.sacCode} onChange={(e) => handleUpdateItem(item.id, "sacCode", e.target.value)} className="h-8 text-xs text-center" />
-                  </div>
-                  <div className="md:col-span-1">
-                    <Label className="text-[10px] text-zinc-500">Qty</Label>
-                    <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-8 text-xs text-center" />
-                  </div>
-                  <div className="md:col-span-1.5">
-                    <Label className="text-[10px] text-zinc-500">Rate (₹)</Label>
-                    <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-8 text-xs font-semibold text-right" />
-                  </div>
-                  <div className="md:col-span-2.5 flex items-center gap-2">
-                    <div className="w-full">
-                      <Label className="text-[10px] text-zinc-400">IGST %</Label>
-                      <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
+          )}
+        </CardHeader>
+
+        {errorMessage && (
+          <div className="mx-6 mt-4 p-3 text-xs bg-red-50 text-red-650 dark:bg-red-950/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-900/50">
+            {errorMessage}
+          </div>
+        )}
+        {successMessage && (
+          <div className="mx-6 mt-4 p-3 text-xs bg-emerald-50 text-emerald-650 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-lg border border-emerald-200 dark:border-emerald-900/50">
+            {successMessage}
+          </div>
+        )}
+
+        <CardContent className="p-6">
+          {activeTab === "list" ? (
+            <div className="space-y-4">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                  <span className="text-xs">Loading saved invoices...</span>
+                </div>
+              ) : savedInvoices.length === 0 ? (
+                <div className="text-center py-12 text-zinc-500 text-sm">
+                  No saved invoices found. Use the "Create / Edit Invoice" tab to make one.
+                </div>
+              ) : (
+                <div className="overflow-x-auto border rounded-lg dark:border-zinc-800">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-zinc-50 dark:bg-zinc-900 text-zinc-500 font-semibold border-b dark:border-zinc-800">
+                      <tr>
+                        <th className="px-4 py-3">Invoice No.</th>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Client Name</th>
+                        <th className="px-4 py-3 text-right">Grand Total</th>
+                        <th className="px-4 py-3 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                      {savedInvoices.map((inv) => {
+                        const total = inv.items.reduce((acc: number, item: any) => {
+                          const taxable = item.qty * item.rate;
+                          const igst = taxable * ((item.igstRate || 0) / 100);
+                          return acc + taxable + igst;
+                        }, 0);
+
+                        return (
+                          <tr key={inv._id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                            <td className="px-4 py-3 font-semibold font-mono">{inv.invoiceNo}</td>
+                            <td className="px-4 py-3">{inv.invoiceDate}</td>
+                            <td className="px-4 py-3">{inv.billToName}</td>
+                            <td className="px-4 py-3 text-right font-bold text-zinc-900 dark:text-zinc-100">
+                              ₹{total.toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 text-center flex items-center justify-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleLoadInvoice(inv)}
+                                className="h-7 text-[10px]"
+                              >
+                                View & Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleLoadAndPrint(inv)}
+                                className="h-7 text-[10px] bg-[#0d2452] hover:bg-[#0a1c3f] text-white flex items-center gap-1"
+                              >
+                                <Printer className="w-3 h-3" /> View & Print
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Meta Section */}
+                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">1. Invoice Meta Info</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs text-zinc-500">Invoice No (Auto-Generated)</Label>
+                      <Input value={invoiceNo} readOnly className="h-8 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 cursor-not-allowed" />
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveItem(item.id)}
-                      disabled={items.length === 1}
-                      className="text-zinc-400 hover:text-rose-500 h-8 w-8 ml-auto flex-shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div>
+                      <Label className="text-xs text-zinc-500">Invoice Date</Label>
+                      <Input type="date" value={invoiceDate} readOnly className="h-8 text-xs bg-zinc-100 dark:bg-zinc-800 cursor-not-allowed" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-zinc-500">State</Label>
+                        <Input value={state} onChange={(e) => setState(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-zinc-500">State Code</Label>
+                        <Input value={stateCode} onChange={(e) => setStateCode(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-zinc-500">Reverse Charge Applicable?</Label>
+                      <select
+                        value={reverseCharge}
+                        onChange={(e) => setReverseCharge(e.target.value)}
+                        className="flex h-8 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs shadow-sm focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-950"
+                      >
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              ))}
+
+                {/* Bill To Section */}
+                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">2. Bill To Details</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs text-zinc-500">Client Name</Label>
+                      <Input value={billToName} onChange={(e) => setBillToName(e.target.value)} className="h-8 text-xs font-semibold" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-zinc-500">Client Address</Label>
+                      <textarea
+                        value={billToAddress}
+                        onChange={(e) => setBillToAddress(e.target.value)}
+                        className="flex min-h-[50px] w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs shadow-sm focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-950"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-zinc-500">Client State</Label>
+                        <Input value={billToState} onChange={(e) => setBillToState(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-zinc-500">Client State Code</Label>
+                        <Input value={billToStateCode} onChange={(e) => setBillToStateCode(e.target.value)} className="h-8 text-xs" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items Editor */}
+              <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="flex justify-between items-center border-b pb-1.5">
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">3. Invoice Line Items</h3>
+                  <Button size="sm" variant="outline" onClick={handleAddItem} className="h-7 text-xs bg-white text-zinc-900 hover:bg-zinc-50">
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add Line Item
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {items.map((item, index) => (
+                    <div key={item.id} className="p-3 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-250 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                      <div className="md:col-span-3">
+                        <Label className="text-[10px] text-zinc-500">Service / Product Title</Label>
+                        <Input value={item.title} onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)} className="h-8 text-xs font-medium" />
+                      </div>
+                      <div className="md:col-span-3">
+                        <Label className="text-[10px] text-zinc-500">Description</Label>
+                        <Input value={item.desc} onChange={(e) => handleUpdateItem(item.id, "desc", e.target.value)} className="h-8 text-xs" />
+                      </div>
+                      <div className="md:col-span-1">
+                        <Label className="text-[10px] text-zinc-500">SAC / HSN</Label>
+                        <Input value={item.sacCode} onChange={(e) => handleUpdateItem(item.id, "sacCode", e.target.value)} className="h-8 text-xs text-center" />
+                      </div>
+                      <div className="md:col-span-1">
+                        <Label className="text-[10px] text-zinc-500">Qty</Label>
+                        <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-8 text-xs text-center" />
+                      </div>
+                      <div className="md:col-span-1.5">
+                        <Label className="text-[10px] text-zinc-500">Rate (₹)</Label>
+                        <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-8 text-xs font-semibold text-right" />
+                      </div>
+                      <div className="md:col-span-2.5 flex items-center gap-2">
+                        <div className="w-full">
+                          <Label className="text-[10px] text-zinc-400">IGST %</Label>
+                          <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveItem(item.id)}
+                          disabled={items.length === 1}
+                          className="text-zinc-400 hover:text-rose-500 h-8 w-8 ml-auto flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -336,19 +584,19 @@ export default function InvoicePage() {
               font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             }
             .invoice {
-              background: #fff;
+              background: #0d2452;
               box-shadow: 0 10px 35px rgba(13,36,82,0.15);
               border-radius: 10px;
               overflow: hidden;
-              color: #1c1c1c;
-              border: 1px solid #e2e6ee;
+              color: #ffffff;
+              border: 1px solid #1a3668;
             }
             .header {
               display: flex;
               justify-content: space-between;
               align-items: center;
               padding: 24px 32px;
-              background: #fff;
+              background: #0a1c3f;
               border-bottom: 4px solid #d9a441;
               gap: 20px;
             }
@@ -366,27 +614,27 @@ export default function InvoicePage() {
             .brand-text h1 {
               font-size: 22px;
               font-weight: 800;
-              color: #0d2452;
+              color: #ffffff;
               letter-spacing: 0.5px;
               line-height: 1.15;
             }
             .brand-text .sub {
               font-size: 12px;
               font-weight: 600;
-              color: #d9a441;
+              color: #f0c975;
               letter-spacing: 1.5px;
               margin-top: 2px;
             }
             .brand-text .tagline {
               font-size: 10.5px;
-              color: #5a5a5a;
+              color: #a5b4fc;
               letter-spacing: 1px;
               margin-top: 4px;
             }
             .contact-block {
               text-align: right;
               font-size: 11.5px;
-              color: #0a1c3f;
+              color: #ffffff;
               line-height: 1.9;
             }
             .contact-block div {
@@ -401,8 +649,8 @@ export default function InvoicePage() {
               justify-content: center;
               width: 16px; height: 16px;
               border-radius: 50%;
-              background: #0d2452;
-              color: #fff;
+              background: #d9a441;
+              color: #0d2452;
               font-size: 9px;
               flex-shrink: 0;
             }
@@ -416,14 +664,14 @@ export default function InvoicePage() {
               position: absolute;
               top: 50%; left: 0; right: 0;
               height: 2px;
-              background: #e2e6ee;
+              background: #1a3668;
               z-index: 0;
             }
             .title-bar span {
               position: relative;
               z-index: 1;
-              background: #0d2452;
-              color: #fff;
+              background: #d9a441;
+              color: #0d2452;
               padding: 8px 34px;
               border-radius: 20px;
               font-weight: 700;
@@ -443,8 +691,8 @@ export default function InvoicePage() {
             }
             .section-label {
               display: inline-block;
-              background: #0d2452;
-              color: #fff;
+              background: #d9a441;
+              color: #0d2452;
               font-size: 11px;
               font-weight: 700;
               letter-spacing: 1px;
@@ -459,35 +707,61 @@ export default function InvoicePage() {
             }
             .field-row .label {
               width: 100px;
-              color: #5a5a5a;
+              color: #a5b4fc;
               font-weight: 600;
               flex-shrink: 0;
             }
             .field-row .line {
               flex: 1;
-              border-bottom: 1px solid #e2e6ee;
+              border-bottom: 1px solid #1a3668;
               min-height: 16px;
               font-weight: 700;
-              color: #0d2452;
+              color: #ffffff;
             }
             .invoice-info {
               min-width: 250px;
-              border: 1px solid #e2e6ee;
+              border: 1px solid #1a3668;
               border-radius: 8px;
               overflow: hidden;
               height: fit-content;
-              background: #fffdf9;
+              background: #0a1c3f;
             }
             .invoice-info .row {
               display: flex;
               justify-content: space-between;
               font-size: 12.5px;
               padding: 8px 14px;
-              border-bottom: 1px solid #e2e6ee;
+              border-bottom: 1px solid #1a3668;
             }
             .invoice-info .row:last-child { border-bottom: none; }
-            .invoice-info .row .k { color: #5a5a5a; font-weight: 600; }
-            .invoice-info .row .v { color: #b5341f; font-weight: 700; }
+            .invoice-info .row .k { color: #a5b4fc; font-weight: 600; }
+            .invoice-info .row .v { color: #f0c975; font-weight: 700; }
+            .barcode-block {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              border: 1px solid #1a3668;
+              border-radius: 8px;
+              padding: 10px;
+              background: #0a1c3f;
+              min-width: 140px;
+              height: fit-content;
+              gap: 6px;
+              text-align: center;
+            }
+            .barcode-block img {
+              background: #ffffff;
+              padding: 4px;
+              border-radius: 4px;
+            }
+            .barcode-title {
+              font-size: 8px;
+              color: #a5b4fc;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              font-weight: bold;
+            }
             table.items {
               width: calc(100% - 64px);
               margin: 22px 32px 0;
@@ -495,8 +769,8 @@ export default function InvoicePage() {
               font-size: 12.5px;
             }
             table.items thead th {
-              background: #0d2452;
-              color: #fff;
+              background: #d9a441;
+              color: #0d2452;
               font-size: 11px;
               letter-spacing: 0.5px;
               text-align: left;
@@ -508,14 +782,15 @@ export default function InvoicePage() {
             table.items thead th:nth-child(5) { width: 15%; text-align: right;}
             table.items tbody td {
               padding: 12px;
-              border-bottom: 1px solid #e2e6ee;
+              border-bottom: 1px solid #1a3668;
               vertical-align: top;
+              color: #ffffff;
             }
             table.items tbody td:nth-child(3) { text-align: center; }
             table.items tbody td:nth-child(4) { text-align: right; }
             table.items tbody td:nth-child(5) { text-align: right; font-weight: 600;}
-            .item-title { font-weight: 700; color: #0a1c3f; }
-            .item-desc { font-size: 11px; color: #5a5a5a; margin-top: 2px; }
+            .item-title { font-weight: 700; color: #ffffff; }
+            .item-desc { font-size: 11px; color: #a5b4fc; margin-top: 2px; }
             .bottom-section {
               display: flex;
               justify-content: space-between;
@@ -531,15 +806,15 @@ export default function InvoicePage() {
               gap: 14px;
             }
             .box {
-              border: 1px solid #e2e6ee;
+              border: 1px solid #1a3668;
               border-radius: 8px;
               padding: 12px 14px;
-              background: #fafbfc;
+              background: #0a1c3f;
             }
             .box .box-title {
               font-size: 11px;
               font-weight: 700;
-              color: #0d2452;
+              color: #f0c975;
               letter-spacing: 0.5px;
               margin-bottom: 8px;
             }
@@ -547,18 +822,18 @@ export default function InvoicePage() {
               display: flex;
               gap: 22px;
               font-size: 10.5px;
-              color: #5a5a5a;
+              color: #a5b4fc;
               text-align: center;
             }
             .pay-icons div { display: flex; flex-direction: column; align-items: center; gap: 4px; }
             .pay-icons .circle {
               width: 32px; height: 32px;
               border-radius: 50%;
-              background: #f4f6fb;
-              border: 1px solid #e2e6ee;
+              background: #0a1c3f;
+              border: 1px solid #1a3668;
               display: flex; align-items: center; justify-content: center;
               font-size: 14px;
-              color: #0d2452;
+              color: #ffffff;
               font-weight: bold;
             }
             .bank-details div {
@@ -567,18 +842,18 @@ export default function InvoicePage() {
               font-size: 11.5px;
               padding: 3px 0;
             }
-            .bank-details .k { color: #5a5a5a; }
-            .bank-details .v { font-weight: 600; color: #0a1c3f; }
+            .bank-details .k { color: #a5b4fc; }
+            .bank-details .v { font-weight: 600; color: #ffffff; }
             .terms ul {
               list-style: none;
               font-size: 10.5px;
-              color: #5a5a5a;
+              color: #ffffff;
               line-height: 1.7;
               padding-left: 0;
             }
             .terms ul li::before {
               content: "• ";
-              color: #d9a441;
+              color: #f0c975;
               font-weight: 700;
             }
             .right-col {
@@ -588,7 +863,7 @@ export default function InvoicePage() {
               gap: 16px;
             }
             .totals {
-              border: 1px solid #e2e6ee;
+              border: 1px solid #1a3668;
               border-radius: 8px;
               overflow: hidden;
             }
@@ -597,24 +872,24 @@ export default function InvoicePage() {
               justify-content: space-between;
               padding: 9px 16px;
               font-size: 12.5px;
-              border-bottom: 1px solid #e2e6ee;
-              background: #fff;
+              border-bottom: 1px solid #1a3668;
+              background: #0a1c3f;
             }
-            .totals .row .k { color: #5a5a5a; font-weight: 600;}
-            .totals .row .v { font-weight: 700; color: #0d2452; }
+            .totals .row .k { color: #a5b4fc; font-weight: 600;}
+            .totals .row .v { font-weight: 700; color: #ffffff; }
             .totals .grand {
-              background: #0d2452;
-              color: #fff;
+              background: #d9a441;
+              color: #0d2452;
               padding: 12px 16px;
               display: flex;
               justify-content: space-between;
               font-size: 14px;
               font-weight: 800;
             }
-            .totals .grand .v { color: #f0c975; }
+            .totals .grand .v { color: #0d2452; }
             .amount-words {
               font-size: 10.5px;
-              color: #5a5a5a;
+              color: #a5b4fc;
               text-align: right;
               font-style: italic;
               line-height: 1.4;
@@ -626,22 +901,22 @@ export default function InvoicePage() {
             .sign-block .for-text {
               font-size: 11px;
               font-weight: 700;
-              color: #0d2452;
+              color: #f0c975;
               margin-bottom: 34px;
             }
             .sign-block .auth {
               font-size: 10.5px;
               font-weight: 700;
               letter-spacing: 0.5px;
-              color: #0a1c3f;
-              border-top: 1px solid #e2e6ee;
+              color: #ffffff;
+              border-top: 1px solid #1a3668;
               padding-top: 6px;
               margin-top: 2px;
             }
             .footer {
               margin-top: 26px;
-              background: #0d2452;
-              color: #fff;
+              background: #0a1c3f;
+              color: #a5b4fc;
               text-align: center;
               padding: 14px 20px;
               font-size: 11px;
@@ -756,6 +1031,26 @@ export default function InvoicePage() {
                   <span className="v">{state} &nbsp; ({stateCode})</span>
                 </div>
               </div>
+
+              <div className="barcode-block">
+                <div className="barcode-title">Scan to Download</div>
+                {typeof window !== "undefined" && (
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(
+                      `${window.location.origin}/api/invoices/download?invoiceNo=${encodeURIComponent(invoiceNo)}`
+                    )}`}
+                    alt="QR Code Scan to Download"
+                    width={80}
+                    height={80}
+                  />
+                )}
+                <div className="barcode-title">Barcode</div>
+                <img
+                  src={`https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(invoiceNo)}&scale=2&rotate=N`}
+                  alt="Code 128 Barcode"
+                  style={{ width: "120px", height: "30px", objectFit: "contain" }}
+                />
+              </div>
             </div>
 
             {/* TABLE */}
@@ -811,7 +1106,7 @@ export default function InvoicePage() {
                     </div>
                     <div>
                       <span className="k">IFSC Code</span>
-                      <span className="v font-mono">KKBK0000191</span>
+                      <span className="v font-mono">KKBK0000287</span>
                     </div>
                     <div>
                       <span className="k">Branch</span>

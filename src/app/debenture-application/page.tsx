@@ -1755,8 +1755,8 @@ function DebentureFormContent() {
       {/* Live Camera Modal Popup */}
       {cameraActive && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-5 max-w-sm w-full space-y-4 text-center border-2 border-[#0c1c3d] shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-2">
+          <div className="bg-white rounded-lg max-w-sm w-full max-h-[90vh] flex flex-col overflow-hidden border-2 border-[#0c1c3d] shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-2 px-5 pt-5 shrink-0">
               <h3 className="font-bold text-sm text-[#0c1c3d] flex items-center gap-1.5">
                 📷 Live Passport Photo Capture
               </h3>
@@ -1768,6 +1768,8 @@ function DebentureFormContent() {
                 ✖
               </button>
             </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-4">
 
             <div className="relative w-full aspect-square bg-zinc-900 rounded-lg overflow-hidden border-2 border-[#c9972f] flex items-center justify-center">
               {cameraLoading && <span className="text-white text-xs">Accessing Camera...</span>}
@@ -1798,6 +1800,7 @@ function DebentureFormContent() {
                 📸 Take Photo
               </button>
             </div>
+            </div>
           </div>
         </div>
       )}
@@ -1805,8 +1808,8 @@ function DebentureFormContent() {
       {/* QR Code Signature Scanner Modal */}
       {showQrModal && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 text-center border-2 border-[#0c1c3d] shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-3">
+          <div className="bg-white rounded-2xl max-w-sm w-full max-h-[90vh] flex flex-col overflow-hidden border-2 border-[#0c1c3d] shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 shrink-0">
               <h3 className="font-bold text-sm text-[#0c1c3d] flex items-center gap-2">
                 <Smartphone className="w-4 h-4 text-amber-500" /> Scan QR to Sign on Phone
               </h3>
@@ -1821,6 +1824,8 @@ function DebentureFormContent() {
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center space-y-3">
               {qrUrl ? (
@@ -1861,6 +1866,7 @@ function DebentureFormContent() {
                 {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                 {copiedLink ? "Copied" : "Copy Link"}
               </button>
+            </div>
             </div>
           </div>
         </div>
