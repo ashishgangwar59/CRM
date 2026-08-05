@@ -829,7 +829,7 @@ export default function InvoicePage() {
                   <div className="terms">
                     <ul>
                       <li>Payment should be made within 15 days of invoice date.</li>
-                      <li>Interest @ 18% p.a. will be charged for delayed payments.</li>
+                      <li>Interest @ 16% p.a. will be charged for delayed payments.</li>
                       <li>All disputes are subject to New Delhi jurisdiction.</li>
                     </ul>
                   </div>
