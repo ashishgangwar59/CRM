@@ -55,7 +55,7 @@ export default function InvoicePage() {
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: "1",
-      title: "Portfolio Management Fee",
+      title: "Debenture Issue Fee",
       desc: "Financial planning and investment retainer fee for Q2 FY2026-27",
       sacCode: "9971",
       qty: 1,
@@ -177,7 +177,7 @@ export default function InvoicePage() {
     setItems([
       {
         id: "1",
-        title: "Portfolio Management Fee",
+        title: "Debenture Issue Fee",
         desc: "Financial planning and investment retainer fee for Q2 FY2026-27",
         sacCode: "9971",
         qty: 1,
