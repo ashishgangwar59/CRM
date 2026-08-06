@@ -1201,39 +1201,61 @@ export default function InvoicePage() {
             .footer strong { color: #f0c975; }
 
              @media print {
-               * {
-                 -webkit-print-color-adjust: exact !important;
-                 print-color-adjust: exact !important;
+               @page {
+                 size: A4 portrait;
+                 margin: 6mm 4mm;
                }
-               aside,
-               header,
-               nav,
-               .print\:hidden {
-                 display: none !important;
+               /* Hide everything during print */
+               body * {
+                 visibility: hidden;
                }
-               main {
-                 padding: 0 !important;
-                 margin: 0 !important;
-                 background: transparent !important;
-                 overflow: visible !important;
-                 display: block !important;
-               }
-               body, html {
-                 background: #fff !important;
-                 padding: 0 !important;
-                 margin: 0 !important;
+               /* Make only the invoice sheet container and its descendants visible */
+               .sheet-container, .sheet-container * {
+                 visibility: visible;
                }
                .sheet-container {
+                 position: absolute;
+                 left: 0;
+                 top: 0;
+                 width: 100% !important;
                  max-width: 100% !important;
                  margin: 0 !important;
                  padding: 0 !important;
-                 width: 100% !important;
+                 zoom: 88%;
                }
                .invoice {
                  box-shadow: none !important;
                  border-radius: 0 !important;
                  border: none !important;
                  width: 100% !important;
+                 background: #0d2452 !important;
+               }
+               .header {
+                 padding: 14px 20px !important;
+               }
+               .meta-section {
+                 flex-wrap: nowrap !important;
+                 padding: 10px 20px 0 !important;
+                 gap: 16px !important;
+               }
+               table.items {
+                 width: calc(100% - 40px) !important;
+                 margin: 12px 20px 0 !important;
+               }
+               table.items tbody td {
+                 padding: 8px 10px !important;
+               }
+               .bottom-section {
+                 padding: 12px 20px 0 !important;
+                 gap: 16px !important;
+               }
+               .footer {
+                 margin-top: 14px !important;
+                 padding: 8px 15px !important;
+               }
+               * {
+                 -webkit-print-color-adjust: exact !important;
+                 print-color-adjust: exact !important;
                }
              }
           ` }} />

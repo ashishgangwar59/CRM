@@ -253,6 +253,34 @@ export async function GET(req: Request) {
   .invoice-info .row:last-child { border-bottom: none; }
   .invoice-info .row .k { color: #a5b4fc; font-weight: 600; }
   .invoice-info .row .v { color: #f0c975; font-weight: 700; }
+  
+  .barcode-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #1a3668;
+    border-radius: 8px;
+    padding: 10px;
+    background: #0a1c3f;
+    min-width: 140px;
+    height: fit-content;
+    gap: 6px;
+    text-align: center;
+  }
+  .barcode-block img {
+    background: #ffffff;
+    padding: 4px;
+    border-radius: 4px;
+  }
+  .barcode-title {
+    font-size: 8px;
+    color: #a5b4fc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+  }
+
   table.items {
     width: calc(100% - 64px);
     margin: 22px 32px 0;
@@ -398,6 +426,10 @@ export async function GET(req: Request) {
   .footer strong { color: #f0c975; }
 
   @media print {
+    @page {
+      size: A4 portrait;
+      margin: 6mm 4mm;
+    }
     * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
@@ -406,12 +438,36 @@ export async function GET(req: Request) {
       padding: 0 !important;
       margin: 0 !important;
       background: #0d2452 !important;
+      zoom: 88%;
     }
     .invoice {
       box-shadow: none !important;
       border-radius: 0 !important;
       border: none !important;
       width: 100% !important;
+    }
+    .header {
+      padding: 14px 20px !important;
+    }
+    .meta-section {
+      flex-wrap: nowrap !important;
+      padding: 10px 20px 0 !important;
+      gap: 16px !important;
+    }
+    table.items {
+      width: calc(100% - 40px) !important;
+      margin: 12px 20px 0 !important;
+    }
+    table.items tbody td {
+      padding: 8px 10px !important;
+    }
+    .bottom-section {
+      padding: 12px 20px 0 !important;
+      gap: 16px !important;
+    }
+    .footer {
+      margin-top: 14px !important;
+      padding: 8px 15px !important;
     }
   }
 </style>
@@ -420,7 +476,8 @@ export async function GET(req: Request) {
   <div class="invoice">
     <!-- HEADER -->
     <div class="header">
-      <div className="brand" style="display:flex; align-items:center; gap:16px;">
+      <div class="brand">
+        <img src="/logo.png" alt="Niventra Logo" />
         <div class="brand-text">
           <h1>Niventra Capital Advisory</h1>
           <div class="sub">INDIA PRIVATE LIMITED</div>
@@ -484,6 +541,24 @@ export async function GET(req: Request) {
           <span class="v">${inv.state} &nbsp; (${inv.stateCode})</span>
         </div>
       </div>
+      
+      <div class="barcode-block">
+        <div class="barcode-title">Scan to Download</div>
+        <img
+          src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(
+            `${req.headers.get("host") ? 'http://' + req.headers.get("host") : 'https://crm.temp.com'}/api/invoices/download?invoiceNo=${encodeURIComponent(inv.invoiceNo)}`
+          )}"
+          alt="QR Code Scan to Download"
+          width="80"
+          height="80"
+        />
+        <div class="barcode-title">Barcode</div>
+        <img
+          src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(inv.invoiceNo)}&scale=2&rotate=N"
+          alt="Code 128 Barcode"
+          style="width: 120px; height: 30px; object-fit: contain;"
+        />
+      </div>
     </div>
 
     <!-- TABLE -->
@@ -503,9 +578,9 @@ export async function GET(req: Request) {
             <td>${idx + 1}</td>
             <td>
               <div class="item-title">${item.title}</div>
-              <div class="item-desc">${item.desc}</div>
+              <div class="item-desc">${item.desc || ""}</div>
             </td>
-            <td>${item.sacCode}</td>
+            <td>${item.sacCode || ""}</td>
             <td>${item.qty} &times; ₹${item.rate.toLocaleString()}</td>
             <td>₹ ${(item.qty * item.rate).toLocaleString()}</td>
           </tr>
@@ -516,6 +591,44 @@ export async function GET(req: Request) {
     <!-- BOTTOM SECTION -->
     <div class="bottom-section">
       <div class="left-col">
+        <div class="box">
+          <div class="box-title">Payment Mode & Transaction Details</div>
+          <div class="bank-details">
+            <div>
+              <span class="k">Mode of Payment</span>
+              <span class="v">${inv.modeOfPayment === "Other" ? inv.paymentModeOther || "Other" : inv.modeOfPayment}</span>
+            </div>
+            ${inv.bankName ? `
+              <div>
+                <span class="k">Bank Name</span>
+                <span class="v">${inv.bankName}</span>
+              </div>
+            ` : ""}
+            <div>
+              <span class="k">Transaction / UTR No.</span>
+              <span class="v font-mono">${inv.transactionUtrNo || ""}</span>
+            </div>
+            ${inv.chequeDdNo ? `
+              <div>
+                <span class="k">Cheque / DD No.</span>
+                <span class="v font-mono">${inv.chequeDdNo}</span>
+              </div>
+            ` : ""}
+            ${inv.chequeDdDate ? `
+              <div>
+                <span class="k">Payment Date</span>
+                <span class="v">${inv.chequeDdDate}</span>
+              </div>
+            ` : ""}
+            ${inv.drawnOnBank ? `
+              <div>
+                <span class="k">Drawn On Bank</span>
+                <span class="v">${inv.drawnOnBank}</span>
+              </div>
+            ` : ""}
+          </div>
+        </div>
+
         <div class="box">
           <div class="box-title">Bank Transfer Details</div>
           <div class="bank-details">
