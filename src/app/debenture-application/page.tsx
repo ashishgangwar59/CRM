@@ -1457,14 +1457,14 @@ function DebentureFormContent() {
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Bank Name</div>
+            <div className="field-label" style={{ width: "170px" }}>Bank Name (Payment)</div>
             <div className="field-colon">:</div>
             <div className="field-fill" style={{ maxWidth: "220px" }}>
               <input
                 type="text"
-                name="bankName"
-                value={form.bankName}
-                onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+                name="drawnOnBankMain"
+                value={form.drawnOnBank}
+                onChange={(e) => setForm({ ...form, drawnOnBank: e.target.value })}
               />
             </div>
             <div style={{ width: "150px", textAlign: "right" }}>Transaction / UTR No.</div>

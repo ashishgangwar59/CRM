@@ -570,14 +570,19 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-fill">{form.modeOfPayment || "NEFT/RTGS"}</div>
               </div>
               <div className="field-row">
-                <div className="field-label">Transaction / UTR / Ref No</div>
+                <div className="field-label">Transaction / UTR No.</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill font-mono">{form.transactionUtrNo || form.chequeDdNo || "—"}</div>
+                <div className="field-fill font-mono">{form.transactionUtrNo || "—"}</div>
               </div>
               <div className="field-row">
-                <div className="field-label">Bank Name</div>
+                <div className="field-label">Cheque / DD No.</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.drawnOnBank || form.bankName || kyc.bankName || "—"}</div>
+                <div className="field-fill font-mono">{form.chequeDdNo || "—"}</div>
+              </div>
+              <div className="field-row">
+                <div className="field-label">Bank Name (Payment)</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill">{form.drawnOnBank || "—"}</div>
               </div>
             </div>
 
