@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2 } from "lucide-react";
+import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2, Upload, Eye, X, File } from "lucide-react";
+
+interface UploadedFile {
+  name: string;
+  type: string; // 'image/jpeg' | 'image/png' | 'application/pdf'
+  dataUrl: string; // base64 data URL
+  size: number;
+}
 
 interface InvoiceItem {
   id: string;
@@ -34,6 +41,11 @@ export default function InvoicePage() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // File upload state
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [viewingFile, setViewingFile] = useState<UploadedFile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Bill To state
   const [billToName, setBillToName] = useState("Niventra Investor Partner");
@@ -130,7 +142,8 @@ export default function InvoicePage() {
           transactionUtrNo,
           chequeDdNo,
           chequeDdDate,
-          drawnOnBank
+          drawnOnBank,
+          attachments: uploadedFiles
         })
       });
       const data = await res.json();
@@ -146,6 +159,30 @@ export default function InvoicePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // File upload handlers
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      const allowed = ["image/jpeg", "image/png", "application/pdf"];
+      if (!allowed.includes(file.type)) return;
+      if (uploadedFiles.length >= 5) return; // max 5 files
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setUploadedFiles((prev) => [
+          ...prev,
+          { name: file.name, type: file.type, dataUrl, size: file.size },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleLoadInvoice = (inv: any) => {
@@ -179,6 +216,8 @@ export default function InvoicePage() {
       igstRate: item.igstRate || 0,
     }));
     setItems(formattedItems);
+    // Load attachments if saved
+    setUploadedFiles(inv.attachments || []);
     setActiveTab("editor");
   };
 
@@ -486,6 +525,7 @@ export default function InvoicePage() {
             </div>
           ) : (
             <div className="space-y-6">
+              {/* Row 1: Meta + Bill To + Payment (3 columns) */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Meta Section */}
                 <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
@@ -550,188 +590,259 @@ export default function InvoicePage() {
                       </div>
                     </div>
                   </div>
-                </div>                 {/* Payment & Transaction details */}
+                </div>
+
+                {/* Payment & Transaction details */}
                 <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">3. Payment Details</h3>
                   <div className="space-y-3">
-
                     {/* Mode of Payment (Radios) */}
                     <div>
                       <Label className="text-xs text-zinc-500 block mb-1.5 font-bold">Mode of Payment</Label>
                       <div className="flex flex-wrap items-center gap-4 text-xs">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="modeOfPayment"
-                            value="Cash"
-                            checked={modeOfPayment === "Cash"}
-                            onChange={(e) => setModeOfPayment(e.target.value)}
-                            className="text-indigo-650"
-                          />
+                          <input type="radio" name="modeOfPayment" value="Cash" checked={modeOfPayment === "Cash"} onChange={(e) => setModeOfPayment(e.target.value)} className="text-indigo-650" />
                           Cash
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="modeOfPayment"
-                            value="UPI"
-                            checked={modeOfPayment === "UPI"}
-                            onChange={(e) => setModeOfPayment(e.target.value)}
-                            className="text-indigo-650"
-                          />
+                          <input type="radio" name="modeOfPayment" value="UPI" checked={modeOfPayment === "UPI"} onChange={(e) => setModeOfPayment(e.target.value)} className="text-indigo-650" />
                           UPI
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="modeOfPayment"
-                            value="Cheque"
-                            checked={modeOfPayment === "Cheque"}
-                            onChange={(e) => setModeOfPayment(e.target.value)}
-                            className="text-indigo-650"
-                          />
+                          <input type="radio" name="modeOfPayment" value="Cheque" checked={modeOfPayment === "Cheque"} onChange={(e) => setModeOfPayment(e.target.value)} className="text-indigo-650" />
                           Cheque
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="modeOfPayment"
-                            value="Bank Account"
-                            checked={modeOfPayment === "Bank Account"}
-                            onChange={(e) => setModeOfPayment(e.target.value)}
-                            className="text-indigo-650"
-                          />
+                          <input type="radio" name="modeOfPayment" value="Bank Account" checked={modeOfPayment === "Bank Account"} onChange={(e) => setModeOfPayment(e.target.value)} className="text-indigo-650" />
                           Bank Account
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="modeOfPayment"
-                            value="Other"
-                            checked={modeOfPayment === "Other"}
-                            onChange={(e) => setModeOfPayment(e.target.value)}
-                            className="text-indigo-650"
-                          />
+                          <input type="radio" name="modeOfPayment" value="Other" checked={modeOfPayment === "Other"} onChange={(e) => setModeOfPayment(e.target.value)} className="text-indigo-650" />
                           Other
                         </label>
                         {modeOfPayment === "Other" && (
-                          <Input
-                            value={paymentModeOther}
-                            onChange={(e) => setPaymentModeOther(e.target.value)}
-                            placeholder="Specify mode"
-                            className="h-7 text-xs w-28 ml-1"
-                          />
+                          <Input value={paymentModeOther} onChange={(e) => setPaymentModeOther(e.target.value)} placeholder="Specify mode" className="h-7 text-xs w-28 ml-1" />
                         )}
                       </div>
                     </div>
-
                     {/* Bank Name & Transaction / UTR No. */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-xs text-zinc-500">Bank Name</Label>
-                        <Input
-                          value={bankNameForm}
-                          onChange={(e) => setBankNameForm(e.target.value)}
-                          placeholder="e.g. State Bank of India"
-                          className="h-8 text-xs"
-                        />
+                        <Input value={bankNameForm} onChange={(e) => setBankNameForm(e.target.value)} placeholder="e.g. State Bank of India" className="h-8 text-xs" />
                       </div>
                       <div>
                         <Label className="text-xs text-rose-500 font-bold">Transaction / UTR No. *</Label>
-                        <Input
-                          value={transactionUtrNo}
-                          onChange={(e) => setTransactionUtrNo(e.target.value)}
-                          placeholder="UTR / Trans No."
-                          className="h-8 text-xs font-semibold"
-                        />
+                        <Input value={transactionUtrNo} onChange={(e) => setTransactionUtrNo(e.target.value)} placeholder="UTR / Trans No." className="h-8 text-xs font-semibold" />
                       </div>
                     </div>
-
                     {/* Cheque / DD No, Date, Drawn on Bank */}
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <Label className="text-xs text-zinc-500">Cheque / DD No.</Label>
-                        <Input
-                          value={chequeDdNo}
-                          onChange={(e) => setChequeDdNo(e.target.value)}
-                          placeholder="Cheque / DD No."
-                          className="h-8 text-xs"
-                        />
+                        <Input value={chequeDdNo} onChange={(e) => setChequeDdNo(e.target.value)} placeholder="Cheque / DD No." className="h-8 text-xs" />
                       </div>
                       <div>
                         <Label className="text-xs text-zinc-500">Date</Label>
-                        <Input
-                          type="date"
-                          value={chequeDdDate}
-                          onChange={(e) => setChequeDdDate(e.target.value)}
-                          className="h-8 text-xs"
-                        />
+                        <Input type="date" value={chequeDdDate} onChange={(e) => setChequeDdDate(e.target.value)} className="h-8 text-xs" />
                       </div>
                       <div>
                         <Label className="text-xs text-zinc-500">Drawn On Bank</Label>
-                        <Input
-                          value={drawnOnBank}
-                          onChange={(e) => setDrawnOnBank(e.target.value)}
-                          placeholder="e.g. ICICI Bank"
-                          className="h-8 text-xs"
-                        />
+                        <Input value={drawnOnBank} onChange={(e) => setDrawnOnBank(e.target.value)} placeholder="e.g. ICICI Bank" className="h-8 text-xs" />
                       </div>
                     </div>
-
                   </div>
                 </div>
+              </div>
 
-                {/* Items Editor */}
-                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                  <div className="flex justify-between items-center border-b pb-1.5">
-                    <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">3. Invoice Line Items</h3>
-                    <Button size="sm" variant="outline" onClick={handleAddItem} className="h-7 text-xs bg-white text-zinc-900 hover:bg-zinc-50">
-                      <Plus className="w-3.5 h-3.5 mr-1" /> Add Line Item
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {items.map((item, index) => (
-                      <div key={item.id} className="p-3 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-250 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                        <div className="md:col-span-3">
-                          <Label className="text-[10px] text-zinc-500">Service / Product Title</Label>
-                          <Input value={item.title} onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)} className="h-8 text-xs font-medium" />
+              {/* Row 2: Invoice Line Items — Full Width, Larger */}
+              <div className="p-5 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="flex justify-between items-center border-b pb-2 mb-4">
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">4. Invoice Line Items</h3>
+                  <Button size="sm" variant="outline" onClick={handleAddItem} className="h-8 text-xs bg-white text-zinc-900 hover:bg-zinc-50 px-3">
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add Line Item
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {items.map((item, index) => (
+                    <div key={item.id} className="p-4 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      {/* Row 1: Title + Description */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <Label className="text-xs text-zinc-500 mb-1 block">Service / Product Title</Label>
+                          <Input value={item.title} onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)} className="h-9 text-sm font-medium" />
                         </div>
-                        <div className="md:col-span-3">
-                          <Label className="text-[10px] text-zinc-500">Description</Label>
-                          <Input value={item.desc} onChange={(e) => handleUpdateItem(item.id, "desc", e.target.value)} className="h-8 text-xs" />
+                        <div>
+                          <Label className="text-xs text-zinc-500 mb-1 block">Description</Label>
+                          <Input value={item.desc} onChange={(e) => handleUpdateItem(item.id, "desc", e.target.value)} className="h-9 text-sm" />
                         </div>
-                        <div className="md:col-span-1">
-                          <Label className="text-[10px] text-zinc-500">SAC / HSN</Label>
-                          <Input value={item.sacCode} onChange={(e) => handleUpdateItem(item.id, "sacCode", e.target.value)} className="h-8 text-xs text-center" />
+                      </div>
+                      {/* Row 2: SAC + Qty + Rate + IGST + Delete */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                        <div>
+                          <Label className="text-xs text-zinc-500 mb-1 block">SAC / HSN Code</Label>
+                          <Input value={item.sacCode} onChange={(e) => handleUpdateItem(item.id, "sacCode", e.target.value)} className="h-9 text-sm text-center" />
                         </div>
-                        <div className="md:col-span-1">
-                          <Label className="text-[10px] text-zinc-500">Qty</Label>
-                          <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-8 text-xs text-center" />
+                        <div>
+                          <Label className="text-xs text-zinc-500 mb-1 block">Quantity</Label>
+                          <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-9 text-sm text-center" />
                         </div>
-                        <div className="md:col-span-1.5">
-                          <Label className="text-[10px] text-zinc-500">Rate (₹)</Label>
-                          <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-8 text-xs font-semibold text-right" />
+                        <div>
+                          <Label className="text-xs text-zinc-500 mb-1 block">Rate (₹)</Label>
+                          <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-9 text-sm font-semibold text-right" />
                         </div>
-                        <div className="md:col-span-2.5 flex items-center gap-2">
-                          <div className="w-full">
-                            <Label className="text-[10px] text-zinc-400">IGST %</Label>
-                            <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
+                        <div>
+                          <Label className="text-xs text-zinc-500 mb-1 block">IGST %</Label>
+                          <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-9 text-sm text-center" />
+                        </div>
+                        <div className="flex items-end justify-between gap-2">
+                          <div className="flex-1">
+                            <Label className="text-xs text-zinc-400 mb-1 block">Taxable Value</Label>
+                            <div className="h-9 px-3 flex items-center rounded-md bg-zinc-100 dark:bg-zinc-800 text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                              ₹{(item.qty * item.rate).toLocaleString()}
+                            </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveItem(item.id)}
                             disabled={items.length === 1}
-                            className="text-zinc-400 hover:text-rose-500 h-8 w-8 ml-auto flex-shrink-0"
+                            className="text-zinc-400 hover:text-rose-500 h-9 w-9 flex-shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {/* Row 3: Upload Documents — Step 5, Hidden on Print */}
+              <div className="print:hidden p-5 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="flex justify-between items-center border-b pb-2 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">5. Upload Supporting Documents</h3>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">Attach payment proof, receipts, etc. (JPG, PNG, PDF only · max 5 files). Not printed on slip.</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadedFiles.length >= 5}
+                    className="h-8 text-xs bg-white text-zinc-900 hover:bg-zinc-50 px-3 flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Upload File
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+
+                {uploadedFiles.length === 0 ? (
+                  <div
+                    className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl flex flex-col items-center justify-center py-10 cursor-pointer hover:border-indigo-400 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+                    <p className="text-xs text-zinc-400">Click to upload JPG, PNG or PDF files</p>
+                    <p className="text-[10px] text-zinc-300 dark:text-zinc-600 mt-1">Up to 5 files · These will be saved with the invoice but will NOT appear on the printed slip</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                    {uploadedFiles.map((file, idx) => (
+                      <div key={idx} className="relative group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 overflow-hidden shadow-sm">
+                        {/* Thumbnail */}
+                        {file.type === "application/pdf" ? (
+                          <div className="h-28 flex flex-col items-center justify-center bg-red-50 dark:bg-red-950/20">
+                            <File className="w-8 h-8 text-red-400" />
+                            <span className="text-[10px] text-red-500 font-semibold mt-1">PDF</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={file.dataUrl}
+                            alt={file.name}
+                            className="h-28 w-full object-cover"
+                          />
+                        )}
+                        {/* Overlay actions */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setViewingFile(file)}
+                            className="bg-white/90 hover:bg-white text-zinc-800 rounded-lg p-1.5 shadow"
+                            title="View"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveFile(idx)}
+                            className="bg-white/90 hover:bg-white text-rose-500 rounded-lg p-1.5 shadow"
+                            title="Remove"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {/* File name */}
+                        <div className="px-2 py-1.5 border-t border-zinc-100 dark:border-zinc-800">
+                          <p className="text-[10px] text-zinc-600 dark:text-zinc-400 truncate font-medium">{file.name}</p>
+                          <p className="text-[9px] text-zinc-400">{(file.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Add More button */}
+                    {uploadedFiles.length < 5 && (
+                      <div
+                        className="h-full min-h-[120px] rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Plus className="w-6 h-6 text-zinc-300" />
+                        <span className="text-[10px] text-zinc-400 mt-1">Add more</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* File Viewer Modal */}
+              {viewingFile && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 print:hidden" onClick={() => setViewingFile(null)}>
+                  <div
+                    className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-3xl w-full mx-4 overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between px-5 py-3 border-b dark:border-zinc-700">
+                      <div>
+                        <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100 truncate max-w-xs">{viewingFile.name}</p>
+                        <p className="text-[10px] text-zinc-400">{(viewingFile.size / 1024).toFixed(1)} KB · {viewingFile.type}</p>
+                      </div>
+                      <button onClick={() => setViewingFile(null)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 min-h-[400px] max-h-[70vh] overflow-auto p-4">
+                      {viewingFile.type === "application/pdf" ? (
+                        <iframe
+                          src={viewingFile.dataUrl}
+                          className="w-full h-[60vh] rounded border"
+                          title={viewingFile.name}
+                        />
+                      ) : (
+                        <img
+                          src={viewingFile.dataUrl}
+                          alt={viewingFile.name}
+                          className="max-w-full max-h-[60vh] object-contain rounded-lg shadow"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
         </div>

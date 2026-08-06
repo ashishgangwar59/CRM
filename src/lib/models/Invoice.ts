@@ -27,6 +27,7 @@ export interface IInvoice extends Document {
   chequeDdNo?: string;
   chequeDdDate?: string;
   drawnOnBank?: string;
+  attachments?: { name: string; type: string; dataUrl: string; size: number }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,9 +60,21 @@ const InvoiceSchema: Schema<IInvoice> = new Schema(
     chequeDdNo: { type: String, default: "" },
     chequeDdDate: { type: String, default: "" },
     drawnOnBank: { type: String, default: "" },
+    attachments: [
+      {
+        name: { type: String },
+        type: { type: String },
+        dataUrl: { type: String },
+        size: { type: Number },
+      },
+    ],
   },
   { timestamps: true }
 );
 
-export const Invoice: Model<IInvoice> =
-  mongoose.models.Invoice || mongoose.model<IInvoice>("Invoice", InvoiceSchema);
+// Delete the cached model to ensure hot-reloads pick up schema changes
+if (mongoose.models.Invoice) {
+  delete mongoose.models.Invoice;
+}
+
+export const Invoice: Model<IInvoice> = mongoose.model<IInvoice>("Invoice", InvoiceSchema);

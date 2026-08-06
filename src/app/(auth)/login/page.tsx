@@ -12,7 +12,7 @@ import Image from "next/image";
 export default function LoginPage() {
   const router = useRouter();
   const [loginMethod, setLoginMethod] = useState<"password" | "otp">("password");
-  
+
   // Password Login States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -141,17 +141,16 @@ export default function LoginPage() {
             Choose your login method and access your account.
           </CardDescription>
         </CardHeader>
-        
+
         {/* Toggle Login Method Tabs */}
         <div className="px-6">
           <div className="flex border-b border-gray-200 mb-6">
             <button
               type="button"
-              className={`flex-1 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-                loginMethod === "password"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`flex-1 pb-3 text-sm font-semibold border-b-2 transition-colors ${loginMethod === "password"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
               onClick={() => {
                 setLoginMethod("password");
                 setError("");
@@ -162,11 +161,10 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              className={`flex-1 pb-3 text-sm font-semibold border-b-2 transition-colors ${
-                loginMethod === "otp"
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`flex-1 pb-3 text-sm font-semibold border-b-2 transition-colors ${loginMethod === "otp"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
               onClick={() => {
                 setLoginMethod("otp");
                 setError("");
@@ -190,20 +188,20 @@ export default function LoginPage() {
                 {successMsg}
               </div>
             )}
-            {debugOtp && (
+            {/* {debugOtp && (
               <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm font-mono text-center">
                 DEBUG OTP: <span className="font-bold text-base">{debugOtp}</span>
               </div>
-            )}
+            )} */}
 
             {loginMethod === "password" ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="m@example.com" 
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
                     required={loginMethod === "password"}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -216,9 +214,9 @@ export default function LoginPage() {
                       Forgot password?
                     </a>
                   </div>
-                  <Input 
-                    id="password" 
-                    type="password" 
+                  <Input
+                    id="password"
+                    type="password"
                     required={loginMethod === "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -230,18 +228,18 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="phone">Mobile Number</Label>
                   <div className="flex space-x-2">
-                    <Input 
-                      id="phone" 
-                      type="tel" 
-                      placeholder="+919876543210" 
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+919876543210"
                       required={loginMethod === "otp"}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       disabled={otpSent && loading}
                       className="flex-1"
                     />
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       variant="outline"
                       onClick={handleSendOtp}
                       disabled={loading || !phone}
@@ -254,11 +252,11 @@ export default function LoginPage() {
                 {otpSent && (
                   <div className="space-y-2 animate-in fade-in duration-200">
                     <Label htmlFor="otp">Enter 6-Digit OTP</Label>
-                    <Input 
-                      id="otp" 
-                      type="text" 
-                      maxLength={6} 
-                      placeholder="123456" 
+                    <Input
+                      id="otp"
+                      type="text"
+                      maxLength={6}
+                      placeholder="123456"
                       required={loginMethod === "otp" && otpSent}
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}

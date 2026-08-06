@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       email: email.toLowerCase().trim(),
       phone,
       investmentAmount: 0,
-      monthlyGrowthPercentage: 2.5, // Default monthly growth 2.5%
+      monthlyGrowthPercentage: 1.33, // Default monthly growth 2.5%
       status: "Pending",
       kycDocs: {},
       bondAgreement: { accepted: false },

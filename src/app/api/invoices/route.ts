@@ -51,7 +51,8 @@ export async function POST(req: Request) {
       transactionUtrNo,
       chequeDdNo,
       chequeDdDate,
-      drawnOnBank
+      drawnOnBank,
+      attachments
     } = body;
 
     if (!invoiceNo || !invoiceDate || !billToName || !billToAddress || !items || items.length === 0 || !transactionUtrNo) {
@@ -81,7 +82,8 @@ export async function POST(req: Request) {
       transactionUtrNo,
       chequeDdNo,
       chequeDdDate,
-      drawnOnBank
+      drawnOnBank,
+      attachments: attachments || []
     });
 
     return NextResponse.json({ success: true, data: newInvoice, message: "Invoice saved successfully" });

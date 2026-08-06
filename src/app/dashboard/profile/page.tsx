@@ -40,7 +40,7 @@ export default function ProfilePage() {
         }),
       });
       const data = await res.json();
-      
+
       if (data.success) {
         setMessage("Password updated successfully!");
         setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
@@ -121,11 +121,10 @@ export default function ProfilePage() {
                   Code: {investor.investorCode || "INV-0000"}
                 </CardDescription>
               </div>
-              <span className={`px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                investor.status === "Verified" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
-                investor.status === "Rejected" ? "bg-rose-950 text-rose-400 border border-rose-800" :
-                "bg-amber-950 text-amber-400 border border-amber-800"
-              }`}>
+              <span className={`px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${investor.status === "Verified" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                  investor.status === "Rejected" ? "bg-rose-950 text-rose-400 border border-rose-800" :
+                    "bg-amber-950 text-amber-400 border border-amber-800"
+                }`}>
                 {investor.status}
               </span>
             </div>
@@ -146,7 +145,7 @@ export default function ProfilePage() {
               </div>
               <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border dark:border-zinc-800">
                 <Label className="text-xs text-zinc-500 uppercase font-bold">Monthly Growth (%)</Label>
-                <p className="font-black text-lg text-indigo-400">{investor.monthlyGrowthPercentage || 2.5}% / mo</p>
+                <p className="font-black text-lg text-indigo-400">{investor.monthlyGrowthPercentage || 1.33}% / mo</p>
               </div>
             </div>
 
@@ -159,11 +158,10 @@ export default function ProfilePage() {
                   return (
                     <div key={docKey} className="p-2.5 bg-zinc-50 dark:bg-zinc-950 border rounded-lg dark:border-zinc-800">
                       <p className="font-bold capitalize text-zinc-600 dark:text-zinc-400">{docKey}</p>
-                      <span className={`font-black text-[11px] ${
-                        status === "Approved" ? "text-emerald-500" :
-                        status === "Rejected" ? "text-rose-500" :
-                        "text-amber-500"
-                      }`}>
+                      <span className={`font-black text-[11px] ${status === "Approved" ? "text-emerald-500" :
+                          status === "Rejected" ? "text-rose-500" :
+                            "text-amber-500"
+                        }`}>
                         {status}
                       </span>
                     </div>
@@ -224,12 +222,12 @@ export default function ProfilePage() {
                   <UploadCloud className="w-4 h-4 mr-2" />
                   {uploadingPhoto ? "Uploading..." : "Change Profile Photo"}
                 </Label>
-                <Input 
-                  id="photoUpload" 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handlePhotoUpload} 
+                <Input
+                  id="photoUpload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
                   disabled={uploadingPhoto}
                 />
                 <p className="text-xs text-zinc-500">Supported formats: JPG, PNG (Max 5MB)</p>
@@ -343,30 +341,30 @@ export default function ProfilePage() {
 
             <div className="space-y-2">
               <Label htmlFor="oldPassword">Current Password</Label>
-              <Input 
-                id="oldPassword" 
-                type="password" 
-                required 
+              <Input
+                id="oldPassword"
+                type="password"
+                required
                 value={formData.oldPassword}
                 onChange={e => setFormData(prev => ({ ...prev, oldPassword: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
-              <Input 
-                id="newPassword" 
-                type="password" 
-                required 
+              <Input
+                id="newPassword"
+                type="password"
+                required
                 value={formData.newPassword}
                 onChange={e => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input 
-                id="confirmPassword" 
-                type="password" 
-                required 
+              <Input
+                id="confirmPassword"
+                type="password"
+                required
                 value={formData.confirmPassword}
                 onChange={e => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
               />

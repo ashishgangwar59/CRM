@@ -18,7 +18,7 @@ export default function InvestorRegisterPage() {
     password: "",
     confirmPassword: "",
   });
-  
+
   // OTP states
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -148,11 +148,11 @@ export default function InvestorRegisterPage() {
               </div>
             )}
 
-            {debugOtp && (
+            {/* {debugOtp && (
               <div className="p-3 mb-4 rounded-md bg-blue-950/60 border border-blue-800 text-blue-300 text-sm font-mono text-center">
                 DEBUG OTP: <span className="font-bold text-base">{debugOtp}</span>
               </div>
-            )}
+            )} */}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">

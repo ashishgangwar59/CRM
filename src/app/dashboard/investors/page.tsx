@@ -68,7 +68,7 @@ export default function AdminInvestorsPage() {
     email: "",
     phone: "",
     investmentAmount: 0,
-    monthlyGrowthPercentage: 2.5,
+    monthlyGrowthPercentage: 1.33,
   });
 
   // Edit investor form
@@ -120,7 +120,7 @@ export default function AdminInvestorsPage() {
       const json = await res.json();
       if (json.success) {
         setShowAddModal(false);
-        setAddForm({ fullName: "", email: "", phone: "", investmentAmount: 0, monthlyGrowthPercentage: 2.5 });
+        setAddForm({ fullName: "", email: "", phone: "", investmentAmount: 0, monthlyGrowthPercentage: 1.33 });
         fetchInvestors();
       } else {
         setMsg(json.error || "Failed to create investor.");
@@ -320,7 +320,7 @@ export default function AdminInvestorsPage() {
                       ₹{(inv.investmentAmount || 0).toLocaleString()}
                     </TableCell>
                     <TableCell className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {inv.monthlyGrowthPercentage || 2.5}% / mo
+                      {inv.monthlyGrowthPercentage || 1.33}% / mo
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -376,7 +376,7 @@ export default function AdminInvestorsPage() {
                               email: inv.email,
                               phone: inv.phone,
                               investmentAmount: inv.investmentAmount || 0,
-                              monthlyGrowthPercentage: inv.monthlyGrowthPercentage || 2.5,
+                              monthlyGrowthPercentage: inv.monthlyGrowthPercentage || 1.33,
                             });
                             setShowEditModal(true);
                           }}
@@ -415,289 +415,289 @@ export default function AdminInvestorsPage() {
 
             <div className="overflow-y-auto flex-1 p-6 space-y-6">
 
-            {/* Financial & Referral Details */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              <div>
-                <p className="text-xs text-zinc-500 font-semibold uppercase">Invested RS Amount</p>
-                <p className="text-xl font-black text-[#00a65a]">₹{(selectedInvestor.investmentAmount || 0).toLocaleString()}</p>
+              {/* Financial & Referral Details */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase">Invested RS Amount</p>
+                  <p className="text-xl font-black text-[#00a65a]">₹{(selectedInvestor.investmentAmount || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase">Monthly Growth Rate</p>
+                  <p className="text-xl font-black text-[#134086]">{selectedInvestor.monthlyGrowthPercentage || 1.33}% / mo</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase">Referred By Employee</p>
+                  <p className="text-sm font-extrabold text-[#134086]">
+                    {selectedInvestor.referralEmployeeName || "Self Signup / Direct"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 font-semibold uppercase">Status</p>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-white ${selectedInvestor.status === "Verified" ? "bg-[#00a65a]" :
+                    selectedInvestor.status === "Rejected" ? "bg-rose-600" :
+                      "bg-orange-500"
+                    }`}>
+                    {selectedInvestor.status}
+                  </span>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-zinc-500 font-semibold uppercase">Monthly Growth Rate</p>
-                <p className="text-xl font-black text-[#134086]">{selectedInvestor.monthlyGrowthPercentage || 2.5}% / mo</p>
+
+              {/* Debenture Form Details (If submitted via Debenture Form) */}
+              {selectedInvestor.debentureForm && (
+                <div className="p-4 border border-[#eee] bg-white rounded-lg space-y-3 shadow-sm">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h4 className="font-bold text-sm text-[#134086]">Debenture Application Form Details</h4>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-mono font-bold bg-blue-50 text-[#134086] px-2 py-0.5 rounded border border-blue-200">
+                        App No: {selectedInvestor.debentureForm.applicationNo || "N/A"}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => setDebentureModalInvestor(selectedInvestor)}
+                        className="bg-[#0c1c3d] hover:bg-[#132a5c] text-white font-bold text-xs h-7 px-2.5"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1" /> View Full Sheet Form
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div>
+                      <span className="text-zinc-500">Father/Spouse:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.fatherSpouseName || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">DOB:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.dob || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Address:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.address || "N/A"}, {selectedInvestor.debentureForm.city} ({selectedInvestor.debentureForm.pinCode})</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Occupation:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.occupation || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Debenture Type:</span>
+                      <p className="font-bold text-[#134086]">{selectedInvestor.debentureForm.typeOfDebenture || "Secured"}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Applied Count:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.noOfDebentures} @ ₹{selectedInvestor.debentureForm.faceValue}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Payment Mode:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.modeOfPayment} (UTR: {selectedInvestor.debentureForm.transactionUtrNo || "N/A"})</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Bank:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.drawnOnBank || "N/A"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Uploaded Documents Check List with One-by-One Verification */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-sm uppercase tracking-wider text-zinc-500">Uploaded KYC Documents & One-by-One Verification</h3>
+
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  {[
+                    { key: "aadhar", title: "Aadhar Card", sub: selectedInvestor.kycDocs?.aadharNumber, url: selectedInvestor.kycDocs?.aadharDocUrl, req: true },
+                    { key: "pan", title: "PAN Card", sub: selectedInvestor.kycDocs?.panNumber, url: selectedInvestor.kycDocs?.panDocUrl, req: true },
+                    { key: "marksheet10th", title: "10th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet10thUrl, req: false },
+                    { key: "marksheet12th", title: "12th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet12thUrl, req: false },
+                    { key: "graduation", title: "Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.graduationUrl, req: false },
+                    { key: "postGraduation", title: "Post Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.postGraduationUrl, req: false },
+                    { key: "bankPassbook", title: "Bank Passbook / Cheque", sub: `Bank: ${selectedInvestor.kycDocs?.bankName || "N/A"} | Ac: ${selectedInvestor.kycDocs?.accountNumber || "N/A"} | IFSC: ${selectedInvestor.kycDocs?.ifscCode || "N/A"}`, url: selectedInvestor.kycDocs?.bankPassbookUrl, req: true },
+                  ].map((docItem) => {
+                    const currentStatus = selectedInvestor.docVerifications?.[docItem.key as keyof typeof selectedInvestor.docVerifications] || "Pending";
+
+                    const handleDocVerify = async (key: string, docStatus: "Approved" | "Rejected") => {
+                      setSubmitting(true);
+                      try {
+                        const res = await fetch("/api/investors/me", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            investorId: selectedInvestor._id,
+                            docVerifications: { [key]: docStatus },
+                          }),
+                        });
+                        const json = await res.json();
+                        if (json.success) {
+                          setSelectedInvestor(json.data);
+                          fetchInvestors();
+                        }
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setSubmitting(false);
+                      }
+                    };
+
+                    return (
+                      <div key={docItem.key} className="p-3.5 border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold">{docItem.title}</p>
+                            {docItem.sub && <span className="text-xs text-zinc-500 font-mono">({docItem.sub})</span>}
+                            {docItem.req && <span className="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
+                              currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
+                                "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                              }`}>
+                              {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
+                              {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
+                              Status: {currentStatus}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {docItem.url ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewDoc({ title: docItem.title, url: docItem.url })}
+                              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> View File
+                            </button>
+                          ) : (
+                            <span className="text-xs text-rose-500 font-semibold bg-rose-950/40 px-2.5 py-1 rounded border border-rose-800">
+                              Missing / Not Uploaded
+                            </span>
+                          )}
+
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              size="sm"
+                              disabled={submitting || !docItem.url}
+                              onClick={() => handleDocVerify(docItem.key, "Approved")}
+                              className={`font-bold h-8 px-3 text-xs ${!docItem.url
+                                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                                : currentStatus === "Approved"
+                                  ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
+                                  : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
+                                }`}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={submitting || !docItem.url}
+                              onClick={() => handleDocVerify(docItem.key, "Rejected")}
+                              className={`h-8 px-3 text-xs font-bold ${!docItem.url
+                                ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
+                                : currentStatus === "Rejected"
+                                  ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
+                                  : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
+                                }`}
+                            >
+                              <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-zinc-500 font-semibold uppercase">Referred By Employee</p>
-                <p className="text-sm font-extrabold text-[#134086]">
-                  {selectedInvestor.referralEmployeeName || "Self Signup / Direct"}
+
+              {/* Bond Agreement Status */}
+              <div className="p-4 border rounded-lg bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-800 space-y-1">
+                <h4 className="font-bold text-sm">Bond Agreement Verification</h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Bond Checkbox Accepted: <span className="font-bold">{selectedInvestor.bondAgreement?.accepted ? "YES ✔" : "NO ❌"}</span>
+                </p>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Digital Signature: <span className="font-bold font-mono">{selectedInvestor.bondAgreement?.signatureText || "N/A"}</span>
                 </p>
               </div>
-              <div>
-                <p className="text-xs text-zinc-500 font-semibold uppercase">Status</p>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-white ${selectedInvestor.status === "Verified" ? "bg-[#00a65a]" :
-                  selectedInvestor.status === "Rejected" ? "bg-rose-600" :
-                    "bg-orange-500"
-                  }`}>
-                  {selectedInvestor.status}
-                </span>
-              </div>
-            </div>
 
-            {/* Debenture Form Details (If submitted via Debenture Form) */}
-            {selectedInvestor.debentureForm && (
-              <div className="p-4 border border-[#eee] bg-white rounded-lg space-y-3 shadow-sm">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <h4 className="font-bold text-sm text-[#134086]">Debenture Application Form Details</h4>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs font-mono font-bold bg-blue-50 text-[#134086] px-2 py-0.5 rounded border border-blue-200">
-                      App No: {selectedInvestor.debentureForm.applicationNo || "N/A"}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={() => setDebentureModalInvestor(selectedInvestor)}
-                      className="bg-[#0c1c3d] hover:bg-[#132a5c] text-white font-bold text-xs h-7 px-2.5"
-                    >
-                      <FileText className="w-3.5 h-3.5 mr-1" /> View Full Sheet Form
-                    </Button>
-                  </div>
+              {/* Reject reason box */}
+              {showRejectBox && (
+                <div className="space-y-2 p-4 border border-rose-300 bg-rose-50 dark:bg-rose-950/20 rounded-lg">
+                  <Label className="text-rose-700 font-bold">Reason for Rejection *</Label>
+                  <Input
+                    placeholder="Enter rejection reason (e.g. Aadhar doc unreadable)"
+                    value={rejectReasonInput}
+                    onChange={(e) => setRejectReasonInput(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    className="bg-rose-600 hover:bg-rose-500 text-white font-bold"
+                    onClick={() => handleUpdateStatus(selectedInvestor._id, "Rejected", rejectReasonInput)}
+                    disabled={submitting || !rejectReasonInput.trim()}
+                  >
+                    Confirm Rejection
+                  </Button>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                  <div>
-                    <span className="text-zinc-500">Father/Spouse:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.fatherSpouseName || "N/A"}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">DOB:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.dob || "N/A"}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Address:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.address || "N/A"}, {selectedInvestor.debentureForm.city} ({selectedInvestor.debentureForm.pinCode})</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Occupation:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.occupation || "N/A"}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Debenture Type:</span>
-                    <p className="font-bold text-[#134086]">{selectedInvestor.debentureForm.typeOfDebenture || "Secured"}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Applied Count:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.noOfDebentures} @ ₹{selectedInvestor.debentureForm.faceValue}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Payment Mode:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.modeOfPayment} (UTR: {selectedInvestor.debentureForm.transactionUtrNo || "N/A"})</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">Bank:</span>
-                    <p className="font-bold">{selectedInvestor.debentureForm.drawnOnBank || "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Uploaded Documents Check List with One-by-One Verification */}
-            <div className="space-y-3">
-              <h3 className="font-bold text-sm uppercase tracking-wider text-zinc-500">Uploaded KYC Documents & One-by-One Verification</h3>
+              {/* Admin verification actions */}
+              {(() => {
+                const hasUploadedDocs = !!(
+                  selectedInvestor.kycDocs?.aadharDocUrl ||
+                  selectedInvestor.kycDocs?.panDocUrl ||
+                  selectedInvestor.kycDocs?.marksheet10thUrl ||
+                  selectedInvestor.kycDocs?.marksheet12thUrl ||
+                  selectedInvestor.kycDocs?.bankPassbookUrl
+                );
+                const hasAllMandatoryUploaded = !!(
+                  selectedInvestor.kycDocs?.aadharDocUrl &&
+                  selectedInvestor.kycDocs?.panDocUrl &&
+                  selectedInvestor.kycDocs?.marksheet10thUrl &&
+                  selectedInvestor.kycDocs?.marksheet12thUrl &&
+                  selectedInvestor.kycDocs?.bankPassbookUrl
+                );
 
-              <div className="grid grid-cols-1 gap-3 text-sm">
-                {[
-                  { key: "aadhar", title: "Aadhar Card", sub: selectedInvestor.kycDocs?.aadharNumber, url: selectedInvestor.kycDocs?.aadharDocUrl, req: true },
-                  { key: "pan", title: "PAN Card", sub: selectedInvestor.kycDocs?.panNumber, url: selectedInvestor.kycDocs?.panDocUrl, req: true },
-                  { key: "marksheet10th", title: "10th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet10thUrl, req: false },
-                  { key: "marksheet12th", title: "12th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet12thUrl, req: false },
-                  { key: "graduation", title: "Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.graduationUrl, req: false },
-                  { key: "postGraduation", title: "Post Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.postGraduationUrl, req: false },
-                  { key: "bankPassbook", title: "Bank Passbook / Cheque", sub: `Bank: ${selectedInvestor.kycDocs?.bankName || "N/A"} | Ac: ${selectedInvestor.kycDocs?.accountNumber || "N/A"} | IFSC: ${selectedInvestor.kycDocs?.ifscCode || "N/A"}`, url: selectedInvestor.kycDocs?.bankPassbookUrl, req: true },
-                ].map((docItem) => {
-                  const currentStatus = selectedInvestor.docVerifications?.[docItem.key as keyof typeof selectedInvestor.docVerifications] || "Pending";
-
-                  const handleDocVerify = async (key: string, docStatus: "Approved" | "Rejected") => {
-                    setSubmitting(true);
-                    try {
-                      const res = await fetch("/api/investors/me", {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          investorId: selectedInvestor._id,
-                          docVerifications: { [key]: docStatus },
-                        }),
-                      });
-                      const json = await res.json();
-                      if (json.success) {
-                        setSelectedInvestor(json.data);
-                        fetchInvestors();
-                      }
-                    } catch (e) {
-                      console.error(e);
-                    } finally {
-                      setSubmitting(false);
-                    }
-                  };
-
-                  return (
-                    <div key={docItem.key} className="p-3.5 border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold">{docItem.title}</p>
-                          {docItem.sub && <span className="text-xs text-zinc-500 font-mono">({docItem.sub})</span>}
-                          {docItem.req && <span className="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
-                            currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
-                              "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                            }`}>
-                            {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
-                            {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
-                            Status: {currentStatus}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {docItem.url ? (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewDoc({ title: docItem.title, url: docItem.url })}
-                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" /> View File
-                          </button>
-                        ) : (
-                          <span className="text-xs text-rose-500 font-semibold bg-rose-950/40 px-2.5 py-1 rounded border border-rose-800">
-                            Missing / Not Uploaded
-                          </span>
-                        )}
-
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            size="sm"
-                            disabled={submitting || !docItem.url}
-                            onClick={() => handleDocVerify(docItem.key, "Approved")}
-                            className={`font-bold h-8 px-3 text-xs ${!docItem.url
-                              ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                              : currentStatus === "Approved"
-                                ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
-                                : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
-                              }`}
-                          >
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={submitting || !docItem.url}
-                            onClick={() => handleDocVerify(docItem.key, "Rejected")}
-                            className={`h-8 px-3 text-xs font-bold ${!docItem.url
-                              ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
-                              : currentStatus === "Rejected"
-                                ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
-                                : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
-                              }`}
-                          >
-                            <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Bond Agreement Status */}
-            <div className="p-4 border rounded-lg bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-800 space-y-1">
-              <h4 className="font-bold text-sm">Bond Agreement Verification</h4>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Bond Checkbox Accepted: <span className="font-bold">{selectedInvestor.bondAgreement?.accepted ? "YES ✔" : "NO ❌"}</span>
-              </p>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Digital Signature: <span className="font-bold font-mono">{selectedInvestor.bondAgreement?.signatureText || "N/A"}</span>
-              </p>
-            </div>
-
-            {/* Reject reason box */}
-            {showRejectBox && (
-              <div className="space-y-2 p-4 border border-rose-300 bg-rose-50 dark:bg-rose-950/20 rounded-lg">
-                <Label className="text-rose-700 font-bold">Reason for Rejection *</Label>
-                <Input
-                  placeholder="Enter rejection reason (e.g. Aadhar doc unreadable)"
-                  value={rejectReasonInput}
-                  onChange={(e) => setRejectReasonInput(e.target.value)}
-                />
-                <Button
-                  size="sm"
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold"
-                  onClick={() => handleUpdateStatus(selectedInvestor._id, "Rejected", rejectReasonInput)}
-                  disabled={submitting || !rejectReasonInput.trim()}
-                >
-                  Confirm Rejection
-                </Button>
-              </div>
-            )}
-
-            {/* Admin verification actions */}
-            {(() => {
-              const hasUploadedDocs = !!(
-                selectedInvestor.kycDocs?.aadharDocUrl ||
-                selectedInvestor.kycDocs?.panDocUrl ||
-                selectedInvestor.kycDocs?.marksheet10thUrl ||
-                selectedInvestor.kycDocs?.marksheet12thUrl ||
-                selectedInvestor.kycDocs?.bankPassbookUrl
-              );
-              const hasAllMandatoryUploaded = !!(
-                selectedInvestor.kycDocs?.aadharDocUrl &&
-                selectedInvestor.kycDocs?.panDocUrl &&
-                selectedInvestor.kycDocs?.marksheet10thUrl &&
-                selectedInvestor.kycDocs?.marksheet12thUrl &&
-                selectedInvestor.kycDocs?.bankPassbookUrl
-              );
-
-              return (
-                <div className="space-y-2 border-t pt-4 dark:border-zinc-800">
-                  {!hasUploadedDocs && (
-                    <p className="text-xs text-rose-500 font-semibold text-right">
-                      ⚠️ Investor has not uploaded any documents yet. Verification controls disabled.
-                    </p>
-                  )}
-                  {hasUploadedDocs && !hasAllMandatoryUploaded && (
-                    <p className="text-xs text-amber-500 font-semibold text-right">
-                      ⚠️ Some mandatory documents are still missing from the investor.
-                    </p>
-                  )}
-
-                  <div className="flex justify-end gap-3">
-                    <Button
-                      variant="outline"
-                      className={`bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100 font-bold ${!hasUploadedDocs ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                      onClick={() => setShowRejectBox(!showRejectBox)}
-                      disabled={submitting || !hasUploadedDocs}
-                    >
-                      Reject Investor Docs
-                    </Button>
-                    <Button
-                      className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                      onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
-                      disabled={submitting || !hasAllMandatoryUploaded}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
-                    </Button>
-                    {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (
-                      <Button
-                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md"
-                        onClick={() => setBondModalInvestor(selectedInvestor)}
-                      >
-                        <Award className="w-4 h-4 mr-2" /> Download Payment Bond (PDF)
-                      </Button>
+                return (
+                  <div className="space-y-2 border-t pt-4 dark:border-zinc-800">
+                    {!hasUploadedDocs && (
+                      <p className="text-xs text-rose-500 font-semibold text-right">
+                        ⚠️ Investor has not uploaded any documents yet. Verification controls disabled.
+                      </p>
                     )}
+                    {hasUploadedDocs && !hasAllMandatoryUploaded && (
+                      <p className="text-xs text-amber-500 font-semibold text-right">
+                        ⚠️ Some mandatory documents are still missing from the investor.
+                      </p>
+                    )}
+
+                    <div className="flex justify-end gap-3">
+                      <Button
+                        variant="outline"
+                        className={`bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100 font-bold ${!hasUploadedDocs ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        onClick={() => setShowRejectBox(!showRejectBox)}
+                        disabled={submitting || !hasUploadedDocs}
+                      >
+                        Reject Investor Docs
+                      </Button>
+                      <Button
+                        className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
+                        disabled={submitting || !hasAllMandatoryUploaded}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
+                      </Button>
+                      {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (
+                        <Button
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md"
+                          onClick={() => setBondModalInvestor(selectedInvestor)}
+                        >
+                          <Award className="w-4 h-4 mr-2" /> Download Payment Bond (PDF)
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -734,37 +734,37 @@ export default function AdminInvestorsPage() {
             </div>
             <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
-            {msg && <p className="text-xs text-rose-500">{msg}</p>}
+              {msg && <p className="text-xs text-rose-500">{msg}</p>}
 
-            <form onSubmit={handleAddInvestor} className="space-y-3">
-              <div className="space-y-1">
-                <Label>Full Name *</Label>
-                <Input required value={addForm.fullName} onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Email *</Label>
-                <Input type="email" required value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Phone *</Label>
-                <Input required value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Invest RS Amount (₹)</Label>
-                <Input type="number" value={addForm.investmentAmount} onChange={(e) => setAddForm({ ...addForm, investmentAmount: Number(e.target.value) })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Monthly Growth (%)</Label>
-                <Input type="number" step="0.1" value={addForm.monthlyGrowthPercentage} onChange={(e) => setAddForm({ ...addForm, monthlyGrowthPercentage: Number(e.target.value) })} />
-              </div>
+              <form onSubmit={handleAddInvestor} className="space-y-3">
+                <div className="space-y-1">
+                  <Label>Full Name *</Label>
+                  <Input required value={addForm.fullName} onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Email *</Label>
+                  <Input type="email" required value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Phone *</Label>
+                  <Input required value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Invest RS Amount (₹)</Label>
+                  <Input type="number" value={addForm.investmentAmount} onChange={(e) => setAddForm({ ...addForm, investmentAmount: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Monthly Growth (%)</Label>
+                  <Input type="number" step="0.1" value={addForm.monthlyGrowthPercentage} onChange={(e) => setAddForm({ ...addForm, monthlyGrowthPercentage: Number(e.target.value) })} />
+                </div>
 
-              <div className="flex justify-end gap-2 pt-3">
-                <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
-                  {submitting ? "Saving..." : "Create Investor"}
-                </Button>
-              </div>
-            </form>
+                <div className="flex justify-end gap-2 pt-3">
+                  <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                  <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
+                    {submitting ? "Saving..." : "Create Investor"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -780,35 +780,35 @@ export default function AdminInvestorsPage() {
             </div>
             <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
-            <form onSubmit={handleEditSave} className="space-y-3">
-              <div className="space-y-1">
-                <Label>Full Name</Label>
-                <Input value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Email</Label>
-                <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Phone</Label>
-                <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Invest RS Amount (₹)</Label>
-                <Input type="number" value={editForm.investmentAmount} onChange={(e) => setEditForm({ ...editForm, investmentAmount: Number(e.target.value) })} />
-              </div>
-              <div className="space-y-1">
-                <Label>Monthly Growth (%)</Label>
-                <Input type="number" step="0.1" value={editForm.monthlyGrowthPercentage} onChange={(e) => setEditForm({ ...editForm, monthlyGrowthPercentage: Number(e.target.value) })} />
-              </div>
+              <form onSubmit={handleEditSave} className="space-y-3">
+                <div className="space-y-1">
+                  <Label>Full Name</Label>
+                  <Input value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Email</Label>
+                  <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Phone</Label>
+                  <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Invest RS Amount (₹)</Label>
+                  <Input type="number" value={editForm.investmentAmount} onChange={(e) => setEditForm({ ...editForm, investmentAmount: Number(e.target.value) })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Monthly Growth (%)</Label>
+                  <Input type="number" step="0.1" value={editForm.monthlyGrowthPercentage} onChange={(e) => setEditForm({ ...editForm, monthlyGrowthPercentage: Number(e.target.value) })} />
+                </div>
 
-              <div className="flex justify-end gap-2 pt-3">
-                <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>
-                <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
-                  {submitting ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
+                <div className="flex justify-end gap-2 pt-3">
+                  <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>
+                  <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
+                    {submitting ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
