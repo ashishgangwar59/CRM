@@ -44,11 +44,18 @@ export async function POST(req: Request) {
       billToAddress,
       billToState,
       billToStateCode,
-      items
+      items,
+      modeOfPayment,
+      paymentModeOther,
+      bankName,
+      transactionUtrNo,
+      chequeDdNo,
+      chequeDdDate,
+      drawnOnBank
     } = body;
 
-    if (!invoiceNo || !invoiceDate || !billToName || !billToAddress || !items || items.length === 0) {
-      return NextResponse.json({ error: "Missing required invoice fields" }, { status: 400 });
+    if (!invoiceNo || !invoiceDate || !billToName || !billToAddress || !items || items.length === 0 || !transactionUtrNo) {
+      return NextResponse.json({ error: "Missing required fields: Invoice details and Transaction / UTR No. are required." }, { status: 400 });
     }
 
     // Check if invoice number is unique
@@ -67,7 +74,14 @@ export async function POST(req: Request) {
       billToAddress,
       billToState,
       billToStateCode,
-      items
+      items,
+      modeOfPayment,
+      paymentModeOther,
+      bankName,
+      transactionUtrNo,
+      chequeDdNo,
+      chequeDdDate,
+      drawnOnBank
     });
 
     return NextResponse.json({ success: true, data: newInvoice, message: "Invoice saved successfully" });

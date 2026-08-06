@@ -20,6 +20,13 @@ export interface IInvoice extends Document {
   billToState: string;
   billToStateCode: string;
   items: IInvoiceItem[];
+  modeOfPayment?: string;
+  paymentModeOther?: string;
+  bankName?: string;
+  transactionUtrNo?: string;
+  chequeDdNo?: string;
+  chequeDdDate?: string;
+  drawnOnBank?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +52,13 @@ const InvoiceSchema: Schema<IInvoice> = new Schema(
     billToState: { type: String, default: "Delhi" },
     billToStateCode: { type: String, default: "07" },
     items: [InvoiceItemSchema],
+    modeOfPayment: { type: String, default: "NEFT/RTGS" },
+    paymentModeOther: { type: String, default: "" },
+    bankName: { type: String, default: "" },
+    transactionUtrNo: { type: String, default: "" },
+    chequeDdNo: { type: String, default: "" },
+    chequeDdDate: { type: String, default: "" },
+    drawnOnBank: { type: String, default: "" },
   },
   { timestamps: true }
 );

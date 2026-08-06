@@ -62,6 +62,8 @@ export interface IInvestor extends Document {
     modeOfPayment?: string;
     paymentModeOther?: string;
     bankName?: string;
+    accountNo?: string;
+    ifscCode?: string;
     chequeDdNo?: string;
     chequeDdDate?: string;
     transactionUtrNo?: string;
@@ -151,6 +153,8 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       modeOfPayment: { type: String },
       paymentModeOther: { type: String },
       bankName: { type: String },
+      accountNo: { type: String },
+      ifscCode: { type: String },
       chequeDdNo: { type: String },
       chequeDdDate: { type: String },
       transactionUtrNo: { type: String },

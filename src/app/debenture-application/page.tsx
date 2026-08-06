@@ -44,6 +44,8 @@ function DebentureFormContent() {
     transactionUtrNo: "",
     drawnOnBank: "",
     bankName: "",
+    accountNo: "",
+    ifscCode: "",
     refEmpCode: refCodeParam,
     passportPhotoUrl: "",
     panDocUrl: "",
@@ -1260,6 +1262,45 @@ function DebentureFormContent() {
                 name="occupation"
                 value={form.occupation}
                 onChange={(e) => setForm({ ...form, occupation: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="field-row">
+            <div className="field-icon">&#127974;</div>
+            <div className="field-label">Bank Name</div>
+            <div className="field-colon">:</div>
+            <div className="field-fill">
+              <input
+                type="text"
+                name="bankName"
+                value={form.bankName}
+                onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="field-row">
+            <div className="field-icon">&#128179;</div>
+            <div className="field-label">Account No.</div>
+            <div className="field-colon">:</div>
+            <div className="field-fill">
+              <input
+                type="text"
+                name="accountNo"
+                value={form.accountNo}
+                onChange={(e) => setForm({ ...form, accountNo: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="field-row">
+            <div className="field-icon">&#128179;</div>
+            <div className="field-label">IFSC Code</div>
+            <div className="field-colon">:</div>
+            <div className="field-fill">
+              <input
+                type="text"
+                name="ifscCode"
+                value={form.ifscCode}
+                onChange={(e) => setForm({ ...form, ifscCode: e.target.value })}
               />
             </div>
           </div>

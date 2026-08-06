@@ -515,6 +515,21 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-colon">:</div>
                 <div className="field-fill">{form.occupation || "—"}</div>
               </div>
+              <div className="field-row">
+                <div className="field-label">Bank Name</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill">{form.bankName || "—"}</div>
+              </div>
+              <div className="field-row">
+                <div className="field-label">Account No.</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill">{form.accountNo || "—"}</div>
+              </div>
+              <div className="field-row">
+                <div className="field-label">IFSC Code</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill">{form.ifscCode || "—"}</div>
+              </div>
             </div>
 
             {/* SECTION 2 */}

@@ -48,6 +48,15 @@ export default function InvoicePage() {
   const [ifscCode, setIfscCode] = useState("ICIC0000007");
   const [branch, setBranch] = useState("Connaught Place Branch, New Delhi");
 
+  // Payment Details from Screenshot
+  const [modeOfPayment, setModeOfPayment] = useState("Cash");
+  const [paymentModeOther, setPaymentModeOther] = useState("");
+  const [bankNameForm, setBankNameForm] = useState("");
+  const [transactionUtrNo, setTransactionUtrNo] = useState("");
+  const [chequeDdNo, setChequeDdNo] = useState("");
+  const [chequeDdDate, setChequeDdDate] = useState("");
+  const [drawnOnBank, setDrawnOnBank] = useState("");
+
   // Sign block
   const [authSignatory, setAuthSignatory] = useState("Authorized Signatory");
 
@@ -96,6 +105,11 @@ export default function InvoicePage() {
     setErrorMessage("");
     setSuccessMessage("");
     try {
+      if (!transactionUtrNo || !transactionUtrNo.trim()) {
+        setErrorMessage("Transaction / UTR No. is a required field.");
+        setSaving(false);
+        return;
+      }
       const res = await fetch("/api/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,7 +123,14 @@ export default function InvoicePage() {
           billToAddress,
           billToState,
           billToStateCode,
-          items
+          items,
+          modeOfPayment,
+          paymentModeOther,
+          bankName: bankNameForm,
+          transactionUtrNo,
+          chequeDdNo,
+          chequeDdDate,
+          drawnOnBank
         })
       });
       const data = await res.json();
@@ -137,6 +158,13 @@ export default function InvoicePage() {
     setBillToAddress(inv.billToAddress);
     setBillToState(inv.billToState || "Delhi");
     setBillToStateCode(inv.billToStateCode || "07");
+    setModeOfPayment(inv.modeOfPayment || "NEFT/RTGS");
+    setPaymentModeOther(inv.paymentModeOther || "");
+    setBankNameForm(inv.bankName || "");
+    setTransactionUtrNo(inv.transactionUtrNo || "");
+    setChequeDdNo(inv.chequeDdNo || "");
+    setChequeDdDate(inv.chequeDdDate || "");
+    setDrawnOnBank(inv.drawnOnBank || "");
 
     // Ensure all items conform to interface
     const formattedItems = inv.items.map((item: any) => ({
@@ -174,6 +202,13 @@ export default function InvoicePage() {
     setBillToAddress("12, Connaught Place, New Delhi");
     setBillToState("Delhi");
     setBillToStateCode("07");
+    setModeOfPayment("NEFT/RTGS");
+    setPaymentModeOther("");
+    setBankNameForm("");
+    setTransactionUtrNo("");
+    setChequeDdNo("");
+    setChequeDdDate("");
+    setDrawnOnBank("");
     setItems([
       {
         id: "1",
@@ -384,7 +419,7 @@ export default function InvoicePage() {
           </div>
         )}
 
-        <CardContent className="p-6">
+        <div className="p-6">
           {activeTab === "list" ? (
             <div className="space-y-4">
               {loading ? (
@@ -451,7 +486,7 @@ export default function InvoicePage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Meta Section */}
                 <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">1. Invoice Meta Info</h3>
@@ -515,69 +550,199 @@ export default function InvoicePage() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </div>                 {/* Payment & Transaction details */}
+                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">3. Payment Details</h3>
+                  <div className="space-y-3">
 
-              {/* Items Editor */}
-              <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                <div className="flex justify-between items-center border-b pb-1.5">
-                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">3. Invoice Line Items</h3>
-                  <Button size="sm" variant="outline" onClick={handleAddItem} className="h-7 text-xs bg-white text-zinc-900 hover:bg-zinc-50">
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Add Line Item
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {items.map((item, index) => (
-                    <div key={item.id} className="p-3 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-250 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                      <div className="md:col-span-3">
-                        <Label className="text-[10px] text-zinc-500">Service / Product Title</Label>
-                        <Input value={item.title} onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)} className="h-8 text-xs font-medium" />
-                      </div>
-                      <div className="md:col-span-3">
-                        <Label className="text-[10px] text-zinc-500">Description</Label>
-                        <Input value={item.desc} onChange={(e) => handleUpdateItem(item.id, "desc", e.target.value)} className="h-8 text-xs" />
-                      </div>
-                      <div className="md:col-span-1">
-                        <Label className="text-[10px] text-zinc-500">SAC / HSN</Label>
-                        <Input value={item.sacCode} onChange={(e) => handleUpdateItem(item.id, "sacCode", e.target.value)} className="h-8 text-xs text-center" />
-                      </div>
-                      <div className="md:col-span-1">
-                        <Label className="text-[10px] text-zinc-500">Qty</Label>
-                        <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-8 text-xs text-center" />
-                      </div>
-                      <div className="md:col-span-1.5">
-                        <Label className="text-[10px] text-zinc-500">Rate (₹)</Label>
-                        <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-8 text-xs font-semibold text-right" />
-                      </div>
-                      <div className="md:col-span-2.5 flex items-center gap-2">
-                        <div className="w-full">
-                          <Label className="text-[10px] text-zinc-400">IGST %</Label>
-                          <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveItem(item.id)}
-                          disabled={items.length === 1}
-                          className="text-zinc-400 hover:text-rose-500 h-8 w-8 ml-auto flex-shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                    {/* Mode of Payment (Radios) */}
+                    <div>
+                      <Label className="text-xs text-zinc-500 block mb-1.5 font-bold">Mode of Payment</Label>
+                      <div className="flex flex-wrap items-center gap-4 text-xs">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="modeOfPayment"
+                            value="Cash"
+                            checked={modeOfPayment === "Cash"}
+                            onChange={(e) => setModeOfPayment(e.target.value)}
+                            className="text-indigo-650"
+                          />
+                          Cash
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="modeOfPayment"
+                            value="UPI"
+                            checked={modeOfPayment === "UPI"}
+                            onChange={(e) => setModeOfPayment(e.target.value)}
+                            className="text-indigo-650"
+                          />
+                          UPI
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="modeOfPayment"
+                            value="Cheque"
+                            checked={modeOfPayment === "Cheque"}
+                            onChange={(e) => setModeOfPayment(e.target.value)}
+                            className="text-indigo-650"
+                          />
+                          Cheque
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="modeOfPayment"
+                            value="Bank Account"
+                            checked={modeOfPayment === "Bank Account"}
+                            onChange={(e) => setModeOfPayment(e.target.value)}
+                            className="text-indigo-650"
+                          />
+                          Bank Account
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="modeOfPayment"
+                            value="Other"
+                            checked={modeOfPayment === "Other"}
+                            onChange={(e) => setModeOfPayment(e.target.value)}
+                            className="text-indigo-650"
+                          />
+                          Other
+                        </label>
+                        {modeOfPayment === "Other" && (
+                          <Input
+                            value={paymentModeOther}
+                            onChange={(e) => setPaymentModeOther(e.target.value)}
+                            placeholder="Specify mode"
+                            className="h-7 text-xs w-28 ml-1"
+                          />
+                        )}
                       </div>
                     </div>
-                  ))}
+
+                    {/* Bank Name & Transaction / UTR No. */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-zinc-500">Bank Name</Label>
+                        <Input
+                          value={bankNameForm}
+                          onChange={(e) => setBankNameForm(e.target.value)}
+                          placeholder="e.g. State Bank of India"
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-rose-500 font-bold">Transaction / UTR No. *</Label>
+                        <Input
+                          value={transactionUtrNo}
+                          onChange={(e) => setTransactionUtrNo(e.target.value)}
+                          placeholder="UTR / Trans No."
+                          className="h-8 text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Cheque / DD No, Date, Drawn on Bank */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-xs text-zinc-500">Cheque / DD No.</Label>
+                        <Input
+                          value={chequeDdNo}
+                          onChange={(e) => setChequeDdNo(e.target.value)}
+                          placeholder="Cheque / DD No."
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-zinc-500">Date</Label>
+                        <Input
+                          type="date"
+                          value={chequeDdDate}
+                          onChange={(e) => setChequeDdDate(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-zinc-500">Drawn On Bank</Label>
+                        <Input
+                          value={drawnOnBank}
+                          onChange={(e) => setDrawnOnBank(e.target.value)}
+                          placeholder="e.g. ICICI Bank"
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Items Editor */}
+                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                  <div className="flex justify-between items-center border-b pb-1.5">
+                    <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">3. Invoice Line Items</h3>
+                    <Button size="sm" variant="outline" onClick={handleAddItem} className="h-7 text-xs bg-white text-zinc-900 hover:bg-zinc-50">
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Add Line Item
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {items.map((item, index) => (
+                      <div key={item.id} className="p-3 bg-white dark:bg-zinc-950 rounded-lg border border-zinc-250 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div className="md:col-span-3">
+                          <Label className="text-[10px] text-zinc-500">Service / Product Title</Label>
+                          <Input value={item.title} onChange={(e) => handleUpdateItem(item.id, "title", e.target.value)} className="h-8 text-xs font-medium" />
+                        </div>
+                        <div className="md:col-span-3">
+                          <Label className="text-[10px] text-zinc-500">Description</Label>
+                          <Input value={item.desc} onChange={(e) => handleUpdateItem(item.id, "desc", e.target.value)} className="h-8 text-xs" />
+                        </div>
+                        <div className="md:col-span-1">
+                          <Label className="text-[10px] text-zinc-500">SAC / HSN</Label>
+                          <Input value={item.sacCode} onChange={(e) => handleUpdateItem(item.id, "sacCode", e.target.value)} className="h-8 text-xs text-center" />
+                        </div>
+                        <div className="md:col-span-1">
+                          <Label className="text-[10px] text-zinc-500">Qty</Label>
+                          <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-8 text-xs text-center" />
+                        </div>
+                        <div className="md:col-span-1.5">
+                          <Label className="text-[10px] text-zinc-500">Rate (₹)</Label>
+                          <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-8 text-xs font-semibold text-right" />
+                        </div>
+                        <div className="md:col-span-2.5 flex items-center gap-2">
+                          <div className="w-full">
+                            <Label className="text-[10px] text-zinc-400">IGST %</Label>
+                            <Input type="number" value={item.igstRate} onChange={(e) => handleUpdateItem(item.id, "igstRate", Number(e.target.value))} className="h-8 text-xs text-center" />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveItem(item.id)}
+                            disabled={items.length === 1}
+                            className="text-zinc-400 hover:text-rose-500 h-8 w-8 ml-auto flex-shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           )}
-        </CardContent>
+        </div>
       </Card>
 
       {/* Invoice Output Sheet Preview - Clean Printable View */}
       <div className="p-0 md:p-6 print:p-0 flex justify-center">
         {/* Scoped Styling for the Invoice Sheet to match the target HTML */}
         <div className="sheet-container">
-          <style jsx global>{`
+          <style dangerouslySetInnerHTML={{
+            __html: `
             .sheet-container {
               width: 100%;
               max-width: 820px;
@@ -960,7 +1125,7 @@ export default function InvoicePage() {
                  width: 100% !important;
                }
              }
-          `}</style>
+          ` }} />
 
           <div className="invoice">
             {/* HEADER */}
@@ -1090,6 +1255,44 @@ export default function InvoicePage() {
             <div className="bottom-section">
               <div className="left-col">
                 <div className="box">
+                  <div className="box-title">Payment Mode & Transaction Details</div>
+                  <div className="bank-details">
+                    <div>
+                      <span className="k">Mode of Payment</span>
+                      <span className="v">{modeOfPayment === "Other" ? paymentModeOther : modeOfPayment}</span>
+                    </div>
+                    {bankNameForm && (
+                      <div>
+                        <span className="k">Bank Name</span>
+                        <span className="v">{bankNameForm}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="k">Transaction / UTR No.</span>
+                      <span className="v font-mono">{transactionUtrNo}</span>
+                    </div>
+                    {chequeDdNo && (
+                      <div>
+                        <span className="k">Cheque / DD No.</span>
+                        <span className="v font-mono">{chequeDdNo}</span>
+                      </div>
+                    )}
+                    {chequeDdDate && (
+                      <div>
+                        <span className="k">Payment Date</span>
+                        <span className="v">{chequeDdDate}</span>
+                      </div>
+                    )}
+                    {drawnOnBank && (
+                      <div>
+                        <span className="k">Drawn On Bank</span>
+                        <span className="v">{drawnOnBank}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="box">
                   <div className="box-title">Bank Transfer Details</div>
                   <div className="bank-details">
                     <div>
@@ -1171,5 +1374,5 @@ export default function InvoicePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
