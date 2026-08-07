@@ -23,7 +23,7 @@
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.477.0",
     "mongoose": "^9.7.4",
-    "next": "16.2.10",
+    "next": "16.3.0",
     "next-swagger-doc": "^0.4.1",
     "nodemailer": "^9.0.3",
     "qrcode.react": "^4.2.0",
