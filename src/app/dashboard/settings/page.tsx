@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings, Plug } from "lucide-react";
+import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings, Plug, Database, Download, Upload, AlertTriangle } from "lucide-react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("Company Profile");
@@ -13,6 +13,20 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
+
+  // Backup states
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [restoreMode, setRestoreMode] = useState<"merge" | "overwrite">("merge");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [backupStats, setBackupStats] = useState<{ collections: number; files: number; sizeMb: string } | null>(null);
+  
+  // Selection checkboxes
+  const [exportDb, setExportDb] = useState(true);
+  const [exportFiles, setExportFiles] = useState(true);
+  const [importDb, setImportDb] = useState(true);
+  const [importFiles, setImportFiles] = useState(true);
 
   const TABS = [
     { name: "Company Profile", icon: Building },
@@ -24,7 +38,8 @@ export default function SettingsPage() {
     { name: "Email Templates", icon: Mail },
     { name: "SMS Templates", icon: MessageSquare },
     { name: "Integrations", icon: Plug },
-    { name: "Access Control", icon: Shield }
+    { name: "Access Control", icon: Shield },
+    { name: "Database Backup", icon: Database }
   ];
 
   useEffect(() => {
@@ -47,6 +62,23 @@ export default function SettingsPage() {
       fetch("/api/users").then(res => res.json()).then(data => {
         if (data.success) setUsers(data.data);
       });
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "Database Backup") {
+      fetch("/api/settings/backup/status")
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setBackupStats({
+              collections: data.collections,
+              files: data.files,
+              sizeMb: data.sizeMb
+            });
+          }
+        })
+        .catch(console.error);
     }
   }, [activeTab]);
 
@@ -92,6 +124,99 @@ export default function SettingsPage() {
   const handleArrayChange = (field: string, value: string) => {
     const arr = value.split(',').map(s => s.trim()).filter(s => s);
     setSettings({ ...settings, [field]: arr });
+  };
+
+  const handleExportBackup = async () => {
+    if (!exportDb && !exportFiles) {
+      setBackupMsg({ type: "error", text: "Please select at least one option (Database or KYC Documents) to export" });
+      return;
+    }
+    setBackupLoading(true);
+    setBackupMsg(null);
+    try {
+      const res = await fetch(`/api/settings/backup?includeDb=${exportDb}&includeFiles=${exportFiles}`);
+      if (!res.ok) throw new Error("Failed to export backup");
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateStr = new Date().toISOString().split("T")[0];
+      a.download = `crm_backup_${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setBackupMsg({ type: "success", text: "Database backup downloaded successfully!" });
+    } catch (e: any) {
+      setBackupMsg({ type: "error", text: e.message || "Failed to download backup" });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleImportBackup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!backupFile) {
+      setBackupMsg({ type: "error", text: "Please select a backup file first" });
+      return;
+    }
+    if (!importDb && !importFiles) {
+      setBackupMsg({ type: "error", text: "Please select at least one option (Database or KYC Documents) to restore" });
+      return;
+    }
+    if (restoreMode === "overwrite" && !confirmDelete) {
+      setBackupMsg({ type: "error", text: "You must confirm the data overwrite checkbox" });
+      return;
+    }
+
+    setBackupLoading(true);
+    setBackupMsg(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const text = event.target?.result as string;
+          const parsedData = JSON.parse(text);
+
+          const res = await fetch("/api/settings/backup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: restoreMode, data: parsedData, restoreDb: importDb, restoreFiles: importFiles })
+          });
+          const json = await res.json();
+          if (json.success) {
+            setBackupMsg({ type: "success", text: "Backup restored successfully!" });
+            setBackupFile(null);
+            setConfirmDelete(false);
+            
+            // Refresh stats
+            fetch("/api/settings/backup/status")
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  setBackupStats({
+                    collections: data.collections,
+                    files: data.files,
+                    sizeMb: data.sizeMb
+                  });
+                }
+              }).catch(console.error);
+          } else {
+            setBackupMsg({ type: "error", text: json.error || "Failed to restore backup" });
+          }
+        } catch (err: any) {
+          setBackupMsg({ type: "error", text: "Invalid JSON format in backup file" });
+        } finally {
+          setBackupLoading(false);
+        }
+      };
+      reader.readAsText(backupFile);
+    } catch (err: any) {
+      setBackupMsg({ type: "error", text: "Failed to read backup file" });
+      setBackupLoading(false);
+    }
   };
 
   if (loading) return <div className="p-8">Loading settings...</div>;
@@ -475,6 +600,165 @@ export default function SettingsPage() {
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "Database Backup" && (
+                <div className="space-y-8">
+                  {backupMsg && (
+                    <div className={`p-4 rounded-lg border text-sm font-bold flex items-center gap-2 ${
+                      backupMsg.type === "success" 
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
+                        : "bg-rose-50 border-rose-200 text-rose-800"
+                    }`}>
+                      {backupMsg.type === "success" ? "✔" : "⚠"} {backupMsg.text}
+                    </div>
+                  )}
+
+                  {/* Status & Stats Panel */}
+                  {backupStats && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-xl bg-white dark:bg-zinc-950 dark:border-zinc-800 shadow-sm">
+                        <p className="text-[10px] uppercase font-black text-zinc-400 tracking-wider">Database Tables</p>
+                        <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{backupStats.collections} collections</p>
+                      </div>
+                      <div className="p-4 border rounded-xl bg-white dark:bg-zinc-950 dark:border-zinc-800 shadow-sm">
+                        <p className="text-[10px] uppercase font-black text-zinc-400 tracking-wider">KYC & Document Uploads</p>
+                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{backupStats.files} files</p>
+                      </div>
+                      <div className="p-4 border rounded-xl bg-white dark:bg-zinc-950 dark:border-zinc-800 shadow-sm">
+                        <p className="text-[10px] uppercase font-black text-zinc-400 tracking-wider">Files Storage Size</p>
+                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{backupStats.sizeMb} MB</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Export Card */}
+                  <div className="p-5 border rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                    <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-2 mb-2">
+                      <Download className="w-5 h-5 text-indigo-600" /> Export CRM Data
+                    </h3>
+                    <p className="text-xs text-zinc-500 mb-4">
+                      Choose which components to package into your JSON backup file.
+                    </p>
+                    
+                    <div className="space-y-3 mb-4 bg-white dark:bg-zinc-950 p-4 rounded-lg border border-zinc-150 dark:border-zinc-850">
+                      <label className="flex items-center gap-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={exportDb} 
+                          onChange={(e) => setExportDb(e.target.checked)}
+                          className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" 
+                        />
+                        Include Database Tables ({backupStats?.collections || 0} collections)
+                      </label>
+                      <label className="flex items-center gap-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={exportFiles} 
+                          onChange={(e) => setExportFiles(e.target.checked)}
+                          className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" 
+                        />
+                        Include KYC & Document Uploads ({backupStats?.files || 0} files - {backupStats?.sizeMb || "0"} MB)
+                      </label>
+                    </div>
+
+                    <Button 
+                      onClick={handleExportBackup} 
+                      disabled={backupLoading || (!exportDb && !exportFiles)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                    >
+                      {backupLoading ? "Generating..." : "Download Backup (.json)"}
+                    </Button>
+                  </div>
+
+                  {/* Import Card */}
+                  <div className="p-5 border rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                    <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-2 mb-2">
+                      <Upload className="w-5 h-5 text-amber-600" /> Import & Restore Backup
+                    </h3>
+                    <p className="text-xs text-zinc-500 mb-4">
+                      Upload a previously exported JSON backup and select which components to restore.
+                    </p>
+
+                    <form onSubmit={handleImportBackup} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Select Backup File (.json)</Label>
+                        <Input 
+                          type="file" 
+                          accept=".json"
+                          required
+                          onChange={(e) => setBackupFile(e.target.files?.[0] || null)}
+                          className="bg-white border-zinc-300 dark:border-zinc-700 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-3 bg-white dark:bg-zinc-950 p-4 rounded-lg border border-zinc-150 dark:border-zinc-850">
+                        <Label className="text-xs font-black text-zinc-500 mb-1 block">SELECT COMPONENTS TO IMPORT</Label>
+                        <label className="flex items-center gap-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={importDb} 
+                            onChange={(e) => setImportDb(e.target.checked)}
+                            className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" 
+                          />
+                          Restore Database Tables
+                        </label>
+                        <label className="flex items-center gap-3 text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={importFiles} 
+                            onChange={(e) => setImportFiles(e.target.checked)}
+                            className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500" 
+                          />
+                          Restore KYC & Document Uploads
+                        </label>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Restore Mode</Label>
+                        <select 
+                          value={restoreMode}
+                          onChange={(e) => setRestoreMode(e.target.value as any)}
+                          className="block w-full text-sm border border-zinc-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white px-3 py-2 dark:bg-zinc-950 dark:border-zinc-800"
+                        >
+                          <option value="merge">Merge / Append Data (safely adds records/files without deleting current ones)</option>
+                          <option value="overwrite">Full Restore (wipes existing database tables and files first - DANGER)</option>
+                        </select>
+                      </div>
+
+                      {restoreMode === "overwrite" && (
+                        <div className="p-4 border border-rose-350 bg-rose-50/50 rounded-lg flex gap-3 text-rose-900 items-start">
+                          <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                          <div className="space-y-2 text-xs">
+                            <p className="font-extrabold">Warning: Destructive Action</p>
+                            <p>This action will completely erase selected components (database collections and/or uploaded files). Make sure you have a safe copy of your data before proceeding.</p>
+                            <label className="flex items-center gap-2 font-bold cursor-pointer mt-1">
+                              <input 
+                                type="checkbox" 
+                                checked={confirmDelete}
+                                onChange={(e) => setConfirmDelete(e.target.checked)}
+                                className="rounded border-rose-300 text-rose-600 focus:ring-rose-500"
+                              />
+                              I understand this will overwrite current database records/files
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      <Button 
+                        type="submit" 
+                        disabled={backupLoading || !backupFile || (!importDb && !importFiles) || (restoreMode === "overwrite" && !confirmDelete)}
+                        className={`font-bold ${
+                          restoreMode === "overwrite" 
+                            ? "bg-rose-600 hover:bg-rose-700 text-white" 
+                            : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        }`}
+                      >
+                        {backupLoading ? "Restoring..." : "Run Database Import"}
+                      </Button>
+                    </form>
                   </div>
                 </div>
               )}
