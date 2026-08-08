@@ -12,7 +12,7 @@ export default function CalculatorPage() {
   const [interestType, setInterestType] = useState<"rupee" | "percent">("rupee");
   const [rate, setRate] = useState<number>(16);
   const [showEquivalent, setShowEquivalent] = useState<boolean>(true);
-  
+
   // Dates
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -32,7 +32,7 @@ export default function CalculatorPage() {
     const today = new Date();
     const nextMonth = new Date();
     nextMonth.setMonth(today.getMonth() + 1);
-    
+
     setFromDate(formatDateToISO(today));
     setToDate(formatDateToISO(nextMonth));
   }, []);
@@ -167,7 +167,7 @@ export default function CalculatorPage() {
     const intAmount = monthlyInt * totalMonthsFraction;
 
     setInterestAmount(`₹${Math.round(intAmount).toLocaleString("en-IN")}`);
-    
+
     const dailyInt = intAmount / totalDays;
     setDailyInterest(`₹${dailyInt.toFixed(2)}`);
 
@@ -215,18 +215,18 @@ export default function CalculatorPage() {
       {/* Main Form Card */}
       <Card className="border border-zinc-200 dark:border-zinc-800 shadow-xl bg-white dark:bg-zinc-950 overflow-hidden">
         <CardContent className="p-6 md:p-8 space-y-6">
-          
+
           {/* Principal Amount Field */}
           <div className="space-y-2">
             <Label className="text-zinc-900 dark:text-zinc-300 font-bold text-xs uppercase tracking-wide">
               Principal Amount ₹
             </Label>
-            <Input 
-              type="number" 
-              value={principal || ""} 
-              onChange={(e) => setPrincipal(Number(e.target.value))} 
+            <Input
+              type="number"
+              value={principal || ""}
+              onChange={(e) => setPrincipal(Number(e.target.value))}
               placeholder="Enter amount"
-              className="h-10 text-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500"
+              className="h-10 text-zinc-900 dark:text-black border-zinc-200 dark:border-zinc-800 focus:ring-indigo-500"
             />
             {principal > 0 && (
               <p className="text-xs font-semibold text-amber-600 dark:text-amber-500 italic">
@@ -247,11 +247,10 @@ export default function CalculatorPage() {
                   setInterestType("rupee");
                   setRate(16);
                 }}
-                className={`h-10 font-bold text-xs ${
-                  interestType === "rupee"
-                    ? "bg-[#0d2452] text-white hover:bg-[#0a1c3f]"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300"
-                }`}
+                className={`h-10 font-bold text-xs ${interestType === "rupee"
+                  ? "bg-[#0d2452] text-white hover:bg-[#0a1c3f]"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300"
+                  }`}
               >
                 ₹ Rupees
               </Button>
@@ -261,11 +260,10 @@ export default function CalculatorPage() {
                   setInterestType("percent");
                   setRate(12);
                 }}
-                className={`h-10 font-bold text-xs ${
-                  interestType === "percent"
-                    ? "bg-[#0d2452] text-white hover:bg-[#0a1c3f]"
-                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300"
-                }`}
+                className={`h-10 font-bold text-xs ${interestType === "percent"
+                  ? "bg-[#0d2452] text-white hover:bg-[#0a1c3f]"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-300"
+                  }`}
               >
                 % Percentage
               </Button>
@@ -275,26 +273,26 @@ export default function CalculatorPage() {
           {/* Rate field */}
           <div className="space-y-2">
             <Label className="text-zinc-900 dark:text-zinc-300 font-bold text-xs uppercase tracking-wide">
-              {interestType === "rupee" 
-                ? "Interest Rate (₹ per ₹100 / month)" 
+              {interestType === "rupee"
+                ? "Interest Rate (₹ per ₹100 / month)"
                 : "Interest Rate (% per annum)"
               }
             </Label>
-            <Input 
+            <Input
               type="number"
               step="any"
               value={rate || ""}
               onChange={(e) => setRate(Number(e.target.value))}
               placeholder="Enter rate"
-              className="h-10 text-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-800"
+              className="h-10 text-zinc-900 dark:text-blackborder-zinc-200 dark:border-zinc-800"
             />
 
             {/* Equivalent switcher */}
             <div className="flex items-center justify-between pt-2">
               <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Show equivalent</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={showEquivalent}
                   onChange={(e) => setShowEquivalent(e.target.checked)}
                   className="sr-only peer"
@@ -315,22 +313,22 @@ export default function CalculatorPage() {
               <Label className="text-zinc-900 dark:text-zinc-300 font-bold text-xs uppercase tracking-wide">
                 From Date
               </Label>
-              <Input 
+              <Input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="h-10 text-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-800"
+                className="h-10 text-zinc-900 dark:text-black border-zinc-200 dark:border-zinc-800"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-zinc-900 dark:text-zinc-300 font-bold text-xs uppercase tracking-wide">
                 To Date
               </Label>
-              <Input 
+              <Input
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="h-10 text-zinc-900 dark:text-white border-zinc-200 dark:border-zinc-800"
+                className="h-10 text-zinc-900 dark:text-black border-zinc-200 dark:border-zinc-800"
               />
             </div>
           </div>
