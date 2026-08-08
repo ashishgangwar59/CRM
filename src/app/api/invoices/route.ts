@@ -92,3 +92,59 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    await connectToDatabase();
+    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const payload = verifyAccessToken(token);
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing invoice ID" }, { status: 400 });
+
+    const body = await req.json();
+    const updatedInvoice = await Invoice.findByIdAndUpdate(id, body, { new: true });
+    
+    if (!updatedInvoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: updatedInvoice, message: "Invoice updated successfully" });
+  } catch (error) {
+    console.error("PUT Invoice Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    await connectToDatabase();
+    const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const payload = verifyAccessToken(token);
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing invoice ID" }, { status: 400 });
+
+    const deleted = await Invoice.findByIdAndDelete(id);
+    if (!deleted) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: "Invoice deleted successfully" });
+  } catch (error) {
+    console.error("DELETE Invoice Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

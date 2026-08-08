@@ -41,6 +41,7 @@ export default function InvoicePage() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
 
   // File upload state
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -122,33 +123,40 @@ export default function InvoicePage() {
         setSaving(false);
         return;
       }
-      const res = await fetch("/api/invoices", {
-        method: "POST",
+
+      const payloadData = {
+        invoiceNo,
+        invoiceDate,
+        reverseCharge,
+        state,
+        stateCode,
+        billToName,
+        billToAddress,
+        billToState,
+        billToStateCode,
+        items,
+        modeOfPayment,
+        paymentModeOther,
+        bankName: bankNameForm,
+        transactionUtrNo,
+        chequeDdNo,
+        chequeDdDate,
+        drawnOnBank,
+        attachments: uploadedFiles
+      };
+
+      const url = editingInvoiceId ? `/api/invoices?id=${editingInvoiceId}` : "/api/invoices";
+      const method = editingInvoiceId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          invoiceNo,
-          invoiceDate,
-          reverseCharge,
-          state,
-          stateCode,
-          billToName,
-          billToAddress,
-          billToState,
-          billToStateCode,
-          items,
-          modeOfPayment,
-          paymentModeOther,
-          bankName: bankNameForm,
-          transactionUtrNo,
-          chequeDdNo,
-          chequeDdDate,
-          drawnOnBank,
-          attachments: uploadedFiles
-        })
+        body: JSON.stringify(payloadData)
       });
       const data = await res.json();
       if (data.success) {
-        setSuccessMessage("Invoice saved successfully!");
+        setSuccessMessage(editingInvoiceId ? "Invoice updated successfully!" : "Invoice saved successfully!");
+        setEditingInvoiceId(null);
         fetchInvoices();
         setActiveTab("list");
       } else {
@@ -158,6 +166,23 @@ export default function InvoicePage() {
       setErrorMessage("Something went wrong");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteInvoice = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this invoice?")) return;
+    try {
+      const res = await fetch(`/api/invoices?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage("Invoice deleted successfully!");
+        fetchInvoices();
+      } else {
+        setErrorMessage(data.error || "Failed to delete invoice");
+      }
+    } catch (err) {
+      setErrorMessage("Failed to delete invoice");
     }
   };
 
@@ -186,6 +211,7 @@ export default function InvoicePage() {
   };
 
   const handleLoadInvoice = (inv: any) => {
+    setEditingInvoiceId(inv._id);
     setInvoiceNo(inv.invoiceNo);
     setInvoiceDate(inv.invoiceDate);
     setReverseCharge(inv.reverseCharge || "No");
@@ -229,6 +255,7 @@ export default function InvoicePage() {
   };
 
   const handleResetForm = () => {
+    setEditingInvoiceId(null);
     const year = new Date().getFullYear();
     const nextYear = (year + 1).toString().slice(-2);
     const rand = Math.floor(1000 + Math.random() * 9000);
@@ -248,6 +275,7 @@ export default function InvoicePage() {
     setChequeDdNo("");
     setChequeDdDate("");
     setDrawnOnBank("");
+    setUploadedFiles([]);
     setItems([
       {
         id: "1",
@@ -412,12 +440,14 @@ export default function InvoicePage() {
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0 pb-4 border-b border-zinc-150 dark:border-zinc-850">
           <div>
             <CardTitle className="text-xl font-bold flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
-              <FileText className="w-5 h-5 text-indigo-650" /> Invoice Management
+              <FileText className="w-5 h-5 text-indigo-650" /> {editingInvoiceId ? "Edit Saved Invoice" : "Invoice Management"}
             </CardTitle>
             <CardDescription className="text-xs text-zinc-500 mt-1">
               {activeTab === "list"
                 ? "View and print previously saved invoices."
-                : "Create new professional tax invoices, save them to the system, and export as PDF."}
+                : editingInvoiceId 
+                  ? `Currently editing Invoice: ${invoiceNo}. Save changes to update.`
+                  : "Create new professional tax invoices, save them to the system, and export as PDF."}
             </CardDescription>
           </div>
           {activeTab === "editor" && (
@@ -435,7 +465,7 @@ export default function InvoicePage() {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 flex items-center gap-1.5 shadow"
               >
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Save Invoice
+                {editingInvoiceId ? "Update Invoice" : "Save Invoice"}
               </Button>
               <Button
                 onClick={handlePrint}
@@ -513,6 +543,14 @@ export default function InvoicePage() {
                                 className="h-7 text-[10px] bg-[#0d2452] hover:bg-[#0a1c3f] text-white flex items-center gap-1"
                               >
                                 <Printer className="w-3 h-3" /> View & Print
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => handleDeleteInvoice(inv._id, e)}
+                                className="h-7 text-[10px] text-rose-500 hover:text-rose-700 hover:bg-rose-55 dark:hover:bg-rose-950/20"
+                              >
+                                <Trash2 className="w-3 h-3 mr-0.5" /> Delete
                               </Button>
                             </td>
                           </tr>
