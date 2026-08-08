@@ -3,7 +3,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
@@ -61,6 +61,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Invoice Form", href: "/dashboard/invoice", icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Calculator", href: "/dashboard/calculator", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN", "Employee", "INVESTOR"] },
     { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee", "INVESTOR"] },
   ];
@@ -69,7 +70,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (!role) return false;
     if (role === "INVESTOR") return item.roles.includes("INVESTOR");
     if (role === "Employee") {
-      if (item.name === "Debenture Form") return true;
+      if (item.name === "Debenture Form" || item.name === "Calculator") return true;
       return modules.includes(item.name);
     }
     return item.roles.includes(role);
