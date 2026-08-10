@@ -11,6 +11,7 @@ export default function SalarySlipPage() {
   const router = useRouter();
   const [payroll, setPayroll] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const slipRef = useRef<HTMLDivElement>(null);
   const [companyProfile, setCompanyProfile] = useState<any>({
     name: "Niventra Capital Advisory India Capital Pvt. Ltd.",
@@ -35,6 +36,15 @@ export default function SalarySlipPage() {
 
   useEffect(() => {
     fetchPayroll();
+
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCurrentUserRole(data.role);
+        }
+      })
+      .catch(e => console.error("Error loading user info:", e));
 
     fetch("/api/settings")
       .then(res => res.json())
@@ -189,20 +199,24 @@ export default function SalarySlipPage() {
         </div>
 
         <div className="flex space-x-2">
-          {payroll.status === "Draft" && (
-            <Button variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => handleAction("Lock")}>
-              <Lock className="mr-2 h-4 w-4" /> Lock
-            </Button>
-          )}
-          {payroll.status === "Locked" && (
-            <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => handleAction("Approve")}>
-              <CheckCircle className="mr-2 h-4 w-4" /> Approve
-            </Button>
-          )}
-          {payroll.status === "Approved" && (
-            <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleAction("Paid")}>
-              Mark as Paid (Wallet)
-            </Button>
+          {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
+            <>
+              {payroll.status === "Draft" && (
+                <Button variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => handleAction("Lock")}>
+                  <Lock className="mr-2 h-4 w-4" /> Lock
+                </Button>
+              )}
+              {payroll.status === "Locked" && (
+                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => handleAction("Approve")}>
+                  <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                </Button>
+              )}
+              {payroll.status === "Approved" && (
+                <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleAction("Paid")}>
+                  Mark as Paid (Wallet)
+                </Button>
+              )}
+            </>
           )}
 
           <Button variant="secondary" onClick={handleDownloadPDF}>
@@ -211,9 +225,12 @@ export default function SalarySlipPage() {
           <Button variant="outline" onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" /> Print / Save PDF
           </Button>
-          <Button onClick={handleEmail}>
-            <Mail className="mr-2 h-4 w-4" /> Email PDF
-          </Button>
+
+          {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
+            <Button onClick={handleEmail}>
+              <Mail className="mr-2 h-4 w-4" /> Email PDF
+            </Button>
+          )}
         </div>
       </div>
 
