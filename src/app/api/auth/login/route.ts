@@ -65,6 +65,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    // Deactivate/block login for exited/inactive employees
+    const { Employee } = await import("@/lib/models/Employee");
+    const employee = await Employee.findOne({ 
+      $or: [
+        { email: user.email }, 
+        { officeEmail: user.email }
+      ] 
+    });
+    if (employee && employee.status !== "Active" && employee.status !== "Notice Period") {
+      return NextResponse.json({ error: "Access Denied: Your account has been deactivated." }, { status: 403 });
+    }
+
     const isPasswordValid = await comparePassword(password, user.password || "");
 
     if (!isPasswordValid) {
