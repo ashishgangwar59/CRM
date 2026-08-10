@@ -78,7 +78,7 @@ export async function POST(req: Request) {
 
     const bonus = 0;
     const loan = 0;
-    const advance = 0;
+    const advance = structure.advanceSalaryDrawn || 0;
 
     // Pro-rate statutory deductions
     const pf = Number(((structure.pf || 0) * ratio).toFixed(2));
@@ -115,6 +115,7 @@ export async function POST(req: Request) {
           incomeTax,
           loan,
           advance,
+          advanceSalaryDrawn: advance,
           unpaidLeaveDeduction
         },
         grossSalary,

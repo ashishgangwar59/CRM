@@ -329,6 +329,14 @@ export default function SalarySlipPage() {
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Professional Tax</span><span className="font-bold text-rose-700">₹{payroll.deductions.professionalTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Income Tax (TDS)</span><span className="font-bold text-rose-700">₹{payroll.deductions.incomeTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
                 {payroll.deductions.unpaidLeaveDeduction > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">LOP Deduction (Leaves)</span><span className="font-bold text-rose-700">₹{payroll.deductions.unpaidLeaveDeduction.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}
+                {(payroll.deductions.advanceSalaryDrawn || payroll.deductions.advance) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-700">Advance Salary Drawn</span>
+                    <span className="font-bold text-rose-700">
+                      ₹{(payroll.deductions.advanceSalaryDrawn || payroll.deductions.advance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

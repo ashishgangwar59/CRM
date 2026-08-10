@@ -23,6 +23,7 @@ export default function SalaryStructurePage() {
     esi: 0,
     professionalTax: 0,
     incomeTax: 0,
+    advanceSalaryDrawn: 0,
   });
 
   const fetchData = async () => {
@@ -60,9 +61,10 @@ export default function SalaryStructurePage() {
         esi: existing.esi || 0,
         professionalTax: existing.professionalTax || 0,
         incomeTax: existing.incomeTax || 0,
+        advanceSalaryDrawn: existing.advanceSalaryDrawn || 0,
       });
     } else {
-      setFormData({ basic: 0, hra: 0, travelAllowance: 0, incentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0 });
+      setFormData({ basic: 0, hra: 0, travelAllowance: 0, incentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0, advanceSalaryDrawn: 0 });
     }
   };
 
@@ -177,6 +179,10 @@ export default function SalaryStructurePage() {
                     <div className="space-y-2">
                       <Label>Income Tax / TDS (₹)</Label>
                       <Input type="number" required value={formData.incomeTax} onChange={e => setFormData({...formData, incomeTax: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Advance Salary Drawn (₹)</Label>
+                      <Input type="number" required value={formData.advanceSalaryDrawn} onChange={e => setFormData({...formData, advanceSalaryDrawn: Number(e.target.value)})} />
                     </div>
                   </div>
                 </div>

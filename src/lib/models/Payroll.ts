@@ -26,6 +26,7 @@ export interface IPayroll extends Document {
     incomeTax: number;
     loan: number;
     advance: number;
+    advanceSalaryDrawn: number;
     unpaidLeaveDeduction: number; // LOP
   };
   
@@ -67,6 +68,7 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
       incomeTax: { type: Number, default: 0 },
       loan: { type: Number, default: 0 },
       advance: { type: Number, default: 0 },
+      advanceSalaryDrawn: { type: Number, default: 0 },
       unpaidLeaveDeduction: { type: Number, default: 0 },
     },
     
