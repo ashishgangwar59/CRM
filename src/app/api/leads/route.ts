@@ -81,12 +81,36 @@ export async function GET(req: Request) {
       query.ownerId = employeeIdFilter;
     }
 
-    const leads = await Lead.find(query)
-      .populate("ownerId", "firstName lastName")
-      .sort({ createdAt: -1 })
-      .lean();
+    const page = parseInt(searchParams.get("page") || "0");
+    const limit = parseInt(searchParams.get("limit") || "0");
 
-    return NextResponse.json({ success: true, data: leads });
+    let leads;
+    let total = 0;
+    if (page > 0 && limit > 0) {
+      total = await Lead.countDocuments(query);
+      leads = await Lead.find(query)
+        .populate("ownerId", "firstName lastName")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+    } else {
+      leads = await Lead.find(query)
+        .populate("ownerId", "firstName lastName")
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      data: leads,
+      pagination: page > 0 && limit > 0 ? {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      } : null
+    });
   } catch (error) {
     console.error("Fetch Leads Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

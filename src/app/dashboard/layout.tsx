@@ -95,6 +95,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               alt="CRM Hub Logo"
               width={32}
               height={32}
+              loading="lazy"
               className="rounded-md object-contain shrink-0"
             />
             {!isCollapsed && <span className="transition-opacity duration-300">CRM Hub</span>}

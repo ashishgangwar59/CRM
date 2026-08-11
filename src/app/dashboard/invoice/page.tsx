@@ -88,14 +88,26 @@ export default function InvoicePage() {
     },
   ]);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Load invoice list on mount
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/invoices");
+      const res = await fetch(`/api/invoices?page=${page}&limit=${limit}`);
       const data = await res.json();
       if (data.success) {
         setSavedInvoices(data.data);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+          setTotalItems(data.pagination.total || 0);
+        } else {
+          setTotalPages(1);
+          setTotalItems(data.data.length || 0);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -103,6 +115,12 @@ export default function InvoicePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === "list") {
+      fetchInvoices();
+    }
+  }, [activeTab, page, limit]);
 
   useEffect(() => {
     const year = new Date().getFullYear();
@@ -558,6 +576,45 @@ export default function InvoicePage() {
                       })}
                     </tbody>
                   </table>
+
+                  {/* Pagination Controls */}
+                  <div className="flex items-center justify-between p-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
+                    <div className="flex items-center space-x-2">
+                      <span>Show</span>
+                      <select
+                        value={limit}
+                        onChange={(e) => setLimit(Number(e.target.value))}
+                        className="rounded-md border border-zinc-300 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                      <span>entries (Total: {totalItems})</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page <= 1}
+                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        Page {page} of {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page >= totalPages}
+                        onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

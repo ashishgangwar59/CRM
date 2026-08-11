@@ -45,12 +45,24 @@ export default function EmployeesPage() {
   const [activeTab, setActiveTab] = useState<"list" | "hierarchy" >("list");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   const fetchEmployees = async () => {
     try {
-      const res = await fetch(`/api/employees?search=${search}&status=${status}`);
+      const res = await fetch(`/api/employees?search=${search}&status=${status}&page=${page}&limit=${limit}`);
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+          setTotalItems(data.pagination.total || 0);
+        } else {
+          setTotalPages(1);
+          setTotalItems(data.data.length || 0);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -58,8 +70,12 @@ export default function EmployeesPage() {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [search, status, limit]);
+
+  useEffect(() => {
     fetchEmployees();
-  }, [search, status]);
+  }, [search, status, page, limit]);
 
   const handleExport = () => {
     window.location.href = `/api/employees/export?search=${search}&status=${status}`;
@@ -230,7 +246,7 @@ export default function EmployeesPage() {
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-200 dark:border-zinc-700">
                           {emp.profilePhotoUrl ? (
-                            <img src={emp.profilePhotoUrl} alt="Profile" className="h-full w-full object-cover" />
+                            <img src={emp.profilePhotoUrl} alt="Profile" loading="lazy" className="h-full w-full object-cover" />
                           ) : (
                             <User className="h-5 w-5 text-zinc-500" />
                           )}
@@ -278,6 +294,45 @@ export default function EmployeesPage() {
                 )}
               </TableBody>
             </Table>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
+              <div className="flex items-center space-x-2">
+                <span>Show</span>
+                <select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  className="rounded-md border border-zinc-300 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span>entries (Total: {totalItems})</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       ) : (

@@ -16,6 +16,11 @@ export default function AdminInvestorsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Modal / Detail state
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
   const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
@@ -84,7 +89,7 @@ export default function AdminInvestorsPage() {
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}`;
+      const query = `?search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -95,6 +100,13 @@ export default function AdminInvestorsPage() {
         } else {
           setInvestors([]);
         }
+        if (json.pagination) {
+          setTotalPages(json.pagination.totalPages || 1);
+          setTotalItems(json.pagination.total || 0);
+        } else {
+          setTotalPages(1);
+          setTotalItems(Array.isArray(json.data) ? json.data.length : (json.data ? 1 : 0));
+        }
       }
     } catch (e) {
       console.error("Fetch Investors Error:", e);
@@ -104,8 +116,12 @@ export default function AdminInvestorsPage() {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, limit]);
+
+  useEffect(() => {
     fetchInvestors();
-  }, [search, statusFilter]);
+  }, [search, statusFilter, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -398,6 +414,45 @@ export default function AdminInvestorsPage() {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
+            <div className="flex items-center space-x-2">
+              <span>Show</span>
+              <select
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+                className="rounded-md border border-zinc-300 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span>entries (Total: {totalItems})</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              >
+                Previous
+              </Button>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

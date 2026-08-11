@@ -14,8 +14,32 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const invoices = await Invoice.find().sort({ createdAt: -1 });
-    return NextResponse.json({ success: true, data: invoices });
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "0");
+    const limit = parseInt(searchParams.get("limit") || "0");
+
+    let invoices;
+    let total = 0;
+    if (page > 0 && limit > 0) {
+      total = await Invoice.countDocuments();
+      invoices = await Invoice.find()
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+    } else {
+      invoices = await Invoice.find().sort({ createdAt: -1 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      data: invoices,
+      pagination: page > 0 && limit > 0 ? {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      } : null
+    });
   } catch (error) {
     console.error("GET Invoices Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

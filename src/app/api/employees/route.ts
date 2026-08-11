@@ -250,9 +250,31 @@ export async function GET(req: Request) {
       query.status = status;
     }
 
-    const employees = await Employee.find(query).sort({ createdAt: -1 });
+    const page = parseInt(searchParams.get("page") || "0");
+    const limit = parseInt(searchParams.get("limit") || "0");
 
-    return NextResponse.json({ success: true, data: employees });
+    let employees;
+    let total = 0;
+    if (page > 0 && limit > 0) {
+      total = await Employee.countDocuments(query);
+      employees = await Employee.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+    } else {
+      employees = await Employee.find(query).sort({ createdAt: -1 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      data: employees,
+      pagination: page > 0 && limit > 0 ? {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      } : null
+    });
   } catch (error) {
     console.error("Fetch Employees Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

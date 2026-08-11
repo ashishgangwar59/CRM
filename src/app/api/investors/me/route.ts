@@ -62,8 +62,32 @@ export async function GET(req: Request) {
         }
       }
 
-      const investors = await Investor.find(query).sort({ createdAt: -1 }).lean();
-      return NextResponse.json({ success: true, data: investors });
+      const page = parseInt(searchParams.get("page") || "0");
+      const limit = parseInt(searchParams.get("limit") || "0");
+
+      let investors;
+      let total = 0;
+      if (page > 0 && limit > 0) {
+        total = await Investor.countDocuments(query);
+        investors = await Investor.find(query)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean();
+      } else {
+        investors = await Investor.find(query).sort({ createdAt: -1 }).lean();
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        data: investors,
+        pagination: page > 0 && limit > 0 ? {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        } : null
+      });
     }
 
     // If Investor self login: Return their investor profile
