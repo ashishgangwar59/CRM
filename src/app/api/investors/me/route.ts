@@ -196,22 +196,40 @@ export async function PUT(req: Request) {
 
     // If Admin/KeyAdmin/Manager/Staff verifying/editing an investor
     if (role !== "INVESTOR") {
-      const { investorId, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm } = body;
+      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, investmentDate, bondMaturityMonths } = body;
+      const targetId = investorId || _id || id;
 
-      const updateData: any = {};
-      if (status) updateData.status = status;
-      if (rejectionReason !== undefined) updateData.rejectionReason = rejectionReason;
-      if (investmentAmount !== undefined) updateData.investmentAmount = Number(investmentAmount);
-      if (monthlyGrowthPercentage !== undefined) updateData.monthlyGrowthPercentage = Number(monthlyGrowthPercentage);
-      if (fullName) updateData.fullName = fullName;
-      if (phone) updateData.phone = phone;
-      if (email) updateData.email = email;
+      if (!targetId) return NextResponse.json({ error: "Investor ID required" }, { status: 400 });
 
-      const currentInvestor = await Investor.findById(investorId);
-      if (!currentInvestor) return NextResponse.json({ error: "Investor not found" }, { status: 404 });
+      const updateFields: any = {};
+      if (status) updateFields.status = status;
+      if (rejectionReason !== undefined) updateFields.rejectionReason = rejectionReason;
+      if (investmentAmount !== undefined && !isNaN(Number(investmentAmount))) {
+        updateFields.investmentAmount = Number(investmentAmount);
+      }
+      if (monthlyGrowthPercentage !== undefined && !isNaN(Number(monthlyGrowthPercentage))) {
+        updateFields.monthlyGrowthPercentage = Number(monthlyGrowthPercentage);
+      }
+      if (investmentDate !== undefined && investmentDate !== null && String(investmentDate).trim() !== "") {
+        updateFields.investmentDate = String(investmentDate).trim();
+      }
+      if (bondMaturityMonths !== undefined && !isNaN(Number(bondMaturityMonths))) {
+        updateFields.bondMaturityMonths = Math.max(1, Number(bondMaturityMonths));
+      }
+      if (fullName) updateFields.fullName = fullName;
+      if (phone) updateFields.phone = phone;
+      if (email) updateFields.email = email;
+
+      if (status === "Verified") {
+        updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
+        updateFields.verifiedAt = new Date();
+      }
+
+      const currentInv = await Investor.findById(targetId).lean();
+      if (!currentInv) return NextResponse.json({ error: "Investor not found" }, { status: 404 });
 
       if (docVerifications) {
-        const currentDocVerifications = currentInvestor.docVerifications ? currentInvestor.toObject().docVerifications : {};
+        const currentDocVerifications = currentInv.docVerifications || {};
         const mergedDocs = {
           aadhar: "Pending",
           pan: "Pending",
@@ -223,44 +241,32 @@ export async function PUT(req: Request) {
           ...currentDocVerifications,
           ...docVerifications,
         };
+        updateFields.docVerifications = mergedDocs;
 
-        currentInvestor.docVerifications = mergedDocs;
-        currentInvestor.markModified("docVerifications");
-
-        // Auto check if mandatory docs (aadhar, pan, bankPassbook) are all Approved
         const mandatoryList = ["aadhar", "pan", "bankPassbook"];
         const anyRejected = mandatoryList.some(doc => mergedDocs[doc as keyof typeof mergedDocs] === "Rejected");
         const allApproved = mandatoryList.every(doc => mergedDocs[doc as keyof typeof mergedDocs] === "Approved");
 
         if (anyRejected) {
-          currentInvestor.status = "Rejected";
-        } else if (allApproved && currentInvestor.bondAgreement?.accepted) {
-          currentInvestor.status = "Verified";
-          currentInvestor.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
-          currentInvestor.verifiedAt = new Date();
+          updateFields.status = "Rejected";
+        } else if (allApproved && currentInv.bondAgreement?.accepted) {
+          updateFields.status = "Verified";
+          updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
+          updateFields.verifiedAt = new Date();
         }
       }
 
-      if (status) currentInvestor.status = status;
-      if (rejectionReason !== undefined) currentInvestor.rejectionReason = rejectionReason;
-      if (investmentAmount !== undefined) currentInvestor.investmentAmount = Number(investmentAmount);
-      if (monthlyGrowthPercentage !== undefined) currentInvestor.monthlyGrowthPercentage = Number(monthlyGrowthPercentage);
-      if (fullName) currentInvestor.fullName = fullName;
-      if (phone) currentInvestor.phone = phone;
-      if (email) currentInvestor.email = email;
-
       if (debentureForm) {
-        currentInvestor.debentureForm = { ...(currentInvestor.debentureForm ? currentInvestor.toObject().debentureForm : {}), ...debentureForm };
-        currentInvestor.markModified("debentureForm");
+        updateFields.debentureForm = { ...(currentInv.debentureForm || {}), ...debentureForm };
       }
 
-      if (status === "Verified") {
-        currentInvestor.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
-        currentInvestor.verifiedAt = new Date();
-      }
+      const updatedInvestor = await Investor.findByIdAndUpdate(
+        targetId,
+        { $set: updateFields },
+        { new: true, runValidators: false }
+      ).lean();
 
-      await currentInvestor.save();
-      return NextResponse.json({ success: true, data: currentInvestor });
+      return NextResponse.json({ success: true, data: updatedInvestor });
     }
 
     // Investor self-update (KYC Docs, Bond Agreement, Investment Amount request)

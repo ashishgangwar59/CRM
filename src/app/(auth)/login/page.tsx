@@ -129,7 +129,7 @@ export default function LoginPage() {
           <div className="mb-2">
             <Image
               src="/logo.png"
-              alt="CRM Hub Logo"
+              alt="CRM  Logo"
               width={64}
               height={64}
               className="object-contain rounded-md"

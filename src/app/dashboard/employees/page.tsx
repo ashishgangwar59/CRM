@@ -296,7 +296,7 @@ export default function EmployeesPage() {
             </Table>
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
+            <div className="flex items-center justify-between p-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
               <div className="flex items-center space-x-2">
                 <span>Show</span>
                 <select

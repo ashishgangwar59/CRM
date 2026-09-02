@@ -18,7 +18,7 @@ const UserSchema: Schema<IUser> = new Schema(
     role: { type: String, default: "USER" },
     lastPasswordChange: { type: Date, default: Date.now },
     requirePasswordChange: { type: Boolean, default: false },
-    accessibleModules: { type: [String], default: ["Overview", "Attendance", "Leads", "Reports", "Profile"] },
+    accessibleModules: { type: [String], default: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"] },
   },
   { timestamps: true }
 );

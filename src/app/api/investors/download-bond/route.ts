@@ -33,16 +33,34 @@ export async function GET(req: Request) {
       return new Response("Investor not found", { status: 404 });
     }
 
+    const monthsParam = searchParams.get("months");
+    const issueDateParam = searchParams.get("issueDate");
+
+    const maturityPeriodMonths = monthsParam
+      ? (parseInt(monthsParam) || 1)
+      : (Number(investor.bondMaturityMonths) || 1);
+
     const principalAmount = investor.investmentAmount || investor.debentureForm?.totalApplicationAmount || 0;
     const growthRate = investor.monthlyGrowthPercentage || 2;
-    const interestAmount = Math.round(principalAmount * (growthRate / 100));
+    const interestAmount = Math.round(principalAmount * (growthRate / 100) * maturityPeriodMonths);
     const maturityAmount = principalAmount + interestAmount;
 
-    const issueDateObj = investor.verifiedAt ? new Date(investor.verifiedAt) : new Date(investor.createdAt);
+    const issueDateVal = issueDateParam || investor.investmentDate;
+    let issueDateObj: Date;
+    if (issueDateVal) {
+      if (typeof issueDateVal === "string" && issueDateVal.includes("-") && issueDateVal.length === 10) {
+        const [y, m, d] = issueDateVal.split("-").map(Number);
+        issueDateObj = new Date(y, m - 1, d);
+      } else {
+        issueDateObj = new Date(issueDateVal);
+      }
+    } else {
+      issueDateObj = investor.verifiedAt ? new Date(investor.verifiedAt) : new Date(investor.createdAt);
+    }
     const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
     const maturityDateObj = new Date(issueDateObj);
-    maturityDateObj.setMonth(maturityDateObj.getMonth() + 1);
+    maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
     const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
     const rawSeq = (investor.investorCode || "").replace(/\D/g, "");
@@ -150,7 +168,7 @@ export async function GET(req: Request) {
                 <div class="card-body">
                   <div class="detail-row"><span>Principal Amount</span><strong>₹${principalAmount.toLocaleString()}/-</strong></div>
                   <div class="detail-row"><span>Investment Date</span><strong>${issueDateStr}</strong></div>
-                  <div class="detail-row"><span>Maturity Period</span><strong>1 Month</strong></div>
+                  <div class="detail-row"><span>Maturity Period</span><strong>${maturityPeriodMonths} ${maturityPeriodMonths === 1 ? "Month" : "Months"}</strong></div>
                   <div class="detail-row"><span>Maturity Date</span><strong>${maturityDateStr}</strong></div>
                   <div class="detail-row"><span>Amount Payable on Maturity</span><strong style="color: #be123c;">₹${maturityAmount.toLocaleString()}/-</strong></div>
                 </div>

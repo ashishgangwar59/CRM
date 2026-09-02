@@ -31,108 +31,120 @@ export function AdminDashboard() {
     fetchAdminDashboard();
   }, []);
 
-  if (loading) return <div className="p-8">Loading Key Admin Command Center...</div>;
+  if (loading) return <div className="p-8">Loading Key Admin Dashboard Overview...</div>;
   if (!data) return <div className="p-8">Failed to load admin dashboard.</div>;
 
   const k = data.kpis;
   const c = data.charts;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Command Center</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Dashboard Overview</h1>
         <p className="text-zinc-500 dark:text-zinc-400">Key Admin & Admin overview of financials, HR, and sales.</p>
       </div>
 
       {/* Row 1: Global KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-zinc-950 text-white">
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-zinc-400">Total Employees</p>
-                <h3 className="text-3xl font-bold mt-1">{k.totalEmployees}</h3>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Employees</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50">{k.totalEmployees}</h3>
               </div>
-              <div className="p-2 bg-zinc-800 rounded-lg text-zinc-300"><Users className="w-5 h-5" /></div>
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
+                <Users className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 text-white">
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-zinc-400">Total Investors</p>
-                <h3 className="text-3xl font-bold mt-1">{k.totalInvestors || 0}</h3>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Investors</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50">{k.totalInvestors || 0}</h3>
               </div>
-              <div className="p-2 bg-zinc-800 rounded-lg text-zinc-300"><Users className="w-5 h-5" /></div>
+              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-purple-600 dark:text-purple-400">
+                <Users className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-indigo-950 text-white border-indigo-900 shadow-lg shadow-indigo-900/20">
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-indigo-300">Wallet Balance</p>
-                <h3 className="text-3xl font-bold mt-1 flex items-center">
-                  <IndianRupee className="w-6 h-6 mr-1 text-indigo-400" />
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Wallet Balance</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50 flex items-center">
+                  <IndianRupee className="w-6 h-6 mr-1 text-zinc-400" />
                   {k.walletBalance.toLocaleString()}
                 </h3>
               </div>
-              <div className="p-2 bg-indigo-900 rounded-lg text-indigo-300"><Wallet className="w-5 h-5" /></div>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <Wallet className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-zinc-500">Revenue (Won Leads)</p>
-                <h3 className="text-3xl font-bold text-emerald-600 mt-1 flex items-center">
-                  <IndianRupee className="w-6 h-6 mr-1" />
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Revenue (Won Leads)</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50 flex items-center">
+                  <IndianRupee className="w-6 h-6 mr-1 text-zinc-400" />
                   {k.revenue.toLocaleString()}
                 </h3>
               </div>
-              <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><TrendingUp className="w-5 h-5" /></div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-amber-950 text-[#c5a059] border-amber-900 shadow-lg shadow-amber-900/20">
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-amber-300">Total Investments</p>
-                <h3 className="text-3xl font-bold mt-1 flex items-center">
-                  <IndianRupee className="w-6 h-6 mr-1 text-amber-400" />
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Investments</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50 flex items-center">
+                  <IndianRupee className="w-6 h-6 mr-1 text-zinc-400" />
                   {(k.totalInvestment || 0).toLocaleString()}
                 </h3>
               </div>
-              <div className="p-2 bg-amber-900 rounded-lg text-amber-300"><IndianRupee className="w-5 h-5" /></div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-amber-600 dark:text-amber-400">
+                <IndianRupee className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex flex-col justify-between h-full">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-zinc-500">Monthly Salary Status</span>
-              <IndianRupee className="w-4 h-4 text-zinc-400" />
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Monthly Salary Status</span>
+              <div className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400">
+                <IndianRupee className="w-4 h-4" />
+              </div>
             </div>
             <div>
               <div className="flex justify-between items-end mb-1">
-                <span className="text-xs text-emerald-600 font-bold">Paid</span>
-                <span className="text-sm font-bold">₹{k.salaryPaid.toLocaleString()}</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Paid</span>
+                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">₹{k.salaryPaid.toLocaleString()}</span>
               </div>
-              <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden mb-3">
-                <div className="bg-emerald-500 h-full" style={{width: `${(k.salaryPaid / (k.salaryPaid + k.salaryPending || 1)) * 100}%`}}></div>
+              <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden mb-3">
+                <div className="bg-emerald-500 h-full" style={{ width: `${(k.salaryPaid / (k.salaryPaid + k.salaryPending || 1)) * 100}%` }}></div>
               </div>
-              
+
               <div className="flex justify-between items-end mb-1">
-                <span className="text-xs text-rose-500 font-bold">Pending</span>
-                <span className="text-sm font-bold">₹{k.salaryPending.toLocaleString()}</span>
+                <span className="text-xs text-rose-500 dark:text-rose-400 font-bold">Pending</span>
+                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">₹{k.salaryPending.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
@@ -141,14 +153,14 @@ export function AdminDashboard() {
 
       {/* Row 2: Today's Operations */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        
+
         <Card className="col-span-2 md:col-span-1 bg-zinc-50 border-dashed border-zinc-300">
           <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center">
             <Clock className="w-6 h-6 text-zinc-400 mb-2" />
-            <h4 className="font-bold text-zinc-700">Today's<br/>Attendance</h4>
+            <h4 className="font-bold text-zinc-700">Today's<br />Attendance</h4>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 flex items-center space-x-4">
             <div className="p-2 bg-emerald-100 text-emerald-600 rounded-full"><UserCheck className="w-5 h-5" /></div>
@@ -158,7 +170,7 @@ export function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 flex items-center space-x-4">
             <div className="p-2 bg-rose-100 text-rose-600 rounded-full"><UserX className="w-5 h-5" /></div>
@@ -168,7 +180,7 @@ export function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 flex items-center space-x-4">
             <div className="p-2 bg-amber-100 text-amber-600 rounded-full"><AlertCircle className="w-5 h-5" /></div>
@@ -231,11 +243,10 @@ export function AdminDashboard() {
                     </TableCell>
                     <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">{emp.department}</TableCell>
                     <TableCell>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        emp.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" :
-                        emp.status === "Half-Day" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" :
-                        "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" :
+                          emp.status === "Half-Day" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" :
+                            "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                        }`}>
                         {emp.status}
                       </span>
                       {emp.isLate && <span className="ml-2 text-xs font-semibold text-amber-600">Late</span>}
@@ -263,7 +274,7 @@ export function AdminDashboard() {
 
       {/* Row 3: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-500">6-Month Trend: Attendance & Salary</CardTitle>
@@ -273,14 +284,14 @@ export function AdminDashboard() {
               <AreaChart data={c.monthlyData}>
                 <defs>
                   <linearGradient id="colorSalary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" fontSize={12} tickLine={false} axisLine={false} hide />
-                <YAxis yAxisId="right" orientation="right" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v/1000)}k`} />
-                <Tooltip cursor={{stroke: '#e4e4e7', strokeWidth: 1, strokeDasharray: '4 4'}} />
+                <YAxis yAxisId="right" orientation="right" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 1000)}k`} />
+                <Tooltip cursor={{ stroke: '#e4e4e7', strokeWidth: 1, strokeDasharray: '4 4' }} />
                 <Legend />
                 <Area yAxisId="right" type="monotone" dataKey="salary" name="Salary Payout" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorSalary)" />
                 <Bar yAxisId="left" dataKey="present" name="Avg Present" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={40} />

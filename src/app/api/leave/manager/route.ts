@@ -23,6 +23,9 @@ export async function GET(req: Request) {
 
     if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       const user = await User.findById(payload.userId);
+      if (!user || !user.accessibleModules.includes("Leave Approvals")) {
+        return NextResponse.json({ error: "Forbidden: You do not have the Leave Approvals module access." }, { status: 403 });
+      }
       if (user) {
         const managerEmployee = await Employee.findOne({ email: user.email });
         if (managerEmployee && managerEmployee.department) {
@@ -67,6 +70,9 @@ export async function POST(req: Request) {
     // Verify department constraints if regular manager (excluding KEY_ADMIN and ADMIN)
     if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
       const user = await User.findById(payload.userId);
+      if (!user || !user.accessibleModules.includes("Leave Approvals")) {
+        return NextResponse.json({ error: "Forbidden: You do not have the Leave Approvals module access." }, { status: 403 });
+      }
       if (user) {
         const managerEmployee = await Employee.findOne({ email: user.email });
         const leaveEmployee = await Employee.findById(leave.employeeId);

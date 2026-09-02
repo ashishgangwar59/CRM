@@ -99,7 +99,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-20">
+    <div className="w-full space-y-6 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center">
           <ShieldCheck className="mr-3 h-8 w-8 text-blue-600" />

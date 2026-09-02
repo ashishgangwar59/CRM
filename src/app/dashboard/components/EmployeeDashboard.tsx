@@ -35,57 +35,76 @@ export function EmployeeDashboard() {
   if (!data) return <div className="p-8">Failed to load dashboard.</div>;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">My Hub</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Dashboard</h1>
         <p className="text-zinc-500 dark:text-zinc-400">Welcome back! Here is your overview for today.</p>
       </div>
 
       {/* Top Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-indigo-100 text-indigo-700 rounded-lg"><Clock className="w-6 h-6" /></div>
-            <div>
-              <p className="text-sm font-medium text-zinc-500">Today's Attendance</p>
-              <h3 className="text-xl font-bold">{data.todaysAttendance}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-emerald-950 text-white">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-emerald-300">Latest Salary</p>
-              <h3 className="text-2xl font-bold flex items-center">
-                <IndianRupee className="w-5 h-5 mr-1" />
-                {data.latestSalary ? data.latestSalary.netSalary.toLocaleString() : "N/A"}
-              </h3>
-            </div>
-            {data.latestSalary && (
-              <Link href={`/dashboard/payroll/${data.latestSalary._id}`}>
-                <Button variant="secondary" size="sm" className="bg-emerald-800 text-white hover:bg-emerald-700 border-none"><Download className="w-4 h-4" /></Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-amber-100 text-amber-700 rounded-lg"><CheckSquare className="w-6 h-6" /></div>
-            <div>
-              <p className="text-sm font-medium text-zinc-500">Pending Tasks</p>
-              <h3 className="text-xl font-bold">{data.tasks?.length || 0}</h3>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Today's Attendance</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50">{data.todaysAttendance}</h3>
+              </div>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                <Clock className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-rose-100 text-rose-700 rounded-lg"><Cake className="w-6 h-6" /></div>
-            <div>
-              <p className="text-sm font-medium text-zinc-500">Upcoming Birthdays</p>
-              <h3 className="text-xl font-bold">{data.upcomingBirthdays?.length || 0}</h3>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Latest Salary</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50 flex items-center">
+                  <IndianRupee className="w-6 h-6 mr-1 text-zinc-400" />
+                  {data.latestSalary ? data.latestSalary.netSalary.toLocaleString() : "N/A"}
+                </h3>
+              </div>
+              <div className="flex flex-col items-end space-y-2">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <IndianRupee className="w-6 h-6" />
+                </div>
+                {data.latestSalary && (
+                  <Link href={`/dashboard/payroll/${data.latestSalary._id}`}>
+                    <Button variant="outline" size="sm" className="h-7 text-xs border-zinc-200 dark:border-zinc-800"><Download className="w-3 h-3 mr-1" /> Slip</Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Pending Tasks</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50">{data.tasks?.length || 0}</h3>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl">
+                <CheckSquare className="w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Upcoming Birthdays</p>
+                <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50">{data.upcomingBirthdays?.length || 0}</h3>
+              </div>
+              <div className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl">
+                <Cake className="w-6 h-6" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -93,7 +112,7 @@ export function EmployeeDashboard() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column (Graphs) */}
         <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -106,7 +125,7 @@ export function EmployeeDashboard() {
                   <BarChart data={data.attendanceGraph}>
                     <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{fill: '#f4f4f5'}} />
+                    <Tooltip cursor={{ fill: '#f4f4f5' }} />
                     <Bar dataKey="hours" fill="#6366f1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -131,7 +150,7 @@ export function EmployeeDashboard() {
                 <div className="flex flex-wrap justify-center gap-2 mt-2">
                   {data.leaveBalances.map((entry: any, index: number) => (
                     <div key={entry.name} className="flex items-center text-xs">
-                      <div className="w-3 h-3 rounded-full mr-1" style={{backgroundColor: COLORS[index % COLORS.length]}}></div>
+                      <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                       <span>{entry.name}: {entry.value}</span>
                     </div>
                   ))}

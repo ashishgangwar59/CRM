@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award } from "lucide-react";
+import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award, IndianRupee } from "lucide-react";
 import PaymentBondModal from "../investors/PaymentBondModal";
 
 export function InvestorDashboard() {
@@ -174,7 +174,7 @@ export function InvestorDashboard() {
   const monthlyReturnAmount = investor.status === "Verified" ? Math.round((investor.investmentAmount * (investor.monthlyGrowthPercentage || 2.5)) / 100) : 0;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       {/* Header banner */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 bg-white border border-[#eee] rounded-xl text-zinc-900 shadow-sm">
         <div>
@@ -254,27 +254,53 @@ export function InvestorDashboard() {
       {/* Verified Status Performance Card */}
       {investor.status === "Verified" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-white text-zinc-900 border border-[#eee] shadow-sm">
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
-              <p className="text-xs font-bold uppercase text-zinc-500">Investment Cost (RS)</p>
-              <h3 className="text-3xl font-black mt-2 text-zinc-900">₹{investor.investmentAmount.toLocaleString()}</h3>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Investment Cost</p>
+                  <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50 flex items-center">
+                    <IndianRupee className="w-6 h-6 mr-1 text-zinc-400" />
+                    {investor.investmentAmount.toLocaleString()}
+                  </h3>
+                </div>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white text-zinc-900 border border-[#eee] shadow-sm">
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
-              <p className="text-xs font-bold uppercase text-[#00a65a]">Monthly Growth Rate</p>
-              <h3 className="text-3xl font-black mt-2 flex items-center gap-1 text-[#00a65a]">
-                <TrendingUp className="w-6 h-6 text-[#00a65a]" />
-                {investor.monthlyGrowthPercentage || 1.33}%
-              </h3>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Monthly Growth Rate</p>
+                  <h3 className="text-3xl font-bold mt-2 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    {investor.monthlyGrowthPercentage || 1.33}%
+                  </h3>
+                </div>
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white text-zinc-900 border border-[#eee] shadow-sm">
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
-              <p className="text-xs font-bold uppercase text-zinc-500">Est. Monthly Return Payout</p>
-              <h3 className="text-3xl font-black text-[#00a65a] mt-2">₹{monthlyReturnAmount.toLocaleString()} / mo</h3>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Est. Monthly Return Payout</p>
+                  <h3 className="text-3xl font-bold mt-2 text-indigo-600 dark:text-indigo-400 flex items-center">
+                    <IndianRupee className="w-6 h-6 mr-1" />
+                    {monthlyReturnAmount.toLocaleString()} <span className="text-lg text-zinc-500 font-normal ml-1">/ mo</span>
+                  </h3>
+                </div>
+                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                  <IndianRupee className="w-6 h-6" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

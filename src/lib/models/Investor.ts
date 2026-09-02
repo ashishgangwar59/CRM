@@ -79,6 +79,8 @@ export interface IInvestor extends Document {
   nomineeRelation?: string;
   nomineeAge?: string;
   nomineeDocUrl?: string;
+  investmentDate?: string;
+  bondMaturityMonths?: number;
 
   // Referral tracking (which employee submitted/referred this investor application)
   referralEmployeeId?: mongoose.Types.ObjectId;
@@ -178,6 +180,8 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
     nomineeRelation: { type: String },
     nomineeAge: { type: String },
     nomineeDocUrl: { type: String },
+    investmentDate: { type: String },
+    bondMaturityMonths: { type: Number, default: 1 },
 
     referralEmployeeId: { type: Schema.Types.ObjectId, ref: "Employee" },
     referralEmployeeName: { type: String },
@@ -194,5 +198,9 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
   { timestamps: true }
 );
 
-export const Investor: Model<IInvestor> =
-  mongoose.models.Investor || mongoose.model("Investor", InvestorSchema);
+// Clear the mongoose model cache for Investor so Next.js HMR picks up schema changes
+if (mongoose.models.Investor) {
+  delete mongoose.models.Investor;
+}
+
+export const Investor: Model<IInvestor> = mongoose.model("Investor", InvestorSchema);

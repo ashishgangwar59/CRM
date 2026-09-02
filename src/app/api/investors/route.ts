@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    const { fullName, email, phone, investmentAmount, monthlyGrowthPercentage, status } = data;
+    const { fullName, email, phone, investmentAmount, monthlyGrowthPercentage, status, investmentDate, bondMaturityMonths } = data;
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
@@ -67,6 +67,8 @@ export async function POST(req: Request) {
       phone,
       investmentAmount: Number(investmentAmount || 0),
       monthlyGrowthPercentage: Number(monthlyGrowthPercentage || 2.5),
+      investmentDate: investmentDate || new Date().toISOString().split("T")[0],
+      bondMaturityMonths: Number(bondMaturityMonths) || 1,
       status: "Pending",
       kycDocs: {},
       docVerifications: {

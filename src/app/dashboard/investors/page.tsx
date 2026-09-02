@@ -74,6 +74,8 @@ export default function AdminInvestorsPage() {
     phone: "",
     investmentAmount: 0,
     monthlyGrowthPercentage: 1.33,
+    investmentDate: new Date().toISOString().split("T")[0],
+    bondMaturityMonths: 1,
   });
 
   // Edit investor form
@@ -84,6 +86,8 @@ export default function AdminInvestorsPage() {
     phone: "",
     investmentAmount: 0,
     monthlyGrowthPercentage: 2.5,
+    investmentDate: "",
+    bondMaturityMonths: 1,
   });
 
   const fetchInvestors = async () => {
@@ -136,7 +140,15 @@ export default function AdminInvestorsPage() {
       const json = await res.json();
       if (json.success) {
         setShowAddModal(false);
-        setAddForm({ fullName: "", email: "", phone: "", investmentAmount: 0, monthlyGrowthPercentage: 1.33 });
+        setAddForm({ 
+          fullName: "", 
+          email: "", 
+          phone: "", 
+          investmentAmount: 0, 
+          monthlyGrowthPercentage: 1.33,
+          investmentDate: new Date().toISOString().split("T")[0],
+          bondMaturityMonths: 1 
+        });
         fetchInvestors();
       } else {
         setMsg(json.error || "Failed to create investor.");
@@ -190,6 +202,15 @@ export default function AdminInvestorsPage() {
       if (json.success) {
         setShowEditModal(false);
         fetchInvestors();
+        if (json.data) {
+          setInvestors((prev) => prev.map((inv) => inv._id === json.data._id ? json.data : inv));
+          if (selectedInvestor?._id === editForm.investorId) {
+            setSelectedInvestor(json.data);
+          }
+          if (bondModalInvestor?._id === editForm.investorId) {
+            setBondModalInvestor(json.data);
+          }
+        }
       } else {
         alert(json.error || "Failed to update investor");
       }
@@ -221,7 +242,7 @@ export default function AdminInvestorsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full mx-auto pb-24">
       {/* Title bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -393,6 +414,8 @@ export default function AdminInvestorsPage() {
                               phone: inv.phone,
                               investmentAmount: inv.investmentAmount || 0,
                               monthlyGrowthPercentage: inv.monthlyGrowthPercentage || 1.33,
+                              investmentDate: inv.investmentDate || (inv.verifiedAt ? new Date(inv.verifiedAt).toISOString().split("T")[0] : new Date(inv.createdAt).toISOString().split("T")[0]),
+                              bondMaturityMonths: inv.bondMaturityMonths || 1,
                             });
                             setShowEditModal(true);
                           }}
@@ -416,7 +439,7 @@ export default function AdminInvestorsPage() {
           </Table>
 
           {/* Pagination Controls */}
-          <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
+          <div className="flex items-center justify-between p-4 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
             <div className="flex items-center space-x-2">
               <span>Show</span>
               <select
@@ -496,6 +519,53 @@ export default function AdminInvestorsPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Payment Bond Maturity Calculation Summary */}
+              {(() => {
+                const principal = selectedInvestor.investmentAmount || 0;
+                const rate = selectedInvestor.monthlyGrowthPercentage || 2;
+                const months = Number(selectedInvestor.bondMaturityMonths) || 1;
+                const totalInterest = Math.round(principal * (rate / 100) * months);
+                const maturityAmount = principal + totalInterest;
+
+                let issueDateObj: Date;
+                if (selectedInvestor.investmentDate) {
+                  if (typeof selectedInvestor.investmentDate === "string" && selectedInvestor.investmentDate.includes("-") && selectedInvestor.investmentDate.length === 10) {
+                    const [y, m, d] = selectedInvestor.investmentDate.split("-").map(Number);
+                    issueDateObj = new Date(y, m - 1, d);
+                  } else {
+                    issueDateObj = new Date(selectedInvestor.investmentDate);
+                  }
+                } else {
+                  issueDateObj = selectedInvestor.verifiedAt ? new Date(selectedInvestor.verifiedAt) : new Date(selectedInvestor.createdAt);
+                }
+
+                const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                const maturityDateObj = new Date(issueDateObj);
+                maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
+                const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800/40">
+                    <div>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Investment Date</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{issueDateStr}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Maturity Period</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{months} {months === 1 ? 'Month' : 'Months'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Maturity Date</p>
+                      <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{maturityDateStr}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Payable on Maturity</p>
+                      <p className="text-sm font-black text-rose-600 dark:text-rose-400">₹{maturityAmount.toLocaleString()}/-</p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Debenture Form Details (If submitted via Debenture Form) */}
               {selectedInvestor.debentureForm && (
@@ -820,6 +890,34 @@ export default function AdminInvestorsPage() {
                   <Label>Monthly Growth (%)</Label>
                   <Input type="number" step="0.1" value={addForm.monthlyGrowthPercentage} onChange={(e) => setAddForm({ ...addForm, monthlyGrowthPercentage: Number(e.target.value) })} />
                 </div>
+                <div className="space-y-1">
+                  <Label>Issue / Investment Date</Label>
+                  <Input type="date" value={addForm.investmentDate} onChange={(e) => setAddForm({ ...addForm, investmentDate: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Bond Maturity Tenure (Months)</Label>
+                  <select
+                    value={String(addForm.bondMaturityMonths || "1")}
+                    onChange={(e) => setAddForm({ ...addForm, bondMaturityMonths: parseInt(e.target.value) })}
+                    className="w-full h-10 px-3 rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900"
+                  >
+                    <option value="1">1 Month</option>
+                    <option value="2">2 Months</option>
+                    <option value="3">3 Months</option>
+                    <option value="4">4 Months</option>
+                    <option value="5">5 Months</option>
+                    <option value="6">6 Months</option>
+                    <option value="7">7 Months</option>
+                    <option value="8">8 Months</option>
+                    <option value="9">9 Months</option>
+                    <option value="10">10 Months</option>
+                    <option value="11">11 Months</option>
+                    <option value="12">12 Months (1 Year)</option>
+                    <option value="18">18 Months</option>
+                    <option value="24">24 Months (2 Years)</option>
+                    <option value="36">36 Months (3 Years)</option>
+                  </select>
+                </div>
 
                 <div className="flex justify-end gap-2 pt-3">
                   <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
@@ -856,14 +954,77 @@ export default function AdminInvestorsPage() {
                   <Label>Phone</Label>
                   <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Invest RS Amount (₹)</Label>
-                  <Input type="number" value={editForm.investmentAmount} onChange={(e) => setEditForm({ ...editForm, investmentAmount: Number(e.target.value) })} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Invest RS Amount (₹)</Label>
+                    <Input type="number" value={editForm.investmentAmount} onChange={(e) => setEditForm({ ...editForm, investmentAmount: Number(e.target.value) })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Monthly Growth (%)</Label>
+                    <Input type="number" step="0.1" value={editForm.monthlyGrowthPercentage} onChange={(e) => setEditForm({ ...editForm, monthlyGrowthPercentage: Number(e.target.value) })} />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label>Monthly Growth (%)</Label>
-                  <Input type="number" step="0.1" value={editForm.monthlyGrowthPercentage} onChange={(e) => setEditForm({ ...editForm, monthlyGrowthPercentage: Number(e.target.value) })} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Investment Date</Label>
+                    <Input type="date" value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Bond Tenure (Months)</Label>
+                    <select
+                      value={String(editForm.bondMaturityMonths || "1")}
+                      onChange={(e) => setEditForm({ ...editForm, bondMaturityMonths: parseInt(e.target.value) })}
+                      className="w-full h-10 px-3 rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900"
+                    >
+                      <option value="1">1 Month</option>
+                      <option value="2">2 Months</option>
+                      <option value="3">3 Months</option>
+                      <option value="4">4 Months</option>
+                      <option value="5">5 Months</option>
+                      <option value="6">6 Months</option>
+                      <option value="7">7 Months</option>
+                      <option value="8">8 Months</option>
+                      <option value="9">9 Months</option>
+                      <option value="10">10 Months</option>
+                      <option value="11">11 Months</option>
+                      <option value="12">12 Months (1 Year)</option>
+                      <option value="18">18 Months</option>
+                      <option value="24">24 Months (2 Years)</option>
+                      <option value="36">36 Months (3 Years)</option>
+                    </select>
+                  </div>
                 </div>
+
+                {/* Payment Bond Auto-Calculation Preview */}
+                {(() => {
+                  const principal = editForm.investmentAmount || 0;
+                  const rate = editForm.monthlyGrowthPercentage || 0;
+                  const months = editForm.bondMaturityMonths || 1;
+                  const totalInterest = Math.round(principal * (rate / 100) * months);
+                  const totalMaturityAmount = principal + totalInterest;
+
+                  let matDateStr = "—";
+                  if (editForm.investmentDate) {
+                    const d = new Date(editForm.investmentDate);
+                    d.setMonth(d.getMonth() + months);
+                    matDateStr = d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  }
+
+                  return (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 mt-2 text-amber-900 dark:text-amber-200">
+                      <p className="font-bold uppercase text-[10px] tracking-wider text-amber-600 dark:text-amber-400">✦ Bond Maturity Auto-Calculation Preview ✦</p>
+                      <div className="flex justify-between">
+                        <span>Total Interest ({months} mo @ {rate}%/mo):</span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{totalInterest.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-amber-500/20 pt-1 font-bold">
+                        <span>Auto Maturity Date: <span className="text-indigo-600 dark:text-indigo-400 font-mono">{matDateStr}</span></span>
+                        <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{totalMaturityAmount.toLocaleString()}/-</span></span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="flex justify-end gap-2 pt-3">
                   <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>

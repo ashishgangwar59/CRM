@@ -44,7 +44,7 @@ export default function EditEmployeePage() {
     bankDetails: { bankName: "", accountNumber: "", ifscCode: "", branchName: "" },
     emergencyContact: { name: "", relation: "", phone: "" },
     profilePhotoUrl: "",
-    accessibleModules: ["Overview", "Attendance", "Leads", "Reports", "Profile"]
+    accessibleModules: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
   });
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function EditEmployeePage() {
               phone: emp.emergencyContact?.phone || ""
             },
             profilePhotoUrl: emp.profilePhotoUrl || "",
-            accessibleModules: emp.accessibleModules || ["Overview", "Attendance", "Leads", "Reports", "Profile"]
+            accessibleModules: emp.accessibleModules || ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
           });
         }
         setPageLoading(false);
@@ -168,7 +168,7 @@ export default function EditEmployeePage() {
   if (pageLoading) return <div className="p-8">Loading employee data...</div>;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+    <div className="space-y-6 w-full pb-10">
       <div className="flex items-center space-x-4">
         <Link href={`/dashboard/employees/${id}`}>
           <Button variant="outline" size="icon">
@@ -488,7 +488,7 @@ export default function EditEmployeePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Leads", "Reports", "Profile",
-                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings"
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2 p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900 border">
                       <input

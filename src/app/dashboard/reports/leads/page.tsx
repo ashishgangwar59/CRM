@@ -40,7 +40,7 @@ export default function LeadReportsPage() {
   if (!report) return <div className="p-8 text-rose-500">Failed to load reports. Are you a KEY_ADMIN?</div>;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Lead Analytics</h1>
         <p className="text-zinc-500 dark:text-zinc-400">KEY_ADMIN monitoring and conversion tracking.</p>

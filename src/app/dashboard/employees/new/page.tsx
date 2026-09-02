@@ -44,7 +44,7 @@ export default function NewEmployeePage() {
     bankDetails: { bankName: "", accountNumber: "", ifscCode: "", branchName: "" },
     emergencyContact: { name: "", relation: "", phone: "" },
     profilePhotoUrl: "",
-    accessibleModules: ["Overview", "Attendance", "Leads", "Reports", "Profile"]
+    accessibleModules: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
   });
 
   const handleChange = (field: string, value: string) => {
@@ -151,7 +151,7 @@ export default function NewEmployeePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+    <div className="space-y-6 w-full pb-10">
       <div className="flex items-center space-x-4">
         <Link href="/dashboard/employees">
           <Button variant="outline" size="icon">
@@ -169,7 +169,11 @@ export default function NewEmployeePage() {
         <div className="mb-8 overflow-x-auto pb-4">
           <div className="flex items-center min-w-max">
             {steps.map((s, i) => (
-              <div key={s} className="flex items-center">
+              <div 
+                key={s} 
+                className="flex items-center cursor-pointer"
+                onClick={() => setStep(i)}
+              >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step >= i ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900' : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'}`}>
                   {i + 1}
                 </div>
@@ -505,7 +509,7 @@ export default function NewEmployeePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Leads", "Reports", "Profile",
-                    "Executive AI", "Wallet", "Payroll", "Leave", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2">
                       <input 

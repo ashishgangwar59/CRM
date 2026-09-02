@@ -38,7 +38,7 @@ export default function AuditLogsPage() {
   if (loading) return <div className="p-8">Loading audit ledger...</div>;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center">
           <ShieldAlert className="mr-3 h-8 w-8 text-rose-600" />

@@ -93,7 +93,7 @@ export default function AttendancePage() {
   const hasPunchedOut = !!todayStatus?.punchOut;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-10">
+    <div className="space-y-6 w-full pb-10">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Attendance Dashboard</h1>
         <p className="text-zinc-500 dark:text-zinc-400">Track your daily punches and review monthly history.</p>

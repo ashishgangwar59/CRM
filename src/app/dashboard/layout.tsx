@@ -15,8 +15,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<string | null>(null);
   const [modules, setModules] = useState<string[]>([]);
   const [empCode, setEmpCode] = useState<string>("");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [hoveredTooltip, setHoveredTooltip] = useState<{name: string, top: number, left: number} | null>(null);
   const { theme, toggleTheme } = useTheme();
+
+
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -29,6 +34,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             setEmpCode(data.employee.employeeCode);
           } else if (data.employee?.email) {
             setEmpCode(data.employee.email);
+          }
+          if (data.employee?.profilePhotoUrl) {
+            setProfilePhoto(data.employee.profilePhotoUrl);
+          }
+          if (data.employee?.firstName) {
+            setUserName(`${data.employee.firstName} ${data.employee.lastName || ""}`.trim());
+          } else if (data.investor?.firstName) {
+            setUserName(`${data.investor.firstName} ${data.investor.lastName || ""}`.trim());
           }
         }
       });
@@ -92,13 +105,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <Link href="/dashboard" className="flex items-center space-x-2 font-bold text-xl tracking-tight text-zinc-900 dark:text-zinc-50 shrink-0">
             <Image
               src="/logo.png"
-              alt="CRM Hub Logo"
+              alt="CRM  Logo"
               width={32}
               height={32}
               loading="lazy"
               className="rounded-md object-contain shrink-0"
             />
-            {!isCollapsed && <span className="transition-opacity duration-300">CRM Hub</span>}
+            {!isCollapsed && <span className="transition-opacity duration-300">CRM</span>}
           </Link>
         </div>
 
@@ -109,7 +122,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.name}
                 href={item.href}
-                title={isCollapsed ? item.name : undefined}
+                onMouseEnter={(e) => {
+                  if (!isCollapsed) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredTooltip({ name: item.name, top: rect.top + 4, left: rect.right + 8 });
+                }}
+                onMouseLeave={() => setHoveredTooltip(null)}
                 className={cn(
                   "flex items-center rounded-md text-sm font-medium transition-all duration-200",
                   isCollapsed ? "justify-center p-2.5" : "space-x-3 px-3 py-2.5",
@@ -129,7 +147,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-col space-y-0">
             <button
               onClick={handleLogout}
-              title={isCollapsed ? "Logout" : undefined}
+              onMouseEnter={(e) => {
+                if (!isCollapsed) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredTooltip({ name: "Logout", top: rect.top + 4, left: rect.right + 8 });
+              }}
+              onMouseLeave={() => setHoveredTooltip(null)}
               className={cn(
                 "flex w-full items-center rounded-md text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50 transition-all duration-200",
                 isCollapsed ? "justify-center p-2.5" : "space-x-3 px-3 py-2.5"
@@ -140,6 +163,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
         </div>
+
+        {hoveredTooltip && (
+          <div 
+            className="fixed z-50 flex items-center pointer-events-none"
+            style={{ top: hoveredTooltip.top, left: hoveredTooltip.left }}
+          >
+            <div className="bg-zinc-900 text-white text-xs font-semibold rounded py-1.5 px-3 shadow-md dark:bg-zinc-100 dark:text-zinc-900">
+              {hoveredTooltip.name}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Area */}
@@ -151,15 +185,34 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               Welcome back, <span className="text-zinc-900 dark:text-zinc-50 font-semibold">{empCode || role || "User"}</span>
             </span>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-800 dark:text-zinc-200">
-              {role}
-            </span>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-3">
+              <div className="flex flex-col items-end mr-1">
+                {userName && <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{userName}</span>}
+                <span className="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
+                  {role}
+                </span>
+              </div>
+              <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-300 dark:border-zinc-700 shrink-0">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <UserIcon className="h-5 w-5 text-zinc-500" />
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 text-sm font-medium text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </button>
           </div>
         </header>
 
         {/* Scrollable Middle Part */}
-        <main className="flex-1 overflow-y-auto p-8 bg-zinc-50 dark:bg-zinc-900/40">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900/40">
           {children}
         </main>
       </div>

@@ -145,7 +145,7 @@ export default function HolidaysPage() {
   if (loading) return <div className="p-8">Loading holiday calendar...</div>;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-10">
+    <div className="space-y-6 w-full pb-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Holiday Calendar</h1>

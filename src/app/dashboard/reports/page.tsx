@@ -122,7 +122,7 @@ export default function UniversalReportsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Report Generator</h1>
         <p className="text-zinc-500 dark:text-zinc-400">Generate, visualize, and export data across all modules.</p>

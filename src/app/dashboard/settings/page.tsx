@@ -223,8 +223,8 @@ export default function SettingsPage() {
   if (!settings) return <div className="p-8 text-rose-500">Failed to load settings. Are you a KEY_ADMIN?</div>;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
-      <div className="flex justify-between items-center border-b border-zinc-200 pb-4">
+    <div className="space-y-6 w-full pb-24">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 pb-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center">
             <Settings className="mr-3 h-8 w-8 text-zinc-400" /> Master Settings

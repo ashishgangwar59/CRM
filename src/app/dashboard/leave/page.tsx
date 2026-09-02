@@ -11,6 +11,7 @@ import Link from "next/link";
 
 export default function LeaveDashboardPage() {
   const [role, setRole] = useState<string | null>(null);
+  const [modules, setModules] = useState<string[]>([]);
   const [balances, setBalances] = useState<any>(null);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,7 @@ export default function LeaveDashboardPage() {
       const data = await res.json();
       if (data.success) {
         setRole(data.role);
+        setModules(data.accessibleModules || []);
       }
     } catch (e) {
       console.error(e);
@@ -102,14 +104,14 @@ export default function LeaveDashboardPage() {
   if (loading) return <div className="p-8">Loading leave data...</div>;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-10">
+    <div className="space-y-6 w-full pb-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Leave Management</h1>
           <p className="text-zinc-500 dark:text-zinc-400">View your balances and apply for time off.</p>
         </div>
         <div className="flex space-x-2">
-          {role && role !== "Employee" && (
+          {role && (role === "ADMIN" || role === "KEY_ADMIN" || modules.includes("Leave Approvals")) && (
             <Link href="/dashboard/leave/manager">
               <Button variant="outline">Team Approvals</Button>
             </Link>

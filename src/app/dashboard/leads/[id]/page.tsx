@@ -131,7 +131,7 @@ export default function LeadDetailsPage() {
   const currentStageIndex = STAGES.indexOf(lead.stage);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-24">
+    <div className="space-y-6 w-full pb-24">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
