@@ -121,17 +121,17 @@ export default function InvestorRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-900">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
-        <h1 className="text-3xl font-black text-indigo-400 tracking-wider">INVESTOR PORTAL</h1>
-        <p className="text-sm text-zinc-400 mt-1">Register your Investor Account to submit KYC & Bond Agreement</p>
+        <h1 className="text-3xl font-black text-[#134086] tracking-wider">INVESTOR PORTAL</h1>
+        <p className="text-sm text-slate-500 mt-1">Register your Investor Account to submit KYC & Bond Agreement</p>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="bg-zinc-900 border-zinc-800 text-white shadow-2xl">
+        <Card className="bg-white border-slate-200 text-slate-900 shadow-xl">
           <CardHeader>
             <CardTitle className="text-xl font-bold">Create Investor Account</CardTitle>
-            <CardDescription className="text-zinc-400">Fill details to start your investment onboard</CardDescription>
+            <CardDescription className="text-slate-500">Fill details to start your investment onboard</CardDescription>
           </CardHeader>
           <CardContent>
             {errorMsg && (
@@ -163,7 +163,7 @@ export default function InvestorRegisterPage() {
                     id="fullName"
                     required
                     placeholder="John Doe"
-                    className="pl-9 bg-zinc-950 border-zinc-800 focus:border-indigo-500"
+                    className="pl-9 bg-white border-slate-300 focus:border-indigo-500"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   />
@@ -179,7 +179,7 @@ export default function InvestorRegisterPage() {
                     type="email"
                     required
                     placeholder="investor@example.com"
-                    className="pl-9 bg-zinc-950 border-zinc-800 focus:border-indigo-500"
+                    className="pl-9 bg-white border-slate-300 focus:border-indigo-500"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
@@ -195,7 +195,7 @@ export default function InvestorRegisterPage() {
                       id="phone"
                       required
                       placeholder="+91 9876543210"
-                      className="pl-9 bg-zinc-950 border-zinc-800 focus:border-indigo-500"
+                      className="pl-9 bg-white border-slate-300 focus:border-indigo-500"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     />
@@ -203,7 +203,7 @@ export default function InvestorRegisterPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-zinc-850 hover:bg-zinc-800 border-zinc-700 text-white"
+                    className="bg-[#134086] hover:bg-[#0c2a5e] border-[#134086] text-white"
                     onClick={handleSendOtp}
                     disabled={loading || !formData.phone || !formData.email}
                   >
@@ -222,7 +222,7 @@ export default function InvestorRegisterPage() {
                       required
                       maxLength={6}
                       placeholder="123456"
-                      className="pl-9 bg-zinc-950 border-zinc-800 focus:border-indigo-500"
+                      className="pl-9 bg-white border-slate-300 focus:border-indigo-500"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                     />
@@ -239,7 +239,7 @@ export default function InvestorRegisterPage() {
                     type="password"
                     required
                     placeholder="••••••••"
-                    className="pl-9 bg-zinc-950 border-zinc-800 focus:border-indigo-500"
+                    className="pl-9 bg-white border-slate-300 focus:border-indigo-500"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
@@ -255,21 +255,21 @@ export default function InvestorRegisterPage() {
                     type="password"
                     required
                     placeholder="••••••••"
-                    className="pl-9 bg-zinc-950 border-zinc-800 focus:border-indigo-500"
+                    className="pl-9 bg-white border-slate-300 focus:border-indigo-500"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   />
                 </div>
               </div>
 
-              <Button type="submit" disabled={loading || !otpSent} className="w-full bg-indigo-600 hover:bg-indigo-500 font-bold py-2 mt-2">
+              <Button type="submit" disabled={loading || !otpSent} className="w-full bg-[#134086] hover:bg-[#0c2a5e] text-white font-bold py-2 mt-2">
                 {loading ? "Creating Account..." : <span className="flex items-center justify-center">Register Investor <ArrowRight className="w-4 h-4 ml-2" /></span>}
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-xs text-zinc-400 border-t border-zinc-800 pt-4">
+            <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-200 pt-4">
               Already have an account?{" "}
-              <Link href="/login" className="text-indigo-400 hover:underline font-semibold">
+              <Link href="/login" className="text-[#134086] hover:underline font-semibold">
                 Login to Portal
               </Link>
             </div>

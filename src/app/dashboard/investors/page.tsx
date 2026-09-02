@@ -76,9 +76,11 @@ export default function AdminInvestorsPage() {
     monthlyGrowthPercentage: 1.33,
     investmentDate: new Date().toISOString().split("T")[0],
     bondMaturityMonths: 1,
+    nomineeName: "",
+    nomineeRelation: "",
+    nomineeAge: "",
   });
 
-  // Edit investor form
   const [editForm, setEditForm] = useState({
     investorId: "",
     fullName: "",
@@ -88,6 +90,9 @@ export default function AdminInvestorsPage() {
     monthlyGrowthPercentage: 2.5,
     investmentDate: "",
     bondMaturityMonths: 1,
+    nomineeName: "",
+    nomineeRelation: "",
+    nomineeAge: "",
   });
 
   const fetchInvestors = async () => {
@@ -147,7 +152,10 @@ export default function AdminInvestorsPage() {
           investmentAmount: 0, 
           monthlyGrowthPercentage: 1.33,
           investmentDate: new Date().toISOString().split("T")[0],
-          bondMaturityMonths: 1 
+          bondMaturityMonths: 1,
+          nomineeName: "",
+          nomineeRelation: "",
+          nomineeAge: ""
         });
         fetchInvestors();
       } else {
@@ -416,6 +424,9 @@ export default function AdminInvestorsPage() {
                               monthlyGrowthPercentage: inv.monthlyGrowthPercentage || 1.33,
                               investmentDate: inv.investmentDate || (inv.verifiedAt ? new Date(inv.verifiedAt).toISOString().split("T")[0] : new Date(inv.createdAt).toISOString().split("T")[0]),
                               bondMaturityMonths: inv.bondMaturityMonths || 1,
+                              nomineeName: inv.debentureForm?.nomineeName || inv.nomineeName || "",
+                              nomineeRelation: inv.debentureForm?.nomineeRelation || inv.nomineeRelation || "",
+                              nomineeAge: inv.debentureForm?.nomineeAge || inv.nomineeAge || "",
                             });
                             setShowEditModal(true);
                           }}
@@ -919,6 +930,21 @@ export default function AdminInvestorsPage() {
                   </select>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Nominee Name</Label>
+                    <Input value={addForm.nomineeName} onChange={(e) => setAddForm({ ...addForm, nomineeName: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Nominee Relation</Label>
+                    <Input value={addForm.nomineeRelation} onChange={(e) => setAddForm({ ...addForm, nomineeRelation: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Nominee Age</Label>
+                  <Input type="number" value={addForm.nomineeAge} onChange={(e) => setAddForm({ ...addForm, nomineeAge: e.target.value })} />
+                </div>
+
                 <div className="flex justify-end gap-2 pt-3">
                   <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
                   <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
@@ -994,6 +1020,20 @@ export default function AdminInvestorsPage() {
                       <option value="36">36 Months (3 Years)</option>
                     </select>
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Nominee Name</Label>
+                    <Input value={editForm.nomineeName} onChange={(e) => setEditForm({ ...editForm, nomineeName: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Nominee Relation</Label>
+                    <Input value={editForm.nomineeRelation} onChange={(e) => setEditForm({ ...editForm, nomineeRelation: e.target.value })} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Nominee Age</Label>
+                  <Input type="number" value={editForm.nomineeAge} onChange={(e) => setEditForm({ ...editForm, nomineeAge: e.target.value })} />
                 </div>
 
                 {/* Payment Bond Auto-Calculation Preview */}

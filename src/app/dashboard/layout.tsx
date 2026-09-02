@@ -212,7 +212,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Scrollable Middle Part */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900/40">
+        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6", role === "INVESTOR" ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/40")}>
           {children}
         </main>
       </div>
