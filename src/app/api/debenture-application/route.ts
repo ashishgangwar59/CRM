@@ -68,6 +68,10 @@ export async function POST(req: Request) {
       aadharDocUrl,
       bankPassbookUrl,
       refEmpCode,
+      nomineeName,
+      nomineeRelation,
+      nomineeAge,
+      nomineeDocUrl,
     } = data;
 
     // --- Validation Rules ---
@@ -189,7 +193,15 @@ export async function POST(req: Request) {
         drawnOnBank: drawnOnBank || "",
         place: place || "",
         passportPhotoUrl: passportPhotoUrl || "",
+        nomineeName: nomineeName ? nomineeName.trim() : "",
+        nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
+        nomineeAge: nomineeAge ? nomineeAge.trim() : "",
+        nomineeDocUrl: nomineeDocUrl || "",
       },
+      nomineeName: nomineeName ? nomineeName.trim() : "",
+      nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
+      nomineeAge: nomineeAge ? nomineeAge.trim() : "",
+      nomineeDocUrl: nomineeDocUrl || "",
       kycDocs: {
         panNumber: panNumber ? panNumber.toUpperCase().trim() : "",
         panDocUrl: panDocUrl || "",

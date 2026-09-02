@@ -48,6 +48,10 @@ function DebentureFormContent() {
     ifscCode: "",
     refEmpCode: refCodeParam,
     passportPhotoUrl: "",
+    nomineeName: "",
+    nomineeRelation: "",
+    nomineeAge: "",
+    nomineeDocUrl: "",
     panDocUrl: "",
     aadharDocUrl: "",
     bankPassbookUrl: "",
@@ -1513,7 +1517,51 @@ function DebentureFormContent() {
         </div>
 
         {/* SECTION 3 */}
-        <div className="section-header">3. DECLARATION</div>
+        <div className="section-header">3. NOMINEE DETAILS</div>
+        <div className="box">
+          <div className="field-row">
+            <div className="field-icon">&#128104;</div>
+            <div className="field-label">Full Name of Nominee</div>
+            <div className="field-colon">:</div>
+            <div className="field-fill">
+              <input
+                type="text"
+                name="nomineeName"
+                value={form.nomineeName}
+                onChange={(e) => setForm({ ...form, nomineeName: e.target.value })}
+                placeholder="Name of Nominee"
+              />
+            </div>
+          </div>
+          <div className="field-row">
+            <div className="field-icon">&#129309;</div>
+            <div className="field-label">Relationship with Applicant</div>
+            <div className="field-colon">:</div>
+            <div className="field-fill" style={{ maxWidth: "250px" }}>
+              <input
+                type="text"
+                name="nomineeRelation"
+                value={form.nomineeRelation}
+                onChange={(e) => setForm({ ...form, nomineeRelation: e.target.value })}
+                placeholder="e.g. Spouse / Son / Father"
+              />
+            </div>
+            <div style={{ width: "100px", textAlign: "right" }}>Age / DOB</div>
+            <div style={{ width: "10px" }}>:</div>
+            <div className="field-fill" style={{ maxWidth: "180px" }}>
+              <input
+                type="text"
+                name="nomineeAge"
+                value={form.nomineeAge}
+                onChange={(e) => setForm({ ...form, nomineeAge: e.target.value })}
+                placeholder="e.g. 32 Yrs / 15-08-1992"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4 */}
+        <div className="section-header">4. DECLARATION</div>
         <div className="box">
           <div className="decl-flex">
             <div className="left decl-text">
@@ -1609,8 +1657,8 @@ function DebentureFormContent() {
           </div>
         </div>
 
-        {/* SECTION 4 */}
-        <div className="section-header">4. DOCUMENTS TO BE ENCLOSED (SELF ATTESTED)</div>
+        {/* SECTION 5 */}
+        <div className="section-header">5. DOCUMENTS TO BE ENCLOSED (SELF ATTESTED)</div>
         <div className="box">
           <div className="docs-grid">
             <div className="col">
@@ -1632,12 +1680,15 @@ function DebentureFormContent() {
                 <input type="checkbox" name="docCheque" /> 5. Cancelled Cheque / Bank Details Proof
               </label>
               <label>
-                <input type="checkbox" name="docOther" /> 6. Other (if applicable) <input type="text" name="docOtherText" style={{ width: "110px" }} />
+                <input type="checkbox" name="docNominee" defaultChecked /> 6. Nominee ID / Proof Details
+              </label>
+              <label>
+                <input type="checkbox" name="docOther" /> 7. Other (if applicable) <input type="text" name="docOtherText" style={{ width: "110px" }} />
               </label>
             </div>
           </div>
 
-          <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+          <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
             <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
               <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach PAN Card</span>
               <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "panDocUrl")} />
@@ -1652,6 +1703,11 @@ function DebentureFormContent() {
               <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Bank Proof / Passbook</span>
               <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "bankPassbookUrl")} />
               {form.bankPassbookUrl && <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>}
+            </div>
+            <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
+              <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Nominee Proof</span>
+              <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "nomineeDocUrl")} />
+              {form.nomineeDocUrl && <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>}
             </div>
           </div>
         </div>
@@ -1762,6 +1818,10 @@ function DebentureFormContent() {
               drawnOnBank: "",
               bankName: "",
               passportPhotoUrl: "",
+              nomineeName: "",
+              nomineeRelation: "",
+              nomineeAge: "",
+              nomineeDocUrl: "",
               panDocUrl: "",
               aadharDocUrl: "",
               bankPassbookUrl: "",

@@ -548,6 +548,14 @@ export default function AdminInvestorsPage() {
                       <span className="text-zinc-500">Bank:</span>
                       <p className="font-bold">{selectedInvestor.debentureForm.drawnOnBank || "N/A"}</p>
                     </div>
+                    <div>
+                      <span className="text-zinc-500">Nominee Name:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.nomineeName || selectedInvestor.nomineeName || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Nominee Relation:</span>
+                      <p className="font-bold">{selectedInvestor.debentureForm.nomineeRelation || selectedInvestor.nomineeRelation || "N/A"}{selectedInvestor.debentureForm.nomineeAge ? ` (${selectedInvestor.debentureForm.nomineeAge})` : ""}</p>
+                    </div>
                   </div>
                 </div>
               )}

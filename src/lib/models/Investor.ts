@@ -70,7 +70,15 @@ export interface IInvestor extends Document {
     drawnOnBank?: string;
     place?: string;
     passportPhotoUrl?: string;
+    nomineeName?: string;
+    nomineeRelation?: string;
+    nomineeAge?: string;
+    nomineeDocUrl?: string;
   };
+  nomineeName?: string;
+  nomineeRelation?: string;
+  nomineeAge?: string;
+  nomineeDocUrl?: string;
 
   // Referral tracking (which employee submitted/referred this investor application)
   referralEmployeeId?: mongoose.Types.ObjectId;
@@ -161,7 +169,15 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       drawnOnBank: { type: String },
       place: { type: String },
       passportPhotoUrl: { type: String },
+      nomineeName: { type: String },
+      nomineeRelation: { type: String },
+      nomineeAge: { type: String },
+      nomineeDocUrl: { type: String },
     },
+    nomineeName: { type: String },
+    nomineeRelation: { type: String },
+    nomineeAge: { type: String },
+    nomineeDocUrl: { type: String },
 
     referralEmployeeId: { type: Schema.Types.ObjectId, ref: "Employee" },
     referralEmployeeName: { type: String },

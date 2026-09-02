@@ -20,6 +20,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   const panDocUrl = kyc.panDocUrl || form.panDocUrl || investor.panDocUrl || "";
   const aadharDocUrl = kyc.aadharDocUrl || form.aadharDocUrl || investor.aadharDocUrl || "";
   const bankPassbookUrl = kyc.bankPassbookUrl || form.bankPassbookUrl || investor.bankPassbookUrl || "";
+  const nomineeDocUrl = form.nomineeDocUrl || kyc.nomineeDocUrl || investor.nomineeDocUrl || "";
 
   const [saving, setSaving] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
@@ -530,6 +531,19 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-colon">:</div>
                 <div className="field-fill">{form.ifscCode || "—"}</div>
               </div>
+              <div className="field-row">
+                <div className="field-label">Nominee Name</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill font-bold">{form.nomineeName || investor.nomineeName || "—"}</div>
+              </div>
+              <div className="field-row">
+                <div className="field-label">Nominee Relation / Age</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill">
+                  {form.nomineeRelation || investor.nomineeRelation || "—"}
+                  {(form.nomineeAge || investor.nomineeAge) ? ` (${form.nomineeAge || investor.nomineeAge})` : ""}
+                </div>
+              </div>
             </div>
 
             {/* SECTION 2 */}
@@ -586,8 +600,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               </div>
             </div>
 
-            {/* SECTION 3 */}
-            <div className="section-header">3. DECLARATION & PHOTOGRAPH</div>
+            {/* SECTION 4 */}
+            <div className="section-header">4. DECLARATION & PHOTOGRAPH</div>
             <div className="box">
               <div style={{ display: "flex", justifyContent: "space-between", gap: "16px" }}>
                 <div style={{ flex: 1, fontSize: "11px", lineHeight: "1.6" }}>
@@ -635,10 +649,10 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               </div>
             </div>
 
-            {/* SECTION 4 DOCUMENTS */}
-            <div className="section-header">4. ATTACHED KYC DOCUMENTS</div>
+            {/* SECTION 5 DOCUMENTS */}
+            <div className="section-header">5. ATTACHED KYC & NOMINEE DOCUMENTS</div>
             <div className="box">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs print:hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs print:hidden">
                 <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
                   <span className="font-bold text-zinc-800">1. PAN Card</span>
                   {panDocUrl ? (
@@ -689,6 +703,19 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                       <Eye className="w-3.5 h-3.5" /> View
                     </button>
                   ) : <span className="text-rose-500 font-semibold text-[11px]">Missing</span>}
+                </div>
+
+                <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
+                  <span className="font-bold text-zinc-800">5. Nominee Proof</span>
+                  {nomineeDocUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc({ title: "Nominee ID / Proof Document", url: nomineeDocUrl })}
+                      className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded border border-indigo-200"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+                  ) : <span className="text-zinc-400 font-medium text-[11px]">Not Attached</span>}
                 </div>
               </div>
             </div>
