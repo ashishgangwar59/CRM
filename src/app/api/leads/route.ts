@@ -129,6 +129,34 @@ export async function POST(req: Request) {
     const body = await req.json();
     const currentEmployeeId = await getEmployeeIdFromUserId(payload.userId);
 
+    // Support Bulk Insert
+    if (Array.isArray(body)) {
+      if (body.length === 0) {
+        return NextResponse.json({ error: "Empty array provided" }, { status: 400 });
+      }
+
+      const leadsToCreate = body.map(lead => ({
+        ...lead,
+        status: "Open",
+        stage: "New",
+        ownerId: lead.ownerId || currentEmployeeId || payload.userId
+      }));
+
+      const newLeads = await Lead.insertMany(leadsToCreate);
+
+      // Auto-create initial activity for all
+      const activities = newLeads.map(lead => ({
+        leadId: lead._id,
+        type: "StatusChange",
+        content: "Lead created and marked as New.",
+        createdBy: payload.userId
+      }));
+      await LeadActivity.insertMany(activities);
+
+      return NextResponse.json({ success: true, message: `${newLeads.length} Leads created successfully`, data: newLeads });
+    }
+
+    // Single Insert Fallback
     const newLead = await Lead.create({
       ...body,
       status: "Open",

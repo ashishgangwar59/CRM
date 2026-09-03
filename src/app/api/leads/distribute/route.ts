@@ -19,7 +19,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    if (payload.role !== "ADMIN" && payload.role !== "KEY_ADMIN") {
+    const { User } = await import("@/lib/models/User");
+    const user = await User.findById((payload as any).userId);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+
+    if (user.role !== "ADMIN" && user.role !== "KEY_ADMIN" && (!user.accessibleModules || !user.accessibleModules.includes("Leads Distribution"))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -34,8 +41,6 @@ export async function POST(req: Request) {
     }
 
     // Resolve creator employee record
-    const { User } = await import("@/lib/models/User");
-    const user = await User.findById(payload.userId).lean();
     const creatorEmployee = user ? await Employee.findOne({ email: user.email }).lean() : null;
     const creatorEmployeeId = creatorEmployee ? creatorEmployee._id : payload.userId;
 

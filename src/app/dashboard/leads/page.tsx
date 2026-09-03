@@ -16,6 +16,7 @@ export default function LeadsDashboardPage() {
   
   // Auth and Employee States
   const [role, setRole] = useState<string | null>(null);
+  const [accessibleModules, setAccessibleModules] = useState<string[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
 
   // Navigation Tabs
@@ -50,8 +51,8 @@ export default function LeadsDashboardPage() {
 
   // CSV Sample Export
   const downloadSampleCSV = () => {
-    if (!isUserAdmin) {
-      alert("Permission denied. Only Admin can download sample CSV template.");
+    if (!isUserAdmin && !hasCSVAccess) {
+      alert("Permission denied. You do not have permission to download the sample CSV template.");
       return;
     }
     const headers = ["FIRST_NAME", "SECOND_NAME", "MOBILE", "COMPANY", "ADDRESS1", "ADDRESS2", "ADDRESS3", "CITY", "STATE", "PINCODE", "REMARK"];
@@ -71,8 +72,8 @@ export default function LeadsDashboardPage() {
 
   // Export current filtered leads to CSV
   const exportLeadsCSV = () => {
-    if (!isUserAdmin) {
-      alert("Permission denied. Only Admin can export leads to CSV.");
+    if (!isUserAdmin && !hasCSVAccess) {
+      alert("Permission denied. You do not have permission to export leads to CSV.");
       return;
     }
     if (leads.length === 0) {
@@ -146,6 +147,11 @@ export default function LeadsDashboardPage() {
   };
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isUserAdmin && !hasCSVAccess) {
+      alert("Permission denied. You do not have permission to import leads from CSV.");
+      if (csvInputRef.current) csvInputRef.current.value = "";
+      return;
+    }
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     const formData = new FormData();
@@ -182,11 +188,17 @@ export default function LeadsDashboardPage() {
       const meData = await meRes.json();
       if (meData.success) {
         setRole(meData.role);
-        if (meData.role === "ADMIN" || meData.role === "KEY_ADMIN") {
+        const modules = meData.accessibleModules || [];
+        setAccessibleModules(modules);
+        if (meData.role === "ADMIN" || meData.role === "KEY_ADMIN" || modules.includes("Leads Distribution")) {
           const empRes = await fetch("/api/employees");
           const empData = await empRes.json();
           if (empData.success) {
-            setEmployees(empData.data);
+            if (meData.role !== "ADMIN" && meData.role !== "KEY_ADMIN" && meData.employee?._id) {
+              setEmployees(empData.data.filter((e: any) => e._id !== meData.employee._id));
+            } else {
+              setEmployees(empData.data);
+            }
           }
         }
       }
@@ -246,17 +258,23 @@ export default function LeadsDashboardPage() {
     fetchLeads();
   };
 
+  const getDistributableLeads = () => leads.filter(l => !l.isLocked);
+
   const toggleLeadSelection = (leadId: string) => {
+    const lead = leads.find(l => l._id === leadId);
+    if (lead?.isLocked) return;
+
     setSelectedLeadIds(prev => 
       prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
     );
   };
 
   const toggleAllLeads = () => {
-    if (selectedLeadIds.length === leads.length) {
+    const available = getDistributableLeads();
+    if (selectedLeadIds.length === available.length && available.length > 0) {
       setSelectedLeadIds([]);
     } else {
-      setSelectedLeadIds(leads.map(lead => lead._id));
+      setSelectedLeadIds(available.map(lead => lead._id));
     }
   };
 
@@ -322,6 +340,9 @@ export default function LeadsDashboardPage() {
   };
 
   const isUserAdmin = role === "ADMIN" || role === "KEY_ADMIN";
+  const hasCSVAccess = accessibleModules.includes("Leads CSV Actions");
+
+  const hasDistributeAccess = accessibleModules.includes("Leads Distribution");
 
   return (
     <div className="space-y-6 w-full pb-24">
@@ -331,7 +352,7 @@ export default function LeadsDashboardPage() {
           <p className="text-zinc-500 dark:text-zinc-400">Track pipeline stages, assign leads, and monitor workloads.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {isUserAdmin && (
+          {(isUserAdmin || hasDistributeAccess) && (
             <div className="flex border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5 bg-zinc-50 dark:bg-zinc-950">
               <button 
                 onClick={() => setActiveTab("pipeline")}
@@ -348,7 +369,7 @@ export default function LeadsDashboardPage() {
             </div>
           )}
 
-          {isUserAdmin && (
+          {(isUserAdmin || hasCSVAccess) && (
             <>
               {/* Sample CSV Download Button */}
               <Button variant="outline" size="sm" onClick={downloadSampleCSV} title="Download Sample CSV Template">
@@ -380,6 +401,11 @@ export default function LeadsDashboardPage() {
               </Button>
             </>
           )}
+          <Link href="/dashboard/leads/bulk-add">
+            <Button variant="secondary" size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-400 dark:hover:bg-indigo-900/60">
+              <Users className="mr-1.5 h-3.5 w-3.5" /> Bulk Add
+            </Button>
+          </Link>
           <Link href="/dashboard/leads/new">
             <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> Add Lead</Button>
           </Link>
@@ -822,8 +848,8 @@ export default function LeadsDashboardPage() {
                     <TableHeader className="sticky top-0 bg-zinc-50 dark:bg-zinc-900 z-10">
                       <TableRow>
                         <TableHead className="w-12 text-center">
-                          <button onClick={toggleAllLeads} className="text-zinc-500 hover:text-zinc-800">
-                            {selectedLeadIds.length === leads.length && leads.length > 0 ? (
+                          <button onClick={toggleAllLeads} className="text-zinc-500 hover:text-zinc-800 disabled:opacity-50" disabled={getDistributableLeads().length === 0}>
+                            {selectedLeadIds.length === getDistributableLeads().length && getDistributableLeads().length > 0 ? (
                               <CheckSquare className="w-4 h-4 text-indigo-600" />
                             ) : (
                               <Square className="w-4 h-4" />
@@ -842,13 +868,13 @@ export default function LeadsDashboardPage() {
                         leads.map(lead => {
                           const isSelected = selectedLeadIds.includes(lead._id);
                           return (
-                            <TableRow key={lead._id} className="hover:bg-zinc-50/50 cursor-pointer" onClick={() => toggleLeadSelection(lead._id)}>
+                            <TableRow key={lead._id} className={`hover:bg-zinc-50/50 ${lead.isLocked ? 'opacity-60 bg-zinc-50/30 dark:bg-zinc-900/30' : 'cursor-pointer'}`} onClick={() => toggleLeadSelection(lead._id)}>
                               <TableCell className="text-center" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => toggleLeadSelection(lead._id)} className="text-zinc-500 hover:text-zinc-800">
+                                <button onClick={() => toggleLeadSelection(lead._id)} className="text-zinc-500 hover:text-zinc-800 disabled:cursor-not-allowed" disabled={lead.isLocked}>
                                   {isSelected ? (
-                                    <CheckSquare className="w-4 h-4 text-indigo-600" />
+                                    <CheckSquare className={`w-4 h-4 ${lead.isLocked ? 'text-zinc-400' : 'text-indigo-600'}`} />
                                   ) : (
-                                    <Square className="w-4 h-4" />
+                                    lead.isLocked ? <Lock className="w-4 h-4 text-zinc-300" /> : <Square className="w-4 h-4" />
                                   )}
                                 </button>
                               </TableCell>

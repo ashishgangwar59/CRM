@@ -19,7 +19,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    if (payload.role !== "ADMIN" && payload.role !== "KEY_ADMIN") {
+    const { User } = await import("@/lib/models/User");
+    const user = await User.findById((payload as any).userId);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+
+    if (user.role !== "ADMIN" && user.role !== "KEY_ADMIN" && (!user.accessibleModules || !user.accessibleModules.includes("Leads CSV Actions"))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -120,6 +120,19 @@ export default function EditEmployeePage() {
       }));
     } else if (field === "accessibleModules") {
       setFormData(prev => ({ ...prev, accessibleModules: value as unknown as string[] }));
+    } else if (field === "systemRole") {
+      if (value === "ADMIN") {
+        setFormData(prev => ({
+          ...prev,
+          systemRole: value,
+          accessibleModules: [
+            "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Distribution", "Reports", "Profile",
+            "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
+          ]
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, systemRole: value }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -186,8 +199,12 @@ export default function EditEmployeePage() {
           <TabsList className="mb-4">
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="official">Official & Work</TabsTrigger>
-            <TabsTrigger value="kyc">KYC & Emergency</TabsTrigger>
-            <TabsTrigger value="bank">Bank Details</TabsTrigger>
+            {formData.systemRole !== "ADMIN" && (
+              <>
+                <TabsTrigger value="kyc">KYC & Emergency</TabsTrigger>
+                <TabsTrigger value="bank">Bank Details</TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="permissions">Permissions & Access</TabsTrigger>
           </TabsList>
 
@@ -403,7 +420,8 @@ export default function EditEmployeePage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="kyc">
+          {formData.systemRole !== "ADMIN" && (
+            <TabsContent value="kyc">
             <Card>
               <CardHeader>
                 <CardTitle>KYC & Emergency Contacts</CardTitle>
@@ -448,8 +466,10 @@ export default function EditEmployeePage() {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
-          <TabsContent value="bank">
+          {formData.systemRole !== "ADMIN" && (
+            <TabsContent value="bank">
             <Card>
               <CardHeader>
                 <CardTitle>Bank Account Details</CardTitle>
@@ -477,6 +497,7 @@ export default function EditEmployeePage() {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           <TabsContent value="permissions">
             <Card>
@@ -487,8 +508,8 @@ export default function EditEmployeePage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    "Overview", "Attendance", "Leads", "Reports", "Profile",
-                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings"
+                    "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Distribution", "Reports", "Profile",
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2 p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900 border">
                       <input

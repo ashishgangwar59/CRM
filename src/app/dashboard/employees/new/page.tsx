@@ -12,7 +12,6 @@ import Link from "next/link";
 export default function NewEmployeePage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const steps = ["Personal", "Official", "KYC & Docs", "Bank", "Permissions"];
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -47,6 +46,23 @@ export default function NewEmployeePage() {
     accessibleModules: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
   });
 
+  const steps = formData.systemRole === "ADMIN" 
+    ? ["Personal", "Official", "Permissions"] 
+    : ["Personal", "Official", "KYC & Docs", "Bank", "Permissions"];
+
+  // Helper to get true index in original structure if needed
+  const renderStep = () => {
+    const currentStepName = steps[step];
+    switch (currentStepName) {
+      case "Personal": return 0;
+      case "Official": return 1;
+      case "KYC & Docs": return 2;
+      case "Bank": return 3;
+      case "Permissions": return 4;
+      default: return 0;
+    }
+  };
+
   const handleChange = (field: string, value: string) => {
     if (field.includes(".")) {
       const [parent, child] = field.split(".");
@@ -59,6 +75,19 @@ export default function NewEmployeePage() {
       }));
     } else if (field === "accessibleModules") {
       setFormData(prev => ({ ...prev, accessibleModules: value as unknown as string[] }));
+    } else if (field === "systemRole") {
+      if (value === "ADMIN") {
+        setFormData(prev => ({
+          ...prev,
+          systemRole: value,
+          accessibleModules: [
+            "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Distribution", "Reports", "Profile",
+            "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
+          ]
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, systemRole: value }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -184,7 +213,7 @@ export default function NewEmployeePage() {
           </div>
         </div>
 
-        {step === 0 && (
+        {renderStep() === 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Personal Details</CardTitle>
@@ -341,7 +370,7 @@ export default function NewEmployeePage() {
             </Card>
         )}
 
-        {step === 1 && (
+        {renderStep() === 1 && (
             <Card>
               <CardHeader>
                 <CardTitle>Official Details</CardTitle>
@@ -419,7 +448,7 @@ export default function NewEmployeePage() {
             </Card>
         )}
 
-        {step === 2 && (
+        {renderStep() === 2 && (
             <Card>
               <CardHeader>
                 <CardTitle>KYC & Documents</CardTitle>
@@ -444,7 +473,7 @@ export default function NewEmployeePage() {
             </Card>
         )}
 
-        {step === 3 && (
+        {renderStep() === 3 && (
             <Card>
               <CardHeader>
                 <CardTitle>Bank & Emergency Details</CardTitle>
@@ -494,7 +523,7 @@ export default function NewEmployeePage() {
             </Card>
         )}
 
-        {step === 4 && (
+        {renderStep() === 4 && (
             <Card>
               <CardHeader>
                 <CardTitle>Module Permissions</CardTitle>
@@ -508,7 +537,7 @@ export default function NewEmployeePage() {
                 )}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    "Overview", "Attendance", "Leads", "Reports", "Profile",
+                    "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Distribution", "Reports", "Profile",
                     "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2">
