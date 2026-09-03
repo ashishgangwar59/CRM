@@ -81,7 +81,7 @@ export default function NewEmployeePage() {
           ...prev,
           systemRole: value,
           accessibleModules: [
-            "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Distribution", "Reports", "Profile",
+            "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
             "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
           ]
         }));
@@ -537,7 +537,7 @@ export default function NewEmployeePage() {
                 )}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Distribution", "Reports", "Profile",
+                    "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
                     "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2">

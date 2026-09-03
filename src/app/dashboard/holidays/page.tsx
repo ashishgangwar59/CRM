@@ -204,8 +204,8 @@ export default function HolidaysPage() {
         {holidays.map(holiday => (
           <Card key={holiday._id} className="hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors relative group">
             <CardContent className="p-6 flex items-start space-x-4">
-              <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400">
-                <Calendar className="h-6 w-6" />
+              <div className="h-12 w-12 flex items-center justify-center flex-shrink-0 text-indigo-600 dark:text-indigo-400">
+                <Calendar className="h-8 w-8" />
               </div>
               <div className="flex-1 pr-6">
                 <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">{holiday.name}</h3>
@@ -218,24 +218,20 @@ export default function HolidaysPage() {
               
               {isUserAdmin && (
                 <div className="absolute right-4 top-4 flex items-center space-x-1.5">
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-8 w-8 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 shadow-xs" 
+                  <button 
+                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-1"
                     title="Edit Holiday"
                     onClick={() => startEdit(holiday)}
                   >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    className="h-8 w-8 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800/80 shadow-xs" 
+                    <Edit className="h-5 w-5" />
+                  </button>
+                  <button 
+                    className="text-rose-600 dark:text-rose-400 hover:text-rose-700 p-1"
                     title="Delete Holiday"
                     onClick={() => handleDelete(holiday._id)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 className="h-5 w-5" />
+                  </button>
                 </div>
               )}
             </CardContent>

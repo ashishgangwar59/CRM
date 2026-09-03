@@ -401,11 +401,13 @@ export default function LeadsDashboardPage() {
               </Button>
             </>
           )}
-          <Link href="/dashboard/leads/bulk-add">
-            <Button variant="secondary" size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-400 dark:hover:bg-indigo-900/60">
-              <Users className="mr-1.5 h-3.5 w-3.5" /> Bulk Add
-            </Button>
-          </Link>
+          {(role === "ADMIN" || role === "KEY_ADMIN" || accessibleModules.includes("Leads Bulk Add")) && (
+            <Link href="/dashboard/leads/bulk-add">
+              <Button variant="secondary" size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-400 dark:hover:bg-indigo-900/60">
+                <Users className="mr-1.5 h-3.5 w-3.5" /> Bulk Add
+              </Button>
+            </Link>
+          )}
           <Link href="/dashboard/leads/new">
             <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> Add Lead</Button>
           </Link>
