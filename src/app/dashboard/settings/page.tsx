@@ -354,13 +354,15 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="font-bold">Bond Maturity Period (Months)</Label>
-                      <Input
-                        type="number"
-                        min={1}
+                      <select
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:focus:ring-zinc-300"
                         value={settings.investorMaturityPeriodMonths ?? 1}
                         onChange={e => setSettings({ ...settings, investorMaturityPeriodMonths: parseInt(e.target.value) || 1 })}
-                        placeholder="e.g. 1"
-                      />
+                      >
+                        {[1, 3, 6, 9, 12, 18, 24, 36, 48, 60].map(m => (
+                          <option key={m} value={m}>{m} {m === 1 ? 'Month' : 'Months'}</option>
+                        ))}
+                      </select>
                       <p className="text-xs text-zinc-500">Number of months after investment date when the bond matures. This will appear on the Payment Bond PDF.</p>
                     </div>
                   </div>

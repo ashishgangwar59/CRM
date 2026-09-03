@@ -199,12 +199,8 @@ export default function EditEmployeePage() {
           <TabsList className="mb-4">
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="official">Official & Work</TabsTrigger>
-            {formData.systemRole !== "ADMIN" && (
-              <>
-                <TabsTrigger value="kyc">KYC & Emergency</TabsTrigger>
-                <TabsTrigger value="bank">Bank Details</TabsTrigger>
-              </>
-            )}
+            <TabsTrigger value="kyc">KYC & Emergency</TabsTrigger>
+            <TabsTrigger value="bank">Bank Details</TabsTrigger>
             <TabsTrigger value="permissions">Permissions & Access</TabsTrigger>
           </TabsList>
 
@@ -420,8 +416,7 @@ export default function EditEmployeePage() {
             </Card>
           </TabsContent>
 
-          {formData.systemRole !== "ADMIN" && (
-            <TabsContent value="kyc">
+          <TabsContent value="kyc">
             <Card>
               <CardHeader>
                 <CardTitle>KYC & Emergency Contacts</CardTitle>
@@ -466,10 +461,7 @@ export default function EditEmployeePage() {
               </CardContent>
             </Card>
           </TabsContent>
-          )}
-
-          {formData.systemRole !== "ADMIN" && (
-            <TabsContent value="bank">
+          <TabsContent value="bank">
             <Card>
               <CardHeader>
                 <CardTitle>Bank Account Details</CardTitle>
@@ -497,7 +489,6 @@ export default function EditEmployeePage() {
               </CardContent>
             </Card>
           </TabsContent>
-          )}
 
           <TabsContent value="permissions">
             <Card>

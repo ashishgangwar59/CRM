@@ -46,9 +46,7 @@ export default function NewEmployeePage() {
     accessibleModules: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
   });
 
-  const steps = formData.systemRole === "ADMIN" 
-    ? ["Personal", "Official", "Permissions"] 
-    : ["Personal", "Official", "KYC & Docs", "Bank", "Permissions"];
+  const steps = ["Personal", "Official", "KYC & Docs", "Bank", "Permissions"];
 
   // Helper to get true index in original structure if needed
   const renderStep = () => {
