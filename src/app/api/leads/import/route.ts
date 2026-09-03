@@ -30,6 +30,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const { Employee } = await import("@/lib/models/Employee");
+    const currentEmployee = await Employee.findOne({ email: user.email }).lean();
+    const currentOwnerId = currentEmployee ? currentEmployee._id : user._id;
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
@@ -160,7 +164,8 @@ export async function POST(req: Request) {
           source: "Website",
           status: "Open",
           stage: "New",
-          priority: "Medium"
+          priority: "Medium",
+          ownerId: currentOwnerId
         });
 
         // If there's a remark, log it in activity
