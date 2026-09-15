@@ -12,7 +12,12 @@ import { useRouter } from "next/navigation";
 export default function PayrollDashboardPage() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
-  const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
+  const [monthYear, setMonthYear] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("payrollMonth") ?? new Date().toISOString().slice(0, 7);
+    }
+    return new Date().toISOString().slice(0, 7);
+  });
   const [payrolls, setPayrolls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -177,11 +182,17 @@ export default function PayrollDashboardPage() {
             <Input 
               type="month" 
               value={monthYear} 
-              onChange={(e) => setMonthYear(e.target.value)}
+              onChange={(e) => {
+                setMonthYear(e.target.value);
+                if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", e.target.value);
+              }}
               className="w-48"
             />
             {monthYear && (
-              <Button variant="ghost" size="sm" onClick={() => setMonthYear("")}>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setMonthYear("");
+                if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", "");
+              }}>
                 All Slips
               </Button>
             )}
