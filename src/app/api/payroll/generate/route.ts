@@ -42,17 +42,6 @@ export async function POST(req: Request) {
       }
     });
 
-    // 3. Fetch Overtime Hours from Attendance
-    const attendances = await Attendance.find({
-      employeeId,
-      date: { $regex: `^${monthYear}` }
-    });
-
-    let totalOvertimeHours = 0;
-    attendances.forEach(att => {
-      totalOvertimeHours += (att.metrics?.overtimeHours || 0);
-    });
-
     // 4. Calculations
     const standardDaysInMonth = 30; // Standard days in a month
     const targetPaidDays = typeof customPaidDays === "number" && customPaidDays > 0 ? customPaidDays : Math.max(0, standardDaysInMonth - lopDays);
@@ -71,10 +60,6 @@ export async function POST(req: Request) {
 
     const perDaySalary = (structure.basic + structure.hra + baseTravelAllowance + baseIncentive) / standardDaysInMonth;
     const unpaidLeaveDeduction = customPaidDays ? 0 : Number((lopDays * perDaySalary).toFixed(2));
-    
-    // Overtime rate
-    const hourlyRate = (structure.basic / 160) * 1.5;
-    const overtimeAmount = Number((totalOvertimeHours * hourlyRate).toFixed(2));
 
     const bonus = 0;
     const loan = 0;
@@ -86,7 +71,7 @@ export async function POST(req: Request) {
     const professionalTax = Number(((structure.professionalTax || 0) * ratio).toFixed(2));
     const incomeTax = Number(((structure.incomeTax || 0) * ratio).toFixed(2));
 
-    const earningsTotal = Number((basic + hra + travelAllowance + bonus + incentive + overtimeAmount).toFixed(2));
+    const earningsTotal = Number((basic + hra + travelAllowance + bonus + incentive).toFixed(2));
     const deductionsTotal = Number((pf + esi + professionalTax + incomeTax + loan + advance + unpaidLeaveDeduction).toFixed(2));
     
     const grossSalary = earningsTotal;
@@ -105,8 +90,7 @@ export async function POST(req: Request) {
           metroAllowance,
           travelAllowance,
           bonus,
-          incentive,
-          overtimeAmount
+          incentive
         },
         deductions: {
           pf,

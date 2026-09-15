@@ -332,7 +332,6 @@ export default function SalarySlipPage() {
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">House Rent Allowance</span><span className="font-bold">₹{payroll.earnings.hra.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Travel Allowance</span><span className="font-bold">₹{(payroll.earnings.travelAllowance || payroll.earnings.metroAllowance || payroll.earnings.specialAllowance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
                 {payroll.earnings.incentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Incentive</span><span className="font-bold">₹{payroll.earnings.incentive.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}
-                {payroll.earnings.overtimeAmount > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Overtime Pay</span><span className="font-bold">₹{payroll.earnings.overtimeAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}
                 {payroll.earnings.bonus > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Performance Bonus</span><span className="font-bold">₹{payroll.earnings.bonus.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>}
               </div>
             </div>
