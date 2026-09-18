@@ -145,11 +145,11 @@ export default function AdminInvestorsPage() {
       const json = await res.json();
       if (json.success) {
         setShowAddModal(false);
-        setAddForm({ 
-          fullName: "", 
-          email: "", 
-          phone: "", 
-          investmentAmount: 0, 
+        setAddForm({
+          fullName: "",
+          email: "",
+          phone: "",
+          investmentAmount: 0,
           monthlyGrowthPercentage: 1.33,
           investmentDate: new Date().toISOString().split("T")[0],
           bondMaturityMonths: 1,
@@ -437,7 +437,7 @@ export default function AdminInvestorsPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
-                          className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          className="text-rose-600 bg-white cursor border-rose-200 hover:bg-primary dark:hover:bg-rose-950/40"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -492,8 +492,8 @@ export default function AdminInvestorsPage() {
 
       {/* --- View & Verify KYC Modal --- */}
       {selectedInvestor && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden text-zinc-900 dark:text-zinc-100 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/60   backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden text-zinc-900 dark:text-zinc-100 shadow-2xl">
             <div className="flex justify-between items-start border-b pb-4 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <div>
                 <h2 className="text-2xl font-bold">{selectedInvestor.fullName}</h2>
@@ -686,12 +686,12 @@ export default function AdminInvestorsPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-bold">{docItem.title}</p>
                             {docItem.sub && <span className="text-xs text-zinc-500 font-mono">({docItem.sub})</span>}
-                            {docItem.req && <span className="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
+                            {docItem.req && <span className="text-[10px] text-indigo-700 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
-                              currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
-                                "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                              currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 border-0 " :
+                                "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-0 border-amber-500/30"
                               }`}>
                               {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
                               {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
@@ -710,7 +710,7 @@ export default function AdminInvestorsPage() {
                               <Eye className="w-3.5 h-3.5" /> View File
                             </button>
                           ) : (
-                            <span className="text-xs text-rose-500 font-semibold bg-rose-950/40 px-2.5 py-1 rounded border border-rose-800">
+                            <span className="text-xs text-rose-500 font-semibold  px-2.5 py-1 rounded border border-rose-800">
                               Missing / Not Uploaded
                             </span>
                           )}
@@ -723,7 +723,7 @@ export default function AdminInvestorsPage() {
                               className={`font-bold h-8 px-3 text-xs ${!docItem.url
                                 ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                                 : currentStatus === "Approved"
-                                  ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
+                                  ? "bg-emerald-600 text-white  ring-emerald-400 shadow-sm"
                                   : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
                                 }`}
                             >
@@ -737,7 +737,7 @@ export default function AdminInvestorsPage() {
                               className={`h-8 px-3 text-xs font-bold ${!docItem.url
                                 ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
                                 : currentStatus === "Rejected"
-                                  ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
+                                  ? "bg-rose-600 text-white "
                                   : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
                                 }`}
                             >
@@ -871,7 +871,7 @@ export default function AdminInvestorsPage() {
       {/* --- Add Investor Modal --- */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl">
             <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Add New Investor</h2>
               <Button variant="ghost" onClick={() => setShowAddModal(false)}>✕</Button>

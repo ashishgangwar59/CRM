@@ -27,7 +27,9 @@
   --border: #eeeeee;
 }
 
-*, ::before, ::after {
+*,
+::before,
+::after {
   border-color: #eeeeee;
 }
 
@@ -35,4 +37,461 @@ body {
   background: #ffffff !important;
   color: #111111 !important;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+
+
+.cert-container-wrapper {
+  font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+  color: #134086;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---------- page scaling ---------- */
+/* .stage{width:min(1400px,100%); display:flex; justify-content:flex-start;} */
+/* .scaler {
+  width: 1400px;
+  transform: scale(0.65);
+  transform-origin: top left;
+} */
+
+/* ---------- certificate frame ---------- */
+.cert {
+  position: relative;
+  width: 1400px;
+  min-height: 933px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #fffdf6 0%, #fdfaf1 45%, #f7f0dd 100%);
+  padding: 10px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+}
+
+/* outer gold band */
+.band {
+  position: relative;
+  padding: 9px;
+  background: linear-gradient(135deg, #8d6b12 0%, #e6c65c 14%, #fff2c0 25%, #c9a227 40%, #8d6b12 55%, #e8cb69 72%, #fff0ba 84%, #a5801a 100%);
+}
+
+/* navy band */
+.band-navy {
+  padding: 7px;
+  background: linear-gradient(135deg, #071c3f, #123a76 45%, #071c3f);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+}
+
+.sheet {
+  position: relative;
+  background:
+    linear-gradient(0deg, rgba(201, 162, 39, .05), rgba(201, 162, 39, .05)),
+    radial-gradient(100% 80% at 50% 0%, #fffef9 0%, #fdfaf1 55%, #f8f1df 100%);
+  outline: 2px solid #c9a227;
+  outline-offset: -6px;
+  padding: 30px 40px 0;
+}
+
+.sheet::before {
+  /* hairline inner rule */
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border: 1px solid rgba(141, 107, 18, .45);
+  pointer-events: none;
+}
+
+/* corner filigree */
+.corner {
+  position: absolute;
+  width: 138px;
+  height: 138px;
+  pointer-events: none;
+  z-index: 5
+}
+
+.corner.tl {
+  top: 11px;
+  left: 11px
+}
+
+.corner.tr {
+  top: 11px;
+  right: 11px;
+  transform: scaleX(-1)
+}
+
+.corner.bl {
+  bottom: 11px;
+  left: 11px;
+  transform: scaleY(-1)
+}
+
+.corner.br {
+  bottom: 11px;
+  right: 11px;
+  transform: scale(-1, -1)
+}
+
+/* ---------- header ---------- */
+header.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  position: relative;
+  z-index: 2
+}
+
+.logo {
+  width: 112px;
+  flex: 0 0 112px;
+  margin-top: 2px
+}
+
+.logo img {
+  width: 100%;
+  display: block
+}
+
+.titleblock {
+  flex: 1;
+  text-align: center;
+  padding-top: 4px
+}
+
+.company {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  color: #0e2c60;
+  font-size: 35px;
+  line-height: 1.08;
+  letter-spacing: .005em;
+  margin: 0;
+}
+
+.tagline {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  color: #8d6b12;
+  font-size: 19px;
+  letter-spacing: .06em;
+  margin: 7px 0 6px;
+}
+
+.address {
+  font-size: 18px;
+  line-height: 1.35;
+  color: #134086;
+  margin: 0;
+  max-width: 640px;
+  margin-inline: auto
+}
+
+.meta {
+  flex: 0 0 300px;
+  padding-top: 6px
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 9px
+}
+
+.meta-row span {
+  font-size: 17px;
+  color: #134086
+}
+
+.meta-row .val {
+  min-width: 172px;
+  text-align: center;
+  font-weight: 600;
+  color: #0e2c60;
+  background: linear-gradient(#fffdf4, #f6edd6);
+  border: 1.5px solid #c9a227;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 17px;
+}
+
+/* ---------- ribbon title ---------- */
+.ribbon {
+  position: relative;
+  margin: 20px 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.ribbon .flourish {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 210px;
+  height: 74px
+}
+
+.ribbon .flourish.l {
+  left: 14px
+}
+
+.ribbon .flourish.r {
+  right: 14px;
+  transform: translateY(-50%) scaleX(-1)
+}
+
+.plate {
+  position: relative;
+  z-index: 2;
+  width: 900px;
+  text-align: center;
+  padding: 12px 30px 15px;
+  background: linear-gradient(180deg, #14376f, #0a2149 60%, #071b3a);
+  border: 2px solid #c9a227;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(242, 220, 154, .35);
+  clip-path: polygon(28px 0, calc(100% - 28px) 0, 100% 50%, calc(100% - 28px) 100%, 28px 100%, 0 50%);
+}
+
+.plate h1 {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: .012em;
+  background: linear-gradient(180deg, #fff4c9, #e7c766 55%, #c39a1e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.plate h2 {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  margin: 5px 0 0;
+  font-size: 25px;
+  letter-spacing: .09em;
+  color: #fff;
+}
+
+/* ---------- certify text ---------- */
+.certify {
+  font-size: 20.5px;
+  line-height: 1.55;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.certify b {
+  color: #134086
+}
+
+.sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 14px 0 10px;
+  font-size: 20.5px;
+}
+
+.sum .box {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  font-size: 21px;
+  letter-spacing: .03em;
+  color: #123a76;
+  background: linear-gradient(#fffdf2, #f3e7c9);
+  border: 1px solid #c9a227;
+  border-radius: 4px;
+  padding: 7px 42px;
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.sum .fig {
+  font-weight: 700;
+  font-size: 21px;
+  color: #134086
+}
+
+.terms-intro {
+  font-size: 20.5px;
+  margin: 2px 0 16px;
+  text-align: center;
+}
+
+/* ---------- body grid ---------- */
+.grid-cert {
+  display: grid;
+  grid-template-columns: 1fr 540px;
+  gap: 34px;
+  align-items: start;
+  text-align: left;
+}
+
+dl.details {
+  margin: 0;
+  font-size: 19.5px
+}
+
+dl.details .row {
+  display: flex;
+  align-items: baseline;
+  padding: 8.5px 0;
+  border-bottom: 1px dotted rgba(141, 107, 18, .28)
+}
+
+dl.details dt {
+  flex: 0 0 218px;
+  color: #134086
+}
+
+dl.details .sep {
+  flex: 0 0 18px;
+  color: #555
+}
+
+dl.details dd {
+  margin: 0;
+  flex: 1;
+  font-weight: 600;
+  color: #134086
+}
+
+.tc {
+  border: 2px solid #0e2c60;
+  border-radius: 5px;
+  overflow: hidden;
+  background: linear-gradient(#fffdf5, #f8f1de);
+}
+
+.tc h3 {
+  margin: 0;
+  font-family: "Cinzel", serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-align: left;
+  padding: 7px 18px;
+  color: #f2dc9a;
+  background: linear-gradient(180deg, #123a76, #0a2149);
+}
+
+.tc ol {
+  margin: 0;
+  padding: 12px 18px 14px 36px;
+  font-size: 17.6px;
+  line-height: 1.36
+}
+
+.tc li {
+  margin-bottom: 8px;
+  padding-left: 4px
+}
+
+.tc li:last-child {
+  margin-bottom: 2px
+}
+
+.tc li::marker {
+  font-weight: 600;
+  color: #134086
+}
+
+/* ---------- value received ---------- */
+.value {
+  margin: 26px 0 0;
+  font-size: 19.5px;
+  line-height: 1.45;
+  max-width: 660px
+}
+
+.for-company {
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  font-size: 19px;
+  color: #134086;
+  margin: 12px 0 0
+}
+
+/* ---------- signature area ---------- */
+.signs {
+  display: grid;
+  grid-template-columns: 1fr 300px 1fr;
+  gap: 20px;
+  align-items: end;
+  margin-top: 6px;
+  padding-bottom: 26px
+}
+
+.sig {
+  text-align: center
+}
+
+.sig .line {
+  border-bottom: 1.6px solid #22314d;
+  height: 74px;
+  margin: 0 auto 7px;
+  max-width: 330px
+}
+
+.sig strong {
+  display: block;
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #134086
+}
+
+.sig span {
+  font-size: 17px;
+  color: #134086
+}
+
+.ack {
+  padding-bottom: 6px
+}
+
+.ack h4 {
+  font-family: "Cinzel", serif;
+  font-size: 18.5px;
+  margin: 0 0 6px;
+  color: #134086;
+  font-weight: 600
+}
+
+.ack p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4
+}
+
+.seal {
+  align-self: end;
+  justify-self: center;
+  width: 230px;
+  margin-bottom: -6px
+}
+
+.seal svg {
+  width: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .28))
+}
+
+/* ---------- footer bar ---------- */
+.footbar {
+  margin: 0 -40px;
+  padding: 11px 20px;
+  text-align: center;
+  background: linear-gradient(180deg, #123a76, #071c3f);
+  border-top: 2px solid #c9a227;
+  font-family: "Cinzel", serif;
+  font-size: 19px;
+  letter-spacing: .055em;
+  color: #f3e2ac;
 }

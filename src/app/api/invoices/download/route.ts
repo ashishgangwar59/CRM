@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Invoice } from "@/lib/models/Invoice";
+import { SystemSettings } from "@/lib/models/SystemSettings";
 
 export async function GET(req: Request) {
   try {
@@ -16,6 +17,9 @@ export async function GET(req: Request) {
     if (!inv) {
       return new Response("Invoice not found", { status: 404 });
     }
+
+    const settings = await SystemSettings.findOne().lean();
+    const invoiceFooterText = settings?.companyProfile?.invoiceFooterText || "Thank you for your business! For any queries regarding this invoice, write to <strong>info@niventracapitaladvisory.com</strong>. <br />Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.";
 
     // Calculations
     let totalTaxableValue = 0;
@@ -701,8 +705,7 @@ export async function GET(req: Request) {
 
     <!-- FOOTER -->
     <div class="footer">
-      Thank you for your business! For any queries regarding this invoice, write to <strong>info@niventracapitaladvisory.com</strong>. <br />
-      Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.
+      ${invoiceFooterText}
     </div>
   </div>
 

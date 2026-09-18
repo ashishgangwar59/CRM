@@ -9,6 +9,7 @@ export interface ISystemSettings extends Document {
     website: string;
     email: string;
     gstNo?: string;
+    invoiceFooterText?: string;
   };
   departments: string[];
   designations: string[];
@@ -80,7 +81,8 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
       phone: { type: String, default: "" },
       website: { type: String, default: "" },
       email: { type: String, default: "" },
-      gstNo: { type: String, default: "" }
+      gstNo: { type: String, default: "" },
+      invoiceFooterText: { type: String, default: 'Thank you for your business! For any queries regarding this invoice, write to <strong>info@niventracapitaladvisory.com</strong>. <br />Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.' }
     },
     departments: { type: [String], default: ["Engineering", "Sales", "HR", "Marketing"] },
     designations: { type: [String], default: ["Manager", "Developer", "Analyst"] },

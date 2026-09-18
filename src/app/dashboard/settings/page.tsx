@@ -298,6 +298,14 @@ export default function SettingsPage() {
                       onChange={e => setSettings({...settings, companyProfile: {...settings.companyProfile, address: e.target.value}})} 
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Invoice Footer Text (HTML supported)</Label>
+                    <textarea 
+                      className="flex w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
+                      value={settings.companyProfile.invoiceFooterText || ""} 
+                      onChange={e => setSettings({...settings, companyProfile: {...settings.companyProfile, invoiceFooterText: e.target.value}})} 
+                    />
+                  </div>
                 </div>
               )}
 
