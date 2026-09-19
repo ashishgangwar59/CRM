@@ -19,7 +19,7 @@ export interface JwtPayload {
 }
 
 export function signAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" }); // 15 minutes
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "3650d" }); // 10 years
 }
 
 export function verifyAccessToken(token: string): JwtPayload {
@@ -27,7 +27,7 @@ export function verifyAccessToken(token: string): JwtPayload {
 }
 
 export function signRefreshToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "7d" }); // 7 days
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "3650d" }); // 10 years
 }
 
 export function verifyRefreshToken(token: string): JwtPayload {

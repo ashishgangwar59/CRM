@@ -1,6 +1,22 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Investor } from "@/lib/models/Investor";
+import { User } from "@/lib/models/User";
+import { verifyAccessToken } from "@/lib/auth";
+
+function getToken(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) {
+    const match = cookieHeader.match(/accessToken=([^;]+)/);
+    if (match) return match[1];
+  }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    if (authHeader.startsWith("Bearer ")) return authHeader.substring(7).trim();
+    return authHeader.trim();
+  }
+  return null;
+}
 
 function numberToWords(num: number): string {
   if (!num || num === 0) return "Zero";
@@ -21,6 +37,22 @@ function numberToWords(num: number): string {
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
+    
+    // Auth Check
+    const token = getToken(req);
+    if (!token) return new Response("Unauthorized", { status: 401 });
+    let payload;
+    try {
+      payload = verifyAccessToken(token);
+    } catch {
+      return new Response("Invalid token", { status: 401 });
+    }
+    const user = await User.findById(payload.userId).lean();
+    const userRole = (user?.role || payload?.role || "").toUpperCase().replace(/_/g, "");
+    if (userRole !== "ADMIN" && userRole !== "KEYADMIN") {
+      return new Response("Forbidden: Only Admin and KeyAdmin can download the bond.", { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

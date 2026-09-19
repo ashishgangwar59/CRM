@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download } from "lucide-react";
+import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download, Loader2 } from "lucide-react";
 import PaymentBondModal from "./PaymentBondModal";
 import DebentureFormModal from "./DebentureFormModal";
 
@@ -66,6 +66,19 @@ export default function AdminInvestorsPage() {
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+
+  // Fetch Role
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setRole(data.role);
+        }
+      })
+      .catch((err) => console.error("Error fetching role:", err));
+  }, []);
 
   // New investor form
   const [addForm, setAddForm] = useState({
@@ -337,7 +350,12 @@ export default function AdminInvestorsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-10 text-zinc-500">Loading Investors...</TableCell>
+                  <TableCell colSpan={8} className="text-center py-10">
+                    <div className="flex flex-col items-center justify-center text-zinc-500">
+                      <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mb-2" />
+                      <span>Loading investors...</span>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ) : investors.length === 0 ? (
                 <TableRow>
@@ -830,7 +848,7 @@ export default function AdminInvestorsPage() {
                       >
                         <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
                       </Button>
-                      {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (
+                      {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (role === "ADMIN" || role === "KEY_ADMIN") && (
                         <Button
                           className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md"
                           onClick={() => setBondModalInvestor(selectedInvestor)}

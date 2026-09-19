@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     const accessToken = signAccessToken({ userId: user._id.toString(), role: user.role });
     const refreshToken = signRefreshToken({ userId: user._id.toString(), role: user.role });
 
-    const expiresInDays = rememberMe ? 7 : 1;
+    const expiresInDays = 3650; // 10 years, never expire unless manual logout
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
@@ -146,7 +146,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 15 * 60,
+      maxAge: expiresInDays * 24 * 60 * 60,
       path: "/",
     });
 

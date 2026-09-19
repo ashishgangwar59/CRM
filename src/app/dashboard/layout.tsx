@@ -3,7 +3,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Calculator } from "lucide-react";
+import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Calculator, AlertCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
@@ -22,6 +22,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { theme, toggleTheme } = useTheme();
 
 
+  const [toastMsg, setToastMsg] = useState<{title: string, desc: string} | null>(null);
+
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      if (response.status === 401 || response.status === 403) {
+         setToastMsg({
+            title: "Unauthorized Access",
+            desc: "You do not have permission to perform this action or access this resource."
+         });
+         setTimeout(() => setToastMsg(null), 5000);
+      }
+      return response;
+    };
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -215,6 +234,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <main className={cn("flex-1 overflow-y-auto p-4 md:p-6", role === "INVESTOR" ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/40")}>
           {children}
         </main>
+        {/* Global Toast Notification */}
+        {toastMsg && (
+          <div className="fixed bottom-4 right-4 z-[9999] bg-rose-600 text-white p-4 rounded-xl shadow-2xl flex items-start gap-3 w-80 animate-in slide-in-from-bottom-5">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold text-sm">{toastMsg.title}</h4>
+              <p className="text-xs mt-1 opacity-90">{toastMsg.desc}</p>
+            </div>
+            <button onClick={() => setToastMsg(null)} className="ml-auto opacity-70 hover:opacity-100">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );

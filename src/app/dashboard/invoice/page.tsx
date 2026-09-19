@@ -92,6 +92,7 @@ export default function InvoicePage() {
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [invoiceFooterText, setInvoiceFooterText] = useState("");
 
   // Load invoice list on mount
   const fetchInvoices = async () => {
@@ -129,6 +130,18 @@ export default function InvoicePage() {
     setInvoiceNo(`NCA/${year}-${nextYear}/${rand}`);
     setInvoiceDate(new Date().toISOString().split("T")[0]);
     fetchInvoices();
+
+    // Fetch settings for invoice footer
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.companyProfile?.invoiceFooterText) {
+          setInvoiceFooterText(data.data.companyProfile.invoiceFooterText);
+        } else {
+          setInvoiceFooterText("Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.");
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const handleSaveInvoice = async () => {
@@ -463,7 +476,7 @@ export default function InvoicePage() {
             <CardDescription className="text-xs text-zinc-500 mt-1">
               {activeTab === "list"
                 ? "View and print previously saved invoices."
-                : editingInvoiceId 
+                : editingInvoiceId
                   ? `Currently editing Invoice: ${invoiceNo}. Save changes to update.`
                   : "Create new professional tax invoices, save them to the system, and export as PDF."}
             </CardDescription>
@@ -623,7 +636,7 @@ export default function InvoicePage() {
               {/* Row 1: Meta + Bill To + Payment (3 columns) */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Meta Section */}
-                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="space-y-3 p-4 bg-white dark:bg-black rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">1. Invoice Meta Info</h3>
                   <div className="space-y-2">
                     <div>
@@ -659,7 +672,7 @@ export default function InvoicePage() {
                 </div>
 
                 {/* Bill To Section */}
-                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="space-y-3 p-4 bg-white dark:bg-black rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">2. Bill To Details</h3>
                   <div className="space-y-2">
                     <div>
@@ -688,7 +701,7 @@ export default function InvoicePage() {
                 </div>
 
                 {/* Payment & Transaction details */}
-                <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div className="space-y-3 p-4 bg-white dark:bg-black rounded-xl border border-zinc-100 dark:border-zinc-800">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">3. Payment Details</h3>
                   <div className="space-y-3">
                     {/* Mode of Payment (Radios) */}
@@ -751,7 +764,7 @@ export default function InvoicePage() {
               </div>
 
               {/* Row 2: Invoice Line Items — Full Width, Larger */}
-              <div className="p-5 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+              <div className="p-5 bg-white dark:bg-black rounded-xl border border-zinc-100 dark:border-zinc-800">
                 <div className="flex justify-between items-center border-b pb-2 mb-4">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">4. Invoice Line Items</h3>
                   <Button size="sm" variant="outline" onClick={handleAddItem} className="h-8 text-xs bg-white text-zinc-900 hover:bg-zinc-50 px-3">
@@ -955,20 +968,20 @@ export default function InvoicePage() {
               font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             }
             .invoice {
-              background: #0d2452;
+              background: #ffffff;
               box-shadow: 0 10px 35px rgba(13,36,82,0.15);
               border-radius: 10px;
               overflow: hidden;
-              color: #ffffff;
-              border: 1px solid #1a3668;
+              color: #1a3668;
+              // border: 1px solid #1a3668;
             }
             .header {
               display: flex;
               justify-content: space-between;
               align-items: center;
               padding: 24px 32px;
-              background: #0a1c3f;
-              border-bottom: 4px solid #d9a441;
+              background: #ffffff;
+              border-bottom: 4px solid #1a3668;
               gap: 20px;
             }
             .brand {
@@ -985,27 +998,27 @@ export default function InvoicePage() {
             .brand-text h1 {
               font-size: 22px;
               font-weight: 800;
-              color: #ffffff;
+              color: #1a3668;
               letter-spacing: 0.5px;
               line-height: 1.15;
             }
             .brand-text .sub {
               font-size: 12px;
               font-weight: 600;
-              color: #f0c975;
+              color: #1a3668;
               letter-spacing: 1.5px;
               margin-top: 2px;
             }
             .brand-text .tagline {
               font-size: 10.5px;
-              color: #a5b4fc;
+              color: #1a3668;
               letter-spacing: 1px;
               margin-top: 4px;
             }
             .contact-block {
               text-align: right;
               font-size: 11.5px;
-              color: #ffffff;
+              color: #1a3668;
               line-height: 1.9;
             }
             .contact-block div {
@@ -1020,8 +1033,8 @@ export default function InvoicePage() {
               justify-content: center;
               width: 16px; height: 16px;
               border-radius: 50%;
-              background: #d9a441;
-              color: #0d2452;
+              background: #1a3668;
+              color: #1a3668;
               font-size: 9px;
               flex-shrink: 0;
             }
@@ -1035,14 +1048,14 @@ export default function InvoicePage() {
               position: absolute;
               top: 50%; left: 0; right: 0;
               height: 2px;
-              background: #1a3668;
+              background: #ffffff;
               z-index: 0;
             }
             .title-bar span {
               position: relative;
               z-index: 1;
-              background: #d9a441;
-              color: #0d2452;
+              background: #1a3668;
+              color: #ffffff;
               padding: 8px 34px;
               border-radius: 20px;
               font-weight: 700;
@@ -1062,8 +1075,8 @@ export default function InvoicePage() {
             }
             .section-label {
               display: inline-block;
-              background: #d9a441;
-              color: #0d2452;
+              background: #1a3668;
+              color: #ffffff;
               font-size: 11px;
               font-weight: 700;
               letter-spacing: 1px;
@@ -1078,7 +1091,7 @@ export default function InvoicePage() {
             }
             .field-row .label {
               width: 100px;
-              color: #a5b4fc;
+              color: #1a3668;
               font-weight: 600;
               flex-shrink: 0;
             }
@@ -1087,7 +1100,7 @@ export default function InvoicePage() {
               border-bottom: 1px solid #1a3668;
               min-height: 16px;
               font-weight: 700;
-              color: #ffffff;
+              color: #1a3668;
             }
             .invoice-info {
               min-width: 250px;
@@ -1095,7 +1108,7 @@ export default function InvoicePage() {
               border-radius: 8px;
               overflow: hidden;
               height: fit-content;
-              background: #0a1c3f;
+              background: #ffffff;
             }
             .invoice-info .row {
               display: flex;
@@ -1105,8 +1118,8 @@ export default function InvoicePage() {
               border-bottom: 1px solid #1a3668;
             }
             .invoice-info .row:last-child { border-bottom: none; }
-            .invoice-info .row .k { color: #a5b4fc; font-weight: 600; }
-            .invoice-info .row .v { color: #f0c975; font-weight: 700; }
+            .invoice-info .row .k { color: #1a3668; font-weight: 600; }
+            .invoice-info .row .v { color: #ffae00; font-weight: 700; }
             .barcode-block {
               display: flex;
               flex-direction: column;
@@ -1115,7 +1128,7 @@ export default function InvoicePage() {
               border: 1px solid #1a3668;
               border-radius: 8px;
               padding: 10px;
-              background: #0a1c3f;
+              background: #ffffff;
               min-width: 140px;
               height: fit-content;
               gap: 6px;
@@ -1128,7 +1141,7 @@ export default function InvoicePage() {
             }
             .barcode-title {
               font-size: 8px;
-              color: #a5b4fc;
+              color: #1a3668;
               text-transform: uppercase;
               letter-spacing: 0.5px;
               font-weight: bold;
@@ -1140,8 +1153,8 @@ export default function InvoicePage() {
               font-size: 12.5px;
             }
             table.items thead th {
-              background: #d9a441;
-              color: #0d2452;
+              background: #1a3668;
+              color: #ffffff;
               font-size: 11px;
               letter-spacing: 0.5px;
               text-align: left;
@@ -1155,13 +1168,13 @@ export default function InvoicePage() {
               padding: 12px;
               border-bottom: 1px solid #1a3668;
               vertical-align: top;
-              color: #ffffff;
+              color: #1a3668;
             }
             table.items tbody td:nth-child(3) { text-align: center; }
             table.items tbody td:nth-child(4) { text-align: right; }
             table.items tbody td:nth-child(5) { text-align: right; font-weight: 600;}
-            .item-title { font-weight: 700; color: #ffffff; }
-            .item-desc { font-size: 11px; color: #a5b4fc; margin-top: 2px; }
+            .item-title { font-weight: 700; color: #1a3668; }
+            .item-desc { font-size: 11px; color: #1a3668; margin-top: 2px; }
             .bottom-section {
               display: flex;
               justify-content: space-between;
@@ -1180,12 +1193,12 @@ export default function InvoicePage() {
               border: 1px solid #1a3668;
               border-radius: 8px;
               padding: 12px 14px;
-              background: #0a1c3f;
+              background: #ffffff;
             }
             .box .box-title {
               font-size: 11px;
               font-weight: 700;
-              color: #f0c975;
+              color: #1a3668;
               letter-spacing: 0.5px;
               margin-bottom: 8px;
             }
@@ -1193,18 +1206,18 @@ export default function InvoicePage() {
               display: flex;
               gap: 22px;
               font-size: 10.5px;
-              color: #a5b4fc;
+              color: #1a3668;
               text-align: center;
             }
             .pay-icons div { display: flex; flex-direction: column; align-items: center; gap: 4px; }
             .pay-icons .circle {
               width: 32px; height: 32px;
               border-radius: 50%;
-              background: #0a1c3f;
+              background: #ffffff;
               border: 1px solid #1a3668;
               display: flex; align-items: center; justify-content: center;
               font-size: 14px;
-              color: #ffffff;
+              color: #1a3668;
               font-weight: bold;
             }
             .bank-details div {
@@ -1213,18 +1226,18 @@ export default function InvoicePage() {
               font-size: 11.5px;
               padding: 3px 0;
             }
-            .bank-details .k { color: #a5b4fc; }
-            .bank-details .v { font-weight: 600; color: #ffffff; }
+            .bank-details .k { color: #1a3668; }
+            .bank-details .v { font-weight: 600; color: #1a3668; }
             .terms ul {
               list-style: none;
               font-size: 10.5px;
-              color: #ffffff;
+              color: #1a3668;
               line-height: 1.7;
               padding-left: 0;
             }
             .terms ul li::before {
               content: "• ";
-              color: #f0c975;
+              color: #1a3668;
               font-weight: 700;
             }
             .right-col {
@@ -1244,23 +1257,23 @@ export default function InvoicePage() {
               padding: 9px 16px;
               font-size: 12.5px;
               border-bottom: 1px solid #1a3668;
-              background: #0a1c3f;
+              background: #ffffff;
             }
-            .totals .row .k { color: #a5b4fc; font-weight: 600;}
+            .totals .row .k { color: #1a3668; font-weight: 600;}
             .totals .row .v { font-weight: 700; color: #ffffff; }
             .totals .grand {
-              background: #d9a441;
-              color: #0d2452;
+              background: #1a3668;
+              color: #ffffff;
               padding: 12px 16px;
               display: flex;
               justify-content: space-between;
               font-size: 14px;
               font-weight: 800;
             }
-            .totals .grand .v { color: #0d2452; }
+            .totals .grand .v { color: #ffffff; }
             .amount-words {
               font-size: 10.5px;
-              color: #a5b4fc;
+              color: #1a3668;
               text-align: right;
               font-style: italic;
               line-height: 1.4;
@@ -1272,28 +1285,29 @@ export default function InvoicePage() {
             .sign-block .for-text {
               font-size: 11px;
               font-weight: 700;
-              color: #f0c975;
+              color: #1a3668;
               margin-bottom: 34px;
             }
             .sign-block .auth {
               font-size: 10.5px;
               font-weight: 700;
               letter-spacing: 0.5px;
-              color: #ffffff;
+              color: #1a3668;
               border-top: 1px solid #1a3668;
               padding-top: 6px;
               margin-top: 2px;
             }
             .footer {
+            border-top:1px solid #1a3668;
               margin-top: 26px;
-              background: #0a1c3f;
-              color: #a5b4fc;
+              background: #ffffff;
+              color: #1a3668;
               text-align: center;
               padding: 14px 20px;
               font-size: 11px;
               line-height: 1.6;
             }
-            .footer strong { color: #f0c975; }
+            .footer strong { color: #1a3668; }
 
              @media print {
                @page {
@@ -1323,7 +1337,7 @@ export default function InvoicePage() {
                  border-radius: 0 !important;
                  border: none !important;
                  width: 100% !important;
-                 background: #0d2452 !important;
+                 background: #ffffff !important;
                }
                .header {
                  padding: 14px 20px !important;
@@ -1593,10 +1607,11 @@ export default function InvoicePage() {
             </div>
 
             {/* FOOTER */}
+            {/* <div className="footer" dangerouslySetInnerHTML={{ __html: invoiceFooterText }} /> */}
             <div className="footer">
               Thank you for your business! For any queries regarding this invoice, write to{" "}
               <strong>info@niventracapitaladvisory.com</strong>. <br />
-              Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.
+              {invoiceFooterText}
             </div>
           </div>
         </div>

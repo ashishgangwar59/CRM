@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, Upload, Plus, User, Layers, List } from "lucide-react";
+import { Search, Download, Upload, Plus, User, Layers, List, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -49,8 +49,10 @@ export default function EmployeesPage() {
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const fetchEmployees = async () => {
+    setLoading(true);
     try {
       const res = await fetch(`/api/employees?search=${search}&status=${status}&page=${page}&limit=${limit}`);
       const data = await res.json();
@@ -66,6 +68,8 @@ export default function EmployeesPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -236,7 +240,23 @@ export default function EmployeesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.map((emp: any) => (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center text-zinc-500">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mb-2" />
+                        <span>Loading employees...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : employees.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-zinc-500">
+                      No employees found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  employees.map((emp: any) => (
                   <TableRow 
                     key={emp._id} 
                     className="cursor-pointer"
@@ -284,14 +304,7 @@ export default function EmployeesPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-                {employees.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-zinc-500">
-                      No employees found.
-                    </TableCell>
-                  </TableRow>
-                )}
+                )))}
               </TableBody>
             </Table>
 
