@@ -195,11 +195,11 @@ export default function AdminInvestorsPage() {
         setShowRejectBox(false);
         setRejectReasonInput("");
         fetchInvestors();
-        // Auto-open bond modal with auto-download when investor is approved
-        if (status === "Verified") {
-          setBondAutoDownload(true);
-          setBondModalInvestor(json.data);
-        }
+        // Auto-open bond modal is disabled per user request
+        // if (status === "Verified") {
+        //   setBondAutoDownload(true);
+        //   setBondModalInvestor(json.data);
+        // }
       } else {
         alert(json.error || "Action failed");
       }
