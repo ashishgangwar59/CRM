@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     const accessToken = signAccessToken({ userId: user._id.toString(), role: user.role });
     const refreshToken = signRefreshToken({ userId: user._id.toString(), role: user.role });
 
-    const expiresInDays = 3650; // 10 years, never expire unless manual logout
+    const expiresInDays = rememberMe ? 7 : 365;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 

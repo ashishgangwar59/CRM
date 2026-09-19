@@ -222,9 +222,16 @@ export async function GET(req: Request) {
     if (token) {
       try {
         const payload = verifyAccessToken(token);
-        // Admin is allowed to see all employees
-        if (payload.role === "ADMIN") {
-          // Do not restrict by createdBy
+        const userRole = (payload.role || "").toUpperCase().replace(/_/g, "");
+        // Admin and Key Admin see all employees
+        if (userRole !== "ADMIN" && userRole !== "KEYADMIN") {
+          const user = await User.findById(payload.userId).lean();
+          if (user && user.email) {
+            query.email = user.email; // restrict to their own email
+          } else {
+             // Fallback if email is somehow missing, effectively returns empty
+            query.email = "unauthorized-no-email"; 
+          }
         }
       } catch (e) {
         return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
