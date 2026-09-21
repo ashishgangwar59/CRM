@@ -301,8 +301,30 @@ export default function AdminInvestorsPage() {
         const status = inv.status || "";
         const amount = inv.investmentAmount || 0;
         const rate = inv.monthlyGrowthPercentage || 0;
-        const invDate = inv.investmentDate ? new Date(inv.investmentDate).toLocaleDateString("en-GB") : "";
-        const matDate = inv.bondMaturityDate ? new Date(inv.bondMaturityDate).toLocaleDateString("en-GB") : "";
+        let issueDateObj: Date;
+        if (inv.investmentDate) {
+          if (typeof inv.investmentDate === "string" && inv.investmentDate.includes("-") && inv.investmentDate.length === 10) {
+            const [y, m, d] = inv.investmentDate.split("-").map(Number);
+            issueDateObj = new Date(y, m - 1, d);
+          } else {
+            issueDateObj = new Date(inv.investmentDate);
+          }
+        } else {
+          issueDateObj = inv.verifiedAt ? new Date(inv.verifiedAt) : (inv.createdAt ? new Date(inv.createdAt) : new Date());
+        }
+
+        const invDate = issueDateObj.toLocaleDateString("en-GB");
+
+        let matDate = "";
+        if (inv.bondMaturityDate) {
+          matDate = new Date(inv.bondMaturityDate).toLocaleDateString("en-GB");
+        } else {
+          const maturityPeriodMonths = Number(inv.bondMaturityMonths) || 1;
+          const calculatedMatDate = new Date(issueDateObj);
+          calculatedMatDate.setMonth(calculatedMatDate.getMonth() + maturityPeriodMonths);
+          matDate = calculatedMatDate.toLocaleDateString("en-GB");
+        }
+
         const created = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-GB") : "";
 
         csvRows.push([code, name, email, phone, status, amount, rate, invDate, matDate, created].join(","));
