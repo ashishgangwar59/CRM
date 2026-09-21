@@ -117,8 +117,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden relative shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 print:static print:bg-transparent print:p-0 print:block print:backdrop-blur-none">
+      <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden relative shadow-2xl print:shadow-none print:border-none print:bg-white print:max-w-none print:max-h-none print:overflow-visible print:rounded-none print:static">
 
         {/* Top Control Header Bar (Hidden during print) */}
         <div className="sticky top-0 z-20 bg-[#0c1c3d] text-white px-6 py-3.5 flex justify-between items-center border-b border-[#c9972f] print:hidden">
@@ -161,7 +161,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
         </div>
 
         {/* Modal Body (Scrollable) */}
-        <div className="overflow-y-auto flex-1 p-4 sm:p-6 print:p-0">
+        <div className="overflow-y-auto print:overflow-visible flex-1 p-4 sm:p-6 print:p-0">
           <style jsx global>{`
             :root {
               --navy: #0c1c3d;
@@ -171,7 +171,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               --text: #1c1c1c;
             }
             .sheet-view {
-              max-width: 70%;
+              max-width: 100%;
               margin: 0 auto;
               background: var(--cream);
               border: 2px solid var(--navy);
@@ -411,22 +411,41 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             }
 
             @media print {
+              @page {
+                size: A4 portrait;
+                margin: 0mm;
+              }
+              body * {
+                visibility: hidden !important;
+              }
+              .printable-debenture-form, .printable-debenture-form * {
+                visibility: visible !important;
+              }
               body {
                 background: #fff !important;
                 padding: 0 !important;
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
               }
-              .print\\:hidden {
+              .print\:hidden {
                 display: none !important;
               }
-              .sheet-view {
+              .printable-debenture-form {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
                 border: none !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                zoom: 0.85; /* Scale down to fit single page */
               }
             }
           `}</style>
 
-          <div className="sheet-view">
+          <div className="sheet-view printable-debenture-form">
             {/* HEADER */}
             <div className="header">
               <div className="logo-badge">
@@ -442,7 +461,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 INVEST TODAY<br />PROSPER<br />TOMORROW
               </div>
               <div className="company-name">{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
-              <div className="addr" style={{ whiteSpace: "pre-wrap" }}>
+              <div className="addr" style={{ whiteSpace: "pre-wrap", width: "85%", textAlign: "center", margin: "0 auto" }}>
                 {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
               </div>
               <div className="contact-row">
@@ -496,7 +515,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>{form.dob || "—"}</span>
-                  <span><b>PAN No:</b> <span className="font-mono">{kyc.panNumber || "—"}</span></span>
+                  <span><b>PAN No:</b> <span className="font-mono">{kyc.panNumber || "—"}</span> | <b>Aadhar No:</b> <span className="font-mono">{kyc.aadharNumber || "—"}</span></span>
                 </div>
               </div>
               <div className="field-row">

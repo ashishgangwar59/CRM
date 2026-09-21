@@ -223,8 +223,8 @@ export function InvestorDashboard() {
         <div
           id="investor-toast-notification"
           className={`fixed top-6 right-6 z-50 p-4 rounded-xl border font-bold text-sm flex items-center gap-3 shadow-2xl backdrop-blur-md max-w-md animate-in slide-in-from-top-5 duration-300 ${msg.type === "success"
-              ? "bg-emerald-950/95 border-emerald-500 text-emerald-100 ring-2 ring-emerald-500/40"
-              : "bg-rose-950/95 border-rose-500 text-rose-100 ring-2 ring-rose-500/40"
+            ? "bg-emerald-950/95 border-emerald-500 text-emerald-100 ring-2 ring-emerald-500/40"
+            : "bg-rose-950/95 border-rose-500 text-rose-100 ring-2 ring-rose-500/40"
             }`}
         >
           {msg.type === "success" ? (
@@ -360,16 +360,16 @@ export function InvestorDashboard() {
                     <Label className="font-bold text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                       {item.label}
                       {item.req ? (
-                        <span className="text-[10px] bg-rose-950 text-rose-300 font-bold px-1.5 py-0.5 rounded border border-rose-800">REQUIRED</span>
+                        <span className="text-[10px] bg-[#134086] text-rose-300 font-bold px-1.5 py-0.5 rounded border border-rose-800">REQUIRED</span>
                       ) : (
-                        <span className="text-[10px] bg-zinc-800 text-zinc-400 font-medium px-1.5 py-0.5 rounded">OPTIONAL</span>
+                        <span className="text-[10px] bg-[#ff0000] text-white font-medium px-1.5 py-0.5 rounded">OPTIONAL</span>
                       )}
                     </Label>
 
                     {docStatus && (
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${docStatus === "Approved" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
-                          docStatus === "Rejected" ? "bg-rose-950 text-rose-400 border border-rose-800" :
-                            "bg-amber-950 text-amber-400 border border-amber-800"
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${docStatus === "Approved" ? "bg-green text-emerald-400 border border-emerald-800" :
+                        docStatus === "Rejected" ? "bg-[#134086] text-rose-400 border border-rose-800" :
+                          "bg-green text-amber-400 border border-amber-800"
                         }`}>
                         {docStatus}
                       </span>
@@ -382,18 +382,18 @@ export function InvestorDashboard() {
                       value={item.numVal}
                       onChange={(e) => setKycDocs({ ...kycDocs, [item.numKey]: e.target.value })}
                       disabled={investor.status === "Verified" || docStatus === "Approved"}
-                      className="bg-zinc-50 dark:bg-zinc-950 text-sm disabled:opacity-75"
+                      className="bg-zinc-50 dark:bg-green text-sm disabled:opacity-75"
                     />
                   )}
 
                   {/* Attractive Drag/Drop Zone */}
                   <label className={`group border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center transition-all ${docStatus === "Approved"
-                      ? "bg-white border-[#00a65a] cursor-not-allowed opacity-90"
-                      : docStatus === "Rejected"
-                        ? "bg-[#fafafa] border-[#eee] hover:border-rose-400 cursor-pointer"
-                        : fileUrl
-                          ? "bg-emerald-50/50 border-[#00a65a] cursor-pointer"
-                          : "bg-white border-[#eee] hover:border-[#00a65a] hover:bg-emerald-50/20 cursor-pointer"
+                    ? "bg-white border-[#00a65a] cursor-not-allowed opacity-90"
+                    : docStatus === "Rejected"
+                      ? "bg-[#fafafa] border-[#eee] hover:border-rose-400 cursor-pointer"
+                      : fileUrl
+                        ? "bg-emerald-50/50 border-[#00a65a] cursor-pointer"
+                        : "bg-white border-[#eee] hover:border-[#00a65a] hover:bg-emerald-50/20 cursor-pointer"
                     }`}>
                     <input
                       type="file"
@@ -444,8 +444,8 @@ export function InvestorDashboard() {
                 </Label>
                 {investor.docVerifications?.bankPassbook && (
                   <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${investor.docVerifications.bankPassbook === "Approved" ? "bg-emerald-50 text-[#00a65a] border border-[#eee]" :
-                      investor.docVerifications.bankPassbook === "Rejected" ? "bg-rose-50 text-rose-600 border border-[#eee]" :
-                        "bg-amber-50 text-amber-600 border border-[#eee]"
+                    investor.docVerifications.bankPassbook === "Rejected" ? "bg-rose-50 text-rose-600 border border-[#eee]" :
+                      "bg-amber-50 text-amber-600 border border-[#eee]"
                     }`}>
                     {investor.docVerifications.bankPassbook}
                   </span>
@@ -460,12 +460,12 @@ export function InvestorDashboard() {
               </div>
 
               <label className={`group border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center transition-all ${investor.docVerifications?.bankPassbook === "Approved"
-                  ? "bg-white border-[#00a65a] cursor-not-allowed opacity-90"
-                  : investor.docVerifications?.bankPassbook === "Rejected"
-                    ? "bg-[#fafafa] border-[#eee] hover:border-rose-400 cursor-pointer"
-                    : kycDocs.bankPassbookUrl
-                      ? "bg-emerald-50/50 border-[#00a65a] cursor-pointer"
-                      : "bg-white border-[#eee] hover:border-[#00a65a] hover:bg-emerald-50/20 cursor-pointer"
+                ? "bg-white border-[#00a65a] cursor-not-allowed opacity-90"
+                : investor.docVerifications?.bankPassbook === "Rejected"
+                  ? "bg-[#fafafa] border-[#eee] hover:border-rose-400 cursor-pointer"
+                  : kycDocs.bankPassbookUrl
+                    ? "bg-emerald-50/50 border-[#00a65a] cursor-pointer"
+                    : "bg-white border-[#eee] hover:border-[#00a65a] hover:bg-emerald-50/20 cursor-pointer"
                 }`}>
                 <input
                   type="file"
