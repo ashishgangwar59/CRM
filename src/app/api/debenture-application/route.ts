@@ -40,6 +40,7 @@ export async function POST(req: Request) {
       state,
       pinCode,
       panNumber,
+      aadharNumber,
       occupation,
       typeOfDebenture,
       typeSecured,
@@ -204,6 +205,7 @@ export async function POST(req: Request) {
       nomineeDocUrl: nomineeDocUrl || "",
       kycDocs: {
         panNumber: panNumber ? panNumber.toUpperCase().trim() : "",
+        aadharNumber: aadharNumber ? aadharNumber.trim() : "",
         panDocUrl: panDocUrl || "",
         aadharDocUrl: aadharDocUrl || "",
         bankPassbookUrl: bankPassbookUrl || "",

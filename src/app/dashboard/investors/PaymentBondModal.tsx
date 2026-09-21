@@ -41,11 +41,17 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
     }
   }, [investor._id]);
 
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => setSettings(data))
+      .catch(console.error);
+  }, []);
+
   const principalAmount = investor.investmentAmount || investor.debentureForm?.totalApplicationAmount || 0;
   const growthRate = investor.monthlyGrowthPercentage || 2;
-  const interestAmount = Math.round(principalAmount * (growthRate / 100) * maturityPeriodMonths);
-  const maturityAmount = principalAmount + interestAmount;
-
   let issueDateObj: Date;
   if (investor.investmentDate) {
     if (typeof investor.investmentDate === "string" && investor.investmentDate.includes("-") && investor.investmentDate.length === 10) {
@@ -59,9 +65,24 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   }
   const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-  const maturityDateObj = new Date(issueDateObj);
-  maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
+  let maturityDateObj: Date;
+  let days = 30;
+  let periodText = "";
+
+  if (investor.bondMaturityDate) {
+    maturityDateObj = new Date(investor.bondMaturityDate);
+    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+    periodText = `${days} Days`;
+  } else {
+    maturityDateObj = new Date(issueDateObj);
+    maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
+    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+    periodText = `${days} Days (${maturityPeriodMonths} Months)`;
+  }
   const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+  
+  const interestAmount = Math.round(principalAmount * ((growthRate * 12) / 365 / 100) * days);
+  const maturityAmount = principalAmount + interestAmount;
 
   const rawSeq = (investor.investorCode || "").replace(/\D/g, "");
   const seqPadded = rawSeq ? rawSeq.slice(-4).padStart(4, "0") : "0001";
@@ -351,7 +372,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                         </div>
                       </div>
                       <h1 className="text-2xl font-black tracking-tight text-[#0a192f] font-serif uppercase">
-                        NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.
+                        {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."}
                       </h1>
                       <p className="text-[10px] tracking-widest font-sans font-bold text-[#c5a059] uppercase mt-0.5">
                         — INVEST TODAY • PROSPER TOMORROW —
@@ -399,7 +420,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
 
                   {/* Certificate Main Receipt Statement */}
                   <div className="text-center px-6 py-2 my-2 font-serif text-xs leading-relaxed text-slate-800 italic bg-white border border-amber-100 rounded">
-                    This is to certify that <strong className="text-[#0a192f] not-italic">NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</strong> has received an amount of <strong className="text-slate-900 not-italic">₹{principalAmount.toLocaleString()}/- ({numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
+                    This is to certify that <strong className="text-[#0a192f] not-italic">{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."}</strong> has received an amount of <strong className="text-slate-900 not-italic">₹{principalAmount.toLocaleString()}/- ({numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
                   </div>
 
                   {/* Grid Section: Investor Info & Investment Details */}
@@ -458,7 +479,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                         </div>
                         <div className="flex justify-between border-b border-slate-100 pb-1">
                           <span className="text-slate-500 font-medium">Maturity Period</span>
-                          <span className="font-bold text-slate-900">{maturityPeriodMonths} {maturityPeriodMonths === 1 ? "Month" : "Months"}</span>
+                          <span className="font-bold text-slate-900">{periodText}</span>
                         </div>
                         <div className="flex justify-between border-b border-slate-100 pb-1">
                           <span className="text-slate-500 font-medium">Maturity Date</span>
@@ -481,7 +502,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                       ✦ TERMS & CONDITIONS ✦
                     </div>
                     <div className="p-3 text-[9px] font-sans text-slate-700 grid grid-cols-2 gap-x-4 gap-y-1.5 leading-tight">
-                      <p>1. This Bond is issued by NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD. as an acknowledgement of receipt of the above amount.</p>
+                      <p>1. This Bond is issued by {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."} as an acknowledgement of receipt of the above amount.</p>
                       <p>4. This Bond is non-transferable unless approved in writing by the Company.</p>
                       <p>2. On successful completion of the one-month period, the Company shall pay the maturity amount stated above, subject to the terms of this Bond.</p>
                       <p>5. Any alteration or overwriting without the Company's authorization shall render this Bond invalid.</p>
@@ -551,7 +572,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
 
                     {/* Right: Director Signature & Authority */}
                     <div className="text-center">
-                      <p className="text-[9px] font-sans font-bold text-slate-800 mb-1">For NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</p>
+                      <p className="text-[9px] font-sans font-bold text-slate-800 mb-1">For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."}</p>
 
                       {/* Cursive Signature Graphic */}
                       <div className="h-10 flex items-center justify-center font-serif text-xl font-bold italic text-indigo-950 tracking-wider">
@@ -596,7 +617,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                       fontStyle: "italic",
                       fontWeight: "400",
                       wordBreak: "break-word",
-                    }}>📞 CUSTOMER CARE: 011 4051 5660</div>
+                    }}>📞 CUSTOMER CARE: {settings?.companyProfile?.phone || "011 4051 5660"}</div>
                     <div
                       style={{
                         textAlign: "center",

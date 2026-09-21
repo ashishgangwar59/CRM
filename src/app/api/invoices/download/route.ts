@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Invoice } from "@/lib/models/Invoice";
+import { SystemSettings } from "@/lib/models/SystemSettings";
 
 export async function GET(req: Request) {
   try {
@@ -16,6 +17,13 @@ export async function GET(req: Request) {
     if (!inv) {
       return new Response("Invoice not found", { status: 404 });
     }
+
+    const settings = await SystemSettings.findOne().lean();
+    const address = settings?.companyProfile?.address || "A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi – 110059, India.";
+    const companyName = settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD";
+    const companyPhone = settings?.companyProfile?.phone || "011 4051 5660";
+    const companyEmail = settings?.companyProfile?.email || "info@niventracapitaladvisory.com";
+    const companyWebsite = settings?.companyProfile?.website || "www.niventracapitaladvisory.com";
 
     // Calculations
     let totalTaxableValue = 0;
@@ -487,15 +495,15 @@ export async function GET(req: Request) {
       <div class="contact-block">
         <div>
           <span class="icon">📞</span>
-          <span>011 4051 5660</span>
+          <span>${companyPhone}</span>
         </div>
         <div>
           <span class="icon">✉️</span>
-          <span>info@niventracapitaladvisory.com</span>
+          <span>${companyEmail}</span>
         </div>
         <div>
           <span class="icon">🌐</span>
-          <span>www.niventracapitaladvisory.com</span>
+          <span>${companyWebsite}</span>
         </div>
       </div>
     </div>
@@ -546,8 +554,8 @@ export async function GET(req: Request) {
         <div class="barcode-title">Scan to Download</div>
         <img
           src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(
-            `${req.headers.get("host") ? 'http://' + req.headers.get("host") : 'https://crm.temp.com'}/api/invoices/download?invoiceNo=${encodeURIComponent(inv.invoiceNo)}`
-          )}"
+      `${req.headers.get("host") ? 'http://' + req.headers.get("host") : 'https://crm.temp.com'}/api/invoices/download?invoiceNo=${encodeURIComponent(inv.invoiceNo)}`
+    )}"
           alt="QR Code Scan to Download"
           width="80"
           height="80"
@@ -693,7 +701,7 @@ export async function GET(req: Request) {
         </div>
 
         <div class="sign-block">
-          <div class="for-text">For NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</div>
+          <div class="for-text">For ${companyName}</div>
           <div class="auth">Authorized Signatory</div>
         </div>
       </div>
@@ -701,8 +709,8 @@ export async function GET(req: Request) {
 
     <!-- FOOTER -->
     <div class="footer">
-      Thank you for your business! For any queries regarding this invoice, write to <strong>info@niventracapitaladvisory.com</strong>. <br />
-      Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.
+      Thank you for your business! For any queries regarding this invoice, write to <strong>${companyEmail}</strong>. <br />
+      Registered Office: ${address.replace(/\n/g, ", ")}
     </div>
   </div>
 

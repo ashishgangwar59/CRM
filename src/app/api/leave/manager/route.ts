@@ -7,6 +7,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { User } from "@/lib/models/User";
 import { Employee } from "@/lib/models/Employee";
 import mongoose from "mongoose";
+import { getOwnedEmployeeIds } from "@/lib/teamUtils";
 
 export async function GET(req: Request) {
   try {
@@ -26,15 +27,8 @@ export async function GET(req: Request) {
       if (!user || !user.accessibleModules.includes("Leave Approvals")) {
         return NextResponse.json({ error: "Forbidden: You do not have the Leave Approvals module access." }, { status: 403 });
       }
-      if (user) {
-        const managerEmployee = await Employee.findOne({ email: user.email });
-        if (managerEmployee && managerEmployee.department) {
-          // Find all employees belonging to the manager's department
-          const sameDeptEmployees = await Employee.find({ department: managerEmployee.department }).select("_id");
-          const employeeIds = sameDeptEmployees.map(e => e._id);
-          query.employeeId = { $in: employeeIds };
-        }
-      }
+      const ownedEmployeeIds = await getOwnedEmployeeIds(payload.userId);
+      query.employeeId = { $in: ownedEmployeeIds };
     }
     
     // Fetch pending leaves populated with employee details and department name
@@ -73,12 +67,9 @@ export async function POST(req: Request) {
       if (!user || !user.accessibleModules.includes("Leave Approvals")) {
         return NextResponse.json({ error: "Forbidden: You do not have the Leave Approvals module access." }, { status: 403 });
       }
-      if (user) {
-        const managerEmployee = await Employee.findOne({ email: user.email });
-        const leaveEmployee = await Employee.findById(leave.employeeId);
-        if (managerEmployee && leaveEmployee && managerEmployee.department !== leaveEmployee.department) {
-          return NextResponse.json({ error: "Forbidden: You can only approve/reject leaves within your department." }, { status: 403 });
-        }
+      const ownedEmployeeIds = await getOwnedEmployeeIds(payload.userId);
+      if (!ownedEmployeeIds.includes(leave.employeeId.toString())) {
+        return NextResponse.json({ error: "Forbidden: You can only approve/reject leaves for employees in your team." }, { status: 403 });
       }
     }
 

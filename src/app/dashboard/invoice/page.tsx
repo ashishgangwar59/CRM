@@ -38,6 +38,12 @@ export default function InvoicePage() {
   const [activeTab, setActiveTab] = useState<"editor" | "list">("editor");
   const [savedInvoices, setSavedInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [viewInvoice, setViewInvoice] = useState<any>(null);
+  const [printRef, setPrintRef] = useState<any>(null);
+  const [companyName, setCompanyName] = useState<string>("NIVENTRA CAPITAL ADVISORY INDIA PVT LTD");
+  const [companyPhone, setCompanyPhone] = useState<string>("011 4051 5660");
+  const [companyEmail, setCompanyEmail] = useState<string>("info@niventracapitaladvisory.com");
+  const [companyWebsite, setCompanyWebsite] = useState<string>("www.niventracapitaladvisory.com");
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -137,8 +143,22 @@ export default function InvoicePage() {
       .then(data => {
         if (data.success && data.data?.companyProfile?.invoiceFooterText) {
           setInvoiceFooterText(data.data.companyProfile.invoiceFooterText);
+        } else if (data.success && data.data?.companyProfile?.address) {
+          setInvoiceFooterText(`Registered Office: ${data.data.companyProfile.address.replace(/\n/g, ", ")}`);
         } else {
-          setInvoiceFooterText("Registered Office: A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi &ndash; 110059, India.");
+          setInvoiceFooterText("The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001");
+        }
+        if (data.success && data.data?.companyProfile?.name) {
+          setCompanyName(data.data.companyProfile.name);
+        }
+        if (data.success && data.data?.companyProfile?.phone) {
+          setCompanyPhone(data.data.companyProfile.phone);
+        }
+        if (data.success && data.data?.companyProfile?.email) {
+          setCompanyEmail(data.data.companyProfile.email);
+        }
+        if (data.success && data.data?.companyProfile?.website) {
+          setCompanyWebsite(data.data.companyProfile.website);
         }
       })
       .catch(console.error);
@@ -440,6 +460,71 @@ export default function InvoicePage() {
     window.print();
   };
 
+  const exportInvoicesToExcel = async () => {
+    try {
+      const res = await fetch(`/api/invoices?page=1&limit=100000`);
+      const json = await res.json();
+
+      let dataToExport: any[] = [];
+      if (json.success && json.data) {
+        dataToExport = Array.isArray(json.data) ? json.data : [json.data];
+      }
+
+      if (dataToExport.length === 0) {
+        alert("No saved invoices available to export.");
+        return;
+      }
+
+      const headers = [
+        "Invoice No.",
+        "Date",
+        "Bill To Name",
+        "Bill To Address",
+        "Bill To State",
+        "Reverse Charge",
+        "Mode of Payment",
+        "Bank Name",
+        "Transaction UTR No",
+        "Total Amount"
+      ];
+
+      const csvRows = [headers.join(",")];
+
+      dataToExport.forEach((inv) => {
+        const no = inv.invoiceNo || "";
+        const date = inv.invoiceDate || "";
+        const name = `"${(inv.billToName || "").replace(/"/g, '""')}"`;
+        const address = `"${(inv.billToAddress || "").replace(/"/g, '""')}"`;
+        const state = inv.billToState || "";
+        const reverseCharge = inv.reverseCharge || "";
+        const modeOfPayment = inv.modeOfPayment || "";
+        const bankName = `"${(inv.bankName || "").replace(/"/g, '""')}"`;
+        const utr = `"${(inv.transactionUtrNo || "").replace(/"/g, '""')}"`;
+
+        const total = inv.items?.reduce((acc: number, item: any) => {
+          const taxable = (item.qty || 0) * (item.rate || 0);
+          const igst = taxable * ((item.igstRate || 0) / 100);
+          return acc + taxable + igst;
+        }, 0) || 0;
+
+        csvRows.push([no, date, name, address, state, reverseCharge, modeOfPayment, bankName, utr, total].join(","));
+      });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Invoices_Export_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error("Export error:", e);
+      alert("Failed to export invoices.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Tab Switcher - Hidden during print */}
@@ -448,8 +533,8 @@ export default function InvoicePage() {
           variant={activeTab === "editor" ? "default" : "ghost"}
           onClick={() => setActiveTab("editor")}
           className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 ${activeTab === "editor"
-            ? "border-indigo-650 bg-[#0d2452] text-white hover:bg-[#0d2452] hover:text-white"
-            : "border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            ? "border-indigo-650 bg-[#0d2452] text-white "
+            : "border-transparent text-white dark:text-zinc-400"
             }`}
         >
           <FileText className="w-4 h-4 mr-1.5" /> Create / Edit Invoice
@@ -460,10 +545,24 @@ export default function InvoicePage() {
             fetchInvoices();
             setActiveTab("list");
           }}
-          className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 border-indigo-650 bg-[#0d2452] text-white hover:bg-[#0d2452]`}
+          className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 
+            ${activeTab === "list" ? "border-indigo-650 bg-[#0d2452] text-white" :
+              " border-transparent text-white dark:text-zinc-400"
+
+            }
+           `}
         >
           <List className="w-4 h-4 mr-1.5" /> Saved Invoices ({savedInvoices.length})
         </Button>
+        {activeTab === "list" && (
+          <Button
+            variant="ghost"
+            onClick={exportInvoicesToExcel}
+            className="text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 border-transparent text-emerald-400 hover:text-emerald-300 ml-auto"
+          >
+            <FileText className="w-4 h-4 mr-1.5" /> Export to Excel
+          </Button>
+        )}
       </div>
 
       {/* Editor Controls Section - Hidden during print */}
@@ -559,7 +658,7 @@ export default function InvoicePage() {
                             <td className="px-4 py-3 text-right font-bold text-zinc-900 dark:text-zinc-100">
                               ₹{total.toLocaleString()}
                             </td>
-                            <td className="px-4 py-3 text-center flex items-center justify-center gap-2">
+                            <td className="px-4 py-3 text-center flex items-center justify-center gap-2 cursor-pointer">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -571,7 +670,7 @@ export default function InvoicePage() {
                               <Button
                                 size="sm"
                                 onClick={() => handleLoadAndPrint(inv)}
-                                className="h-7 text-[10px] bg-[#0d2452] hover:bg-[#0a1c3f] text-white flex items-center gap-1"
+                                className="h-7 text-[10px] bg-[#0d2452] hover:bg-[#0a1c3f] text-white flex items-center gap-1 cursor-pointer"
                               >
                                 <Printer className="w-3 h-3" /> View & Print
                               </Button>
@@ -579,7 +678,7 @@ export default function InvoicePage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={(e) => handleDeleteInvoice(inv._id, e)}
-                                className="h-7 text-[10px] text-rose-500 hover:text-rose-700 hover:bg-rose-55 dark:hover:bg-rose-950/20"
+                                className="h-7 text-[10px] text-white hover:text-white hover:bg-rose-55 dark:hover:bg-rose-950/20 cursor-pointer"
                               >
                                 <Trash2 className="w-3 h-3 mr-0.5" /> Delete
                               </Button>
@@ -1383,15 +1482,15 @@ export default function InvoicePage() {
               <div className="contact-block">
                 <div>
                   <span className="icon">📞</span>
-                  <span>011 4051 5660</span>
+                  <span>{companyPhone}</span>
                 </div>
                 <div>
                   <span className="icon">✉️</span>
-                  <span>info@niventracapitaladvisory.com</span>
+                  <span>{companyEmail}</span>
                 </div>
                 <div>
                   <span className="icon">🌐</span>
-                  <span>www.niventracapitaladvisory.com</span>
+                  <span>{companyWebsite}</span>
                 </div>
               </div>
             </div>
@@ -1600,7 +1699,7 @@ export default function InvoicePage() {
                 </div>
 
                 <div className="sign-block">
-                  <div className="for-text">For NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</div>
+                  <div className="for-text">For {companyName}</div>
                   <div className="auth">{authSignatory}</div>
                 </div>
               </div>

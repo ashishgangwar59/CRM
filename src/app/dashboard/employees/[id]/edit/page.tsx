@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 export default function EditEmployeePage() {
@@ -18,11 +18,14 @@ export default function EditEmployeePage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [departments, setDepartments] = useState<string[]>([]);
   const [designations, setDesignations] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState("");
 
   const [formData, setFormData] = useState({
     employeeCode: "",
     firstName: "",
     lastName: "",
+    fatherOrMotherName: "",
     email: "",
     officeEmail: "",
     phone: "",
@@ -40,9 +43,15 @@ export default function EditEmployeePage() {
     systemRole: "Employee",
     department: "",
     designation: "",
+    reportingManager: "",
     kyc: { aadharNumber: "", panNumber: "", passportNumber: "" },
     bankDetails: { bankName: "", accountNumber: "", ifscCode: "", branchName: "" },
     emergencyContact: { name: "", relation: "", phone: "" },
+    salaryStructure: {
+      ctcPerAnnum: "", basic: "", hra: "", conveyance: "", medicalAllowance: "",
+      specialAllowance: "", pf: "", esi: "", insurance: "", leaves: "",
+      lta: "", professionalTax: "", tds: ""
+    },
     profilePhotoUrl: "",
     accessibleModules: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
   });
@@ -58,6 +67,22 @@ export default function EditEmployeePage() {
         }
       });
 
+    fetch("/api/employees")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setEmployees(data.data);
+        }
+      });
+
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCurrentUserRole(data.role);
+        }
+      });
+
     fetch(`/api/employees/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -67,6 +92,7 @@ export default function EditEmployeePage() {
             employeeCode: emp.employeeCode || "",
             firstName: emp.firstName || "",
             lastName: emp.lastName || "",
+            fatherOrMotherName: emp.fatherOrMotherName || "",
             email: emp.email || "",
             officeEmail: emp.officeEmail || "",
             phone: emp.phone || "",
@@ -84,6 +110,7 @@ export default function EditEmployeePage() {
             systemRole: emp.role || emp.systemRole || "Employee",
             department: emp.department || "",
             designation: emp.designation || "",
+            reportingManager: emp.reportingManager || "",
             kyc: {
               aadharNumber: emp.kyc?.aadharNumber || "",
               panNumber: emp.kyc?.panNumber || "",
@@ -99,6 +126,21 @@ export default function EditEmployeePage() {
               name: emp.emergencyContact?.name || "",
               relation: emp.emergencyContact?.relation || "",
               phone: emp.emergencyContact?.phone || ""
+            },
+            salaryStructure: {
+              ctcPerAnnum: emp.salaryStructure?.ctcPerAnnum || "",
+              basic: emp.salaryStructure?.basic || "",
+              hra: emp.salaryStructure?.hra || "",
+              conveyance: emp.salaryStructure?.conveyance || "",
+              medicalAllowance: emp.salaryStructure?.medicalAllowance || "",
+              specialAllowance: emp.salaryStructure?.specialAllowance || "",
+              pf: emp.salaryStructure?.pf || "",
+              esi: emp.salaryStructure?.esi || "",
+              insurance: emp.salaryStructure?.insurance || "",
+              leaves: emp.salaryStructure?.leaves || "",
+              lta: emp.salaryStructure?.lta || "",
+              professionalTax: emp.salaryStructure?.professionalTax || "",
+              tds: emp.salaryStructure?.tds || ""
             },
             profilePhotoUrl: emp.profilePhotoUrl || "",
             accessibleModules: emp.accessibleModules || ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
@@ -126,8 +168,8 @@ export default function EditEmployeePage() {
           ...prev,
           systemRole: value,
           accessibleModules: [
-            "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-            "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
+            "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
+            "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form"
           ]
         }));
       } else {
@@ -178,6 +220,24 @@ export default function EditEmployeePage() {
     setLoading(false);
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this employee? This action cannot be undone.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        router.push('/dashboard/employees');
+      } else {
+        alert(data.error || "Failed to delete employee");
+        setLoading(false);
+      }
+    } catch (e) {
+      alert("Error deleting employee");
+      setLoading(false);
+    }
+  };
+
   if (pageLoading) return <div className="p-8">Loading employee data...</div>;
 
   return (
@@ -192,6 +252,19 @@ export default function EditEmployeePage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Edit Employee</h1>
           <p className="text-zinc-500 dark:text-zinc-400">Update complete employee profile and system details.</p>
         </div>
+        {(currentUserRole === "ADMIN" || currentUserRole === "KEY_ADMIN") && (
+          <div className="ml-auto flex space-x-2">
+            <Link href={`/dashboard/employees/${id}/letters/offer`} target="_blank">
+              <Button variant="outline">📄 Offer Letter</Button>
+            </Link>
+            <Link href={`/dashboard/employees/${id}/letters/joining`} target="_blank">
+              <Button variant="outline">📄 Joining Letter</Button>
+            </Link>
+            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
+              <Trash2 className="h-4 w-4 mr-2" /> Delete Employee
+            </Button>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -201,6 +274,7 @@ export default function EditEmployeePage() {
             <TabsTrigger value="official">Official & Work</TabsTrigger>
             <TabsTrigger value="kyc">KYC & Emergency</TabsTrigger>
             <TabsTrigger value="bank">Bank Details</TabsTrigger>
+            <TabsTrigger value="salary">Salary Structure</TabsTrigger>
             <TabsTrigger value="permissions">Permissions & Access</TabsTrigger>
           </TabsList>
 
@@ -223,6 +297,10 @@ export default function EditEmployeePage() {
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name *</Label>
                     <Input id="lastName" required value={formData.lastName} onChange={(e) => handleChange("lastName", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fatherOrMotherName">Father/Mother Name</Label>
+                    <Input id="fatherOrMotherName" value={formData.fatherOrMotherName || ""} onChange={(e) => handleChange("fatherOrMotherName", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Personal Email *</Label>
@@ -342,8 +420,6 @@ export default function EditEmployeePage() {
                     >
                       <option value="Employee">Employee</option>
                       <option value="Manager">Manager</option>
-                      <option value="ADMIN">Admin</option>
-                      <option value="KEY_ADMIN">Key Admin</option>
                     </select>
                   </div>
                   <div className="space-y-2">
@@ -373,6 +449,10 @@ export default function EditEmployeePage() {
                       ))}
                       {designations.length === 0 && <option value="">No designations configured</option>}
                     </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reportingManager">Reporting Manager</Label>
+                    <Input id="reportingManager" placeholder="e.g. John Doe" value={formData.reportingManager} onChange={(e) => handleChange("reportingManager", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="status">Employment Status</Label>
@@ -405,11 +485,76 @@ export default function EditEmployeePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dateOfJoining">Date of Joining</Label>
-                    <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
+                    <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} min={new Date().toISOString().split("T")[0]} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="workLocation">Work Location / Branch</Label>
                     <Input id="workLocation" value={formData.workLocation} onChange={(e) => handleChange("workLocation", e.target.value)} placeholder="e.g. Delhi Head Office" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="salary">
+            <Card>
+              <CardHeader>
+                <CardTitle>Salary Structure</CardTitle>
+                <CardDescription>Configure the monthly breakdown and CTC.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2 mb-4 max-w-sm">
+                  <Label htmlFor="ctcPerAnnum">CTC per Annum</Label>
+                  <Input id="ctcPerAnnum" value={formData.salaryStructure.ctcPerAnnum} onChange={(e) => handleChange("salaryStructure.ctcPerAnnum", e.target.value)} placeholder="e.g. ₹ 6,00,000" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_basic">Basic</Label>
+                    <Input id="sal_basic" value={formData.salaryStructure.basic} onChange={(e) => handleChange("salaryStructure.basic", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_hra">HRA</Label>
+                    <Input id="sal_hra" value={formData.salaryStructure.hra} onChange={(e) => handleChange("salaryStructure.hra", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_conveyance">Conveyance</Label>
+                    <Input id="sal_conveyance" value={formData.salaryStructure.conveyance} onChange={(e) => handleChange("salaryStructure.conveyance", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_medical">Medical Allowance</Label>
+                    <Input id="sal_medical" value={formData.salaryStructure.medicalAllowance} onChange={(e) => handleChange("salaryStructure.medicalAllowance", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_special">Special Allowance</Label>
+                    <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_pf">P.F. Deduction</Label>
+                    <Input id="sal_pf" value={formData.salaryStructure.pf} onChange={(e) => handleChange("salaryStructure.pf", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_esi">E.S.I. Deduction</Label>
+                    <Input id="sal_esi" value={formData.salaryStructure.esi} onChange={(e) => handleChange("salaryStructure.esi", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_insurance">Insurance</Label>
+                    <Input id="sal_insurance" value={formData.salaryStructure.insurance} onChange={(e) => handleChange("salaryStructure.insurance", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_leaves">Leaves (Liability)</Label>
+                    <Input id="sal_leaves" value={formData.salaryStructure.leaves} onChange={(e) => handleChange("salaryStructure.leaves", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_lta">L.T.A. (Liability)</Label>
+                    <Input id="sal_lta" value={formData.salaryStructure.lta} onChange={(e) => handleChange("salaryStructure.lta", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_pt">Professional Tax</Label>
+                    <Input id="sal_pt" value={formData.salaryStructure.professionalTax} onChange={(e) => handleChange("salaryStructure.professionalTax", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_tds">*Income Tax (TDS)</Label>
+                    <Input id="sal_tds" value={formData.salaryStructure.tds} onChange={(e) => handleChange("salaryStructure.tds", e.target.value)} />
                   </div>
                 </div>
               </CardContent>
@@ -499,8 +644,8 @@ export default function EditEmployeePage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    "Overview", "Attendance", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Notifications", "Settings", "Debenture Form"
+                    "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2 p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900 border">
                       <input

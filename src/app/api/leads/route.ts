@@ -5,6 +5,7 @@ import { Lead } from "@/lib/models/Lead";
 import { LeadActivity } from "@/lib/models/LeadActivity";
 import { User } from "@/lib/models/User";
 import { Employee } from "@/lib/models/Employee";
+import { getAllowedEmployeeIds } from "@/lib/teamUtils";
 
 async function getEmployeeIdFromUserId(userId: string): Promise<string | null> {
   const user = await User.findById(userId).lean();
@@ -71,11 +72,12 @@ export async function GET(req: Request) {
       }
     }
 
-    if (payload.role === "Employee") {
-      const employeeId = await getEmployeeIdFromUserId(payload.userId);
-      if (employeeId) {
-        query.ownerId = employeeId;
+    if (payload.role !== "ADMIN" && payload.role !== "KEY_ADMIN") {
+      const allowedEmployeeIds = await getAllowedEmployeeIds(payload.userId);
+      if (allowedEmployeeIds.length > 0) {
+        query.ownerId = { $in: allowedEmployeeIds };
       }
+
     } else if (employeeIdFilter) {
       // For Admin/KeyAdmin viewing employee-wise
       query.ownerId = employeeIdFilter;

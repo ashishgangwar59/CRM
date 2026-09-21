@@ -25,6 +25,7 @@ function DebentureFormContent() {
     state: "",
     pinCode: "",
     panNumber: "",
+    aadharNumber: "",
     phone: "",
     email: "",
     occupation: "",
@@ -61,7 +62,14 @@ function DebentureFormContent() {
     declYear: new Date().getFullYear().toString(),
   });
 
+  const [settings, setSettings] = useState<any>(null);
+
   useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => setSettings(data))
+      .catch(console.error);
+
     if (!form.applicationNo) {
       const year = new Date().getFullYear();
       const rand = Math.floor(1000 + Math.random() * 9000);
@@ -423,6 +431,11 @@ function DebentureFormContent() {
       return;
     }
 
+    if (form.aadharNumber && form.aadharNumber.trim().length > 0 && form.aadharNumber.trim().length !== 12) {
+      setError("Aadhaar Number must be exactly 12 digits.");
+      return;
+    }
+
     if (!form.noOfDebentures || Number(form.noOfDebentures) <= 0) {
       setError("No. of Debentures Applied must be at least 1.");
       return;
@@ -534,7 +547,8 @@ function DebentureFormContent() {
           --text: #1c1c1c;
         }
         .sheet {
-          max-width: 900px;
+          max-width: 70%;
+          padding: 30px 30px 0 !important;
           margin: 0 auto;
           background: var(--cream);
           border: 2px solid var(--navy);
@@ -682,7 +696,7 @@ function DebentureFormContent() {
 
         .sheet .app-no-box {
           position: absolute;
-          right: 24px;
+          right: 34px;
           top: 186px;
           border: 1px solid var(--gold);
           padding: 8px 14px;
@@ -701,7 +715,7 @@ function DebentureFormContent() {
         }
 
         .sheet .top-info {
-          padding: 0 24px;
+          padding: 0 15px;
           font-size: 13px;
           line-height: 1.6;
         }
@@ -961,7 +975,7 @@ function DebentureFormContent() {
 
         /* ACTION BAR */
         .action-bar {
-          max-width: 900px;
+          max-width: 90%;
           margin: 16px auto 0;
           display: flex;
           justify-content: flex-end;
@@ -1042,16 +1056,14 @@ function DebentureFormContent() {
             <span className="crown">&#9819;</span>
             INVEST TODAY<br />PROSPER<br />TOMORROW
           </div>
-          <div className="company-name">NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</div>
-          <div className="addr">
-            A-91, Block A, Gali No. 2, Sewak Park,<br />
-            Near Dwarka Mor Metro Station, Gate No. 2,<br />
-            Dwarka Mor, New Delhi &ndash; 110059, India
+          <div className="company-name">{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
+          <div className="addr" style={{ whiteSpace: "pre-wrap" }}>
+            {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
           </div>
           <div className="contact-row">
-            <span>&#128222; 011 4051 5660</span>
-            <span>&#9993; info@niventracapitaladvisory.com</span>
-            <span>&#127760; www.niventracapitaladvisory.com</span>
+            <span>&#128222; {settings?.companyProfile?.phone || "011 4051 5660"}</span>
+            <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
+            <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
           </div>
         </div>
 
@@ -1096,7 +1108,7 @@ function DebentureFormContent() {
           <p>
             To,<br />
             The Board of Directors,<br />
-            <b>NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</b>
+            <b>{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</b>
           </p>
           <p>
             I/We hereby apply for the allotment of Secured, Rated, Listed/Unlisted, Redeemable, Non-Convertible Debentures of
@@ -1176,6 +1188,18 @@ function DebentureFormContent() {
                   value={form.panNumber}
                   onChange={(e) => setForm({ ...form, panNumber: e.target.value.toUpperCase() })}
                   placeholder="PAN NO."
+                />
+              </div>
+              <span style={{ marginLeft: "10px", whiteSpace: "nowrap" }}>Aadhaar No. &nbsp;:</span>
+              <div className="pan-boxes">
+                <input
+                  type="text"
+                  name="aadharNumber"
+                  maxLength={12}
+                  style={{ width: "160px", letterSpacing: "3px", fontWeight: "bold", textAlign: "center" }}
+                  value={form.aadharNumber}
+                  onChange={(e) => setForm({ ...form, aadharNumber: e.target.value.replace(/\D/g, "") })}
+                  placeholder="AADHAAR NO."
                 />
               </div>
             </div>
@@ -1767,7 +1791,7 @@ function DebentureFormContent() {
             <div className="row">
               <span className="lbl">Sign &amp; Date</span>: <input type="text" name="approvedSignDate" />
             </div>
-            <div style={{ marginTop: "6px", fontWeight: 700 }}>For NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</div>
+            <div style={{ marginTop: "6px", fontWeight: 700 }}>For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
             <div className="sign-name">Ram Mohan Sharma</div>
             <div style={{ fontSize: "10.5px" }}>
               Ram Mohan Sharma<br />Authorized Signatory
@@ -1805,6 +1829,7 @@ function DebentureFormContent() {
               state: "",
               pinCode: "",
               panNumber: "",
+              aadharNumber: "",
               phone: "",
               email: "",
               occupation: "",
@@ -1872,35 +1897,35 @@ function DebentureFormContent() {
 
             <div className="overflow-y-auto flex-1 p-5 space-y-4">
 
-            <div className="relative w-full aspect-square bg-zinc-900 rounded-lg overflow-hidden border-2 border-[#c9972f] flex items-center justify-center">
-              {cameraLoading && <span className="text-white text-xs">Accessing Camera...</span>}
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
-            </div>
+              <div className="relative w-full aspect-square bg-zinc-900 rounded-lg overflow-hidden border-2 border-[#c9972f] flex items-center justify-center">
+                {cameraLoading && <span className="text-white text-xs">Accessing Camera...</span>}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-            <p className="text-[11px] text-zinc-500">Align your face inside the square frame and click Capture.</p>
+              <p className="text-[11px] text-zinc-500">Align your face inside the square frame and click Capture.</p>
 
-            <div className="flex justify-center space-x-3 pt-1">
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="px-4 py-2 text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={captureSnapshot}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#0c1c3d] hover:bg-[#132a5c] rounded shadow flex items-center gap-1.5"
-              >
-                📸 Take Photo
-              </button>
-            </div>
+              <div className="flex justify-center space-x-3 pt-1">
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="px-4 py-2 text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={captureSnapshot}
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#0c1c3d] hover:bg-[#132a5c] rounded shadow flex items-center gap-1.5"
+                >
+                  📸 Take Photo
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1928,46 +1953,46 @@ function DebentureFormContent() {
 
             <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center space-y-3">
-              {qrUrl ? (
-                <div className="p-3 bg-white rounded-lg shadow-sm border border-slate-200">
-                  <QRCodeSVG value={qrUrl} size={180} level="M" />
-                </div>
-              ) : (
-                <div className="h-[180px] flex items-center justify-center text-xs text-zinc-400">
-                  Generating QR Code...
-                </div>
-              )}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center space-y-3">
+                {qrUrl ? (
+                  <div className="p-3 bg-white rounded-lg shadow-sm border border-slate-200">
+                    <QRCodeSVG value={qrUrl} size={180} level="M" />
+                  </div>
+                ) : (
+                  <div className="h-[180px] flex items-center justify-center text-xs text-zinc-400">
+                    Generating QR Code...
+                  </div>
+                )}
 
-              <div className="flex items-center text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" /> Waiting for mobile signature...
+                <div className="flex items-center text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                  <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" /> Waiting for mobile signature...
+                </div>
               </div>
-            </div>
 
-            <p className="text-[11px] text-zinc-500 leading-snug">
-              Point your smartphone camera at this QR code. Draw your signature on your phone screen and tap Submit.
-            </p>
+              <p className="text-[11px] text-zinc-500 leading-snug">
+                Point your smartphone camera at this QR code. Draw your signature on your phone screen and tap Submit.
+              </p>
 
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="text"
-                readOnly
-                value={qrUrl}
-                className="text-[10px] flex-1 bg-zinc-100 border border-zinc-300 rounded px-2 py-1 truncate text-zinc-600"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(qrUrl);
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2000);
-                }}
-                className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded hover:bg-indigo-100 flex items-center gap-1"
-              >
-                {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                {copiedLink ? "Copied" : "Copy Link"}
-              </button>
-            </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  readOnly
+                  value={qrUrl}
+                  className="text-[10px] flex-1 bg-zinc-100 border border-zinc-300 rounded px-2 py-1 truncate text-zinc-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(qrUrl);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
+                  }}
+                  className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded hover:bg-indigo-100 flex items-center gap-1"
+                >
+                  {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {copiedLink ? "Copied" : "Copy Link"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

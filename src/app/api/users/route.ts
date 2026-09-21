@@ -10,10 +10,6 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const payload = verifyAccessToken(token);
-    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const users = await User.find().select("-password").sort({ createdAt: -1 }).lean();
     return NextResponse.json({ success: true, data: users });
   } catch (error) {

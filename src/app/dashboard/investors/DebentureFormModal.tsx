@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Save, X, ExternalLink, Eye, Download, FileText } from "lucide-react";
 
@@ -57,6 +57,15 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
       window.open(url, "_blank");
     }
   };
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => setSettings(data))
+      .catch(console.error);
+  }, []);
+
   const [officeData, setOfficeData] = useState({
     officeReceivedOn: form.officeReceivedOn || new Date().toISOString().split("T")[0],
     officeReceivedBy: form.officeReceivedBy || "Admin",
@@ -162,7 +171,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               --text: #1c1c1c;
             }
             .sheet-view {
-              max-width: 850px;
+              max-width: 70%;
               margin: 0 auto;
               background: var(--cream);
               border: 2px solid var(--navy);
@@ -432,15 +441,14 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <span style={{ fontSize: "16px", display: "block" }}>&#9819;</span>
                 INVEST TODAY<br />PROSPER<br />TOMORROW
               </div>
-              <div className="company-name">NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</div>
-              <div className="addr">
-                A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Gate No. 2,<br />
-                Dwarka Mor, New Delhi &ndash; 110059, India
+              <div className="company-name">{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
+              <div className="addr" style={{ whiteSpace: "pre-wrap" }}>
+                {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
               </div>
               <div className="contact-row">
-                <span>&#128222; 011 4051 5660</span>
-                <span>&#9993; info@niventracapitaladvisory.com</span>
-                <span>&#127760; www.niventracapitaladvisory.com</span>
+                <span>&#128222; {settings?.companyProfile?.phone || "011 4051 5660"}</span>
+                <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
+                <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
               </div>
             </div>
 
@@ -466,7 +474,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <p>
                 To,<br />
                 The Board of Directors,<br />
-                <b>NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</b>
+                <b>{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</b>
               </p>
             </div>
 
@@ -856,7 +864,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                     onChange={(e) => setOfficeData({ ...officeData, approvedSignDate: e.target.value })}
                   />
                 </div>
-                <div style={{ marginTop: "4px", fontWeight: 700, fontSize: "10px" }}>For NIVENTRA CAPITAL ADVISORY INDIA PVT LTD</div>
+                <div style={{ marginTop: "4px", fontWeight: 700, fontSize: "10px" }}>For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
                 <div className="sign-name">{officeData.approvedName}</div>
                 <div style={{ fontSize: "9.5px" }}>
                   {officeData.approvedName}<br />{officeData.approvedDesignation}

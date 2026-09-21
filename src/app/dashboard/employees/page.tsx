@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, Upload, Plus, User, Layers, List, Loader2 } from "lucide-react";
+import { Search, Plus, User, Upload, Download, Loader2, List, Layers, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -43,6 +43,9 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [activeTab, setActiveTab] = useState<"list" | "hierarchy" >("list");
+  const [allEmployees, setAllEmployees] = useState([]);
+  const [loadingHierarchy, setLoadingHierarchy] = useState(false);
+  const [role, setRole] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [page, setPage] = useState(1);
@@ -73,13 +76,50 @@ export default function EmployeesPage() {
     }
   };
 
+  const fetchAllEmployeesForHierarchy = async () => {
+    setLoadingHierarchy(true);
+    try {
+      const res = await fetch(`/api/employees?limit=100000`);
+      const data = await res.json();
+      if (data.success) {
+        setAllEmployees(data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingHierarchy(false);
+    }
+  };
+
   useEffect(() => {
     setPage(1);
   }, [search, status, limit]);
 
+  const fetchAuth = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.success) {
+        setRole(data.role || "");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuth();
+  }, []);
+
   useEffect(() => {
     fetchEmployees();
   }, [search, status, page, limit]);
+
+  useEffect(() => {
+    if (activeTab === "hierarchy" && allEmployees.length === 0) {
+      fetchAllEmployeesForHierarchy();
+    }
+  }, [activeTab]);
 
   const handleExport = () => {
     window.location.href = `/api/employees/export?search=${search}&status=${status}`;
@@ -112,9 +152,27 @@ export default function EmployeesPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchEmployees();
+      } else {
+        alert(data.error || "Failed to delete employee");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error deleting employee");
+    }
+  };
+
   // Group employees by department for hierarchy view
   const departments: { [key: string]: any[] } = {};
-  employees.forEach((emp: any) => {
+  allEmployees.forEach((emp: any) => {
     const dept = emp.department || "Unassigned";
     if (!departments[dept]) {
       departments[dept] = [];
@@ -188,17 +246,19 @@ export default function EmployeesPage() {
           <List className="h-4 w-4" />
           <span>Directory List</span>
         </button>
-        <button
-          onClick={() => setActiveTab("hierarchy")}
-          className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-            activeTab === "hierarchy" 
-              ? "border-indigo-600 text-indigo-600" 
-              : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-          }`}
-        >
-          <Layers className="h-4 w-4" />
-          <span>Department Hierarchy</span>
-        </button>
+        {(role === "ADMIN" || role === "KEY_ADMIN") && (
+          <button
+            onClick={() => setActiveTab("hierarchy")}
+            className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+              activeTab === "hierarchy" 
+                ? "border-indigo-600 text-indigo-600" 
+                : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+            }`}
+          >
+            <Layers className="h-4 w-4" />
+            <span>Department Hierarchy</span>
+          </button>
+        )}
       </div>
 
       {activeTab === "list" ? (
@@ -237,6 +297,7 @@ export default function EmployeesPage() {
                   <TableHead>Designation</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Debenture Form Link</TableHead>
+                  {(role === "ADMIN" || role === "KEY_ADMIN") && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -303,6 +364,17 @@ export default function EmployeesPage() {
                         Copy Form Link 📋
                       </Button>
                     </TableCell>
+                    {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(emp._id, `${emp.firstName} ${emp.lastName}`)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 )))}
               </TableBody>
@@ -348,6 +420,11 @@ export default function EmployeesPage() {
             </div>
           </CardContent>
         </Card>
+      ) : loadingHierarchy ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+          <p className="text-zinc-500 font-medium">Building Organization Chart...</p>
+        </div>
       ) : (
         <div className="space-y-8">
           {Object.entries(departments).map(([deptName, deptEmployees]) => {

@@ -15,8 +15,10 @@ export default function SalarySlipPage() {
   const slipRef = useRef<HTMLDivElement>(null);
   const [companyProfile, setCompanyProfile] = useState<any>({
     name: "Niventra Capital Advisory India Capital Pvt. Ltd.",
-    address: "A-91,Sewak Park Near Dwarka Mor Metro Station, Gate No. 2 New Delhi – 110059 Delhi, India",
+    address: "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
     email: "info@niventracapitaladvisory.com",
+    website: "www.niventracapitaladvisory.com",
+    phone: "011 4051 5660",
     gstNo: "07AAICN4810R1Z2"
   });
 
@@ -53,8 +55,10 @@ export default function SalarySlipPage() {
           const cp = data.data.companyProfile;
           setCompanyProfile({
             name: cp.name || "Niventra Capital Advisory India Capital Pvt. Ltd.",
-            address: cp.address || "A-91,Sewak Park Near Dwarka Mor Metro Station, Gate No. 2 New Delhi – 110059 Delhi, India",
+            address: cp.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
             email: cp.email || "info@niventracapitaladvisory.com",
+            website: cp.website || "www.niventracapitaladvisory.com",
+            phone: cp.phone || "011 4051 5660",
             gstNo: cp.gstNo || "07AAICN4810R1Z2"
           });
         }
@@ -248,8 +252,7 @@ export default function SalarySlipPage() {
                 <h2 className="text-2xl font-black text-indigo-950 tracking-tight">{companyProfile.name}</h2>
                 <p className="text-xs text-zinc-500">{companyProfile.address}</p>
                 <p className="text-xs text-zinc-500 font-medium">
-                  {companyProfile.email}
-
+                  {companyProfile.email} | {companyProfile.phone} | {companyProfile.website}
                 </p>
                 <div className="mt-2 flex items-center space-x-3">
                   <span className="text-xs font-black tracking-widest text-white bg-indigo-900 px-3 py-1 rounded">

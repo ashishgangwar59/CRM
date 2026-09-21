@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Investor } from "@/lib/models/Investor";
 import { User } from "@/lib/models/User";
+import { SystemSettings } from "@/lib/models/SystemSettings";
 import { verifyAccessToken } from "@/lib/auth";
 
 function getToken(req: Request): string | null {
@@ -37,7 +38,7 @@ function numberToWords(num: number): string {
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth Check
     const token = getToken(req);
     if (!token) return new Response("Unauthorized", { status: 401 });
@@ -65,6 +66,12 @@ export async function GET(req: Request) {
       return new Response("Investor not found", { status: 404 });
     }
 
+    const settings = await SystemSettings.findOne().lean();
+    const companyName = settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.";
+    const companyPhone = settings?.companyProfile?.phone || "011 4051 5660";
+    const companyEmail = settings?.companyProfile?.email || "info@niventracapitaladvisory.com";
+    const companyWebsite = settings?.companyProfile?.website || "www.niventracapitaladvisory.com";
+
     const monthsParam = searchParams.get("months");
     const issueDateParam = searchParams.get("issueDate");
 
@@ -74,8 +81,6 @@ export async function GET(req: Request) {
 
     const principalAmount = investor.investmentAmount || investor.debentureForm?.totalApplicationAmount || 0;
     const growthRate = investor.monthlyGrowthPercentage || 2;
-    const interestAmount = Math.round(principalAmount * (growthRate / 100) * maturityPeriodMonths);
-    const maturityAmount = principalAmount + interestAmount;
 
     const issueDateVal = issueDateParam || investor.investmentDate;
     let issueDateObj: Date;
@@ -91,13 +96,32 @@ export async function GET(req: Request) {
     }
     const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-    const maturityDateObj = new Date(issueDateObj);
-    maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
+    let maturityDateObj: Date;
+    let days = 30;
+    let periodText = "";
+
+    const maturityDateParam = searchParams.get("maturityDate");
+    const matDateVal = maturityDateParam || investor.bondMaturityDate;
+
+    if (matDateVal) {
+      maturityDateObj = new Date(matDateVal);
+      days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+      periodText = `${days} Days`;
+    } else {
+      maturityDateObj = new Date(issueDateObj);
+      maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
+      days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+      periodText = `${days} Days (${maturityPeriodMonths} Months)`;
+    }
+
     const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+    const interestAmount = Math.round(principalAmount * ((growthRate * 12) / 365 / 100) * days);
+    const maturityAmount = principalAmount + interestAmount;
 
     const rawSeq = (investor.investorCode || "").replace(/\D/g, "");
     const seqPadded = rawSeq ? rawSeq.slice(-4).padStart(4, "0") : "0001";
-    const refNo = `NCA/PB/${issueDateObj.getFullYear().toString().slice(-2)}${(issueDateObj.getFullYear()+1).toString().slice(-2)}/${seqPadded}`;
+    const refNo = `NCA/PB/${issueDateObj.getFullYear().toString().slice(-2)}${(issueDateObj.getFullYear() + 1).toString().slice(-2)}/${seqPadded}`;
 
     const fatherName = investor.debentureForm?.fatherSpouseName || "N/A";
     const address = investor.debentureForm?.address || "N/A";
@@ -162,7 +186,7 @@ export async function GET(req: Request) {
               </div>
             </td>
             <td>
-              <h1 class="company-title">NIVENTRA CAPITAL ADVISORY</h1>
+              <h1 class="company-title">${companyName}</h1>
               <p class="company-subtitle">INVESTMENT ACKNOWLEDGEMENT</p>
             </td>
             <td style="width: 180px; text-align: right;">
@@ -175,7 +199,7 @@ export async function GET(req: Request) {
         </table>
 
         <div class="receipt-statement">
-          This is to certify that <strong>NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</strong> has received an amount of <strong>₹${principalAmount.toLocaleString()}/- (${numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
+          This is to certify that <strong>${companyName}</strong> has received an amount of <strong>₹${principalAmount.toLocaleString()}/- (${numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
         </div>
 
         <table class="grid-table">
@@ -200,7 +224,7 @@ export async function GET(req: Request) {
                 <div class="card-body">
                   <div class="detail-row"><span>Principal Amount</span><strong>₹${principalAmount.toLocaleString()}/-</strong></div>
                   <div class="detail-row"><span>Investment Date</span><strong>${issueDateStr}</strong></div>
-                  <div class="detail-row"><span>Maturity Period</span><strong>${maturityPeriodMonths} ${maturityPeriodMonths === 1 ? "Month" : "Months"}</strong></div>
+                  <div class="detail-row"><span>Maturity Period</span><strong>${periodText}</strong></div>
                   <div class="detail-row"><span>Maturity Date</span><strong>${maturityDateStr}</strong></div>
                   <div class="detail-row"><span>Amount Payable on Maturity</span><strong style="color: #be123c;">₹${maturityAmount.toLocaleString()}/-</strong></div>
                 </div>
@@ -212,7 +236,7 @@ export async function GET(req: Request) {
         <div class="terms-card">
           <div class="card-header">✦ TERMS & CONDITIONS ✦</div>
           <div class="terms-grid">
-            <div>1. This Bond is issued by NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD. as an acknowledgement of receipt of the above amount.</div>
+            <div>1. This Bond is issued by ${companyName} as an acknowledgement of receipt of the above amount.</div>
             <div>4. This Bond is non-transferable unless approved in writing by the Company.</div>
             <div>2. On successful completion of the period, the Company shall pay the maturity amount stated above, subject to terms.</div>
             <div>5. Any alteration without the Company's authorization shall render this Bond invalid.</div>
@@ -232,7 +256,7 @@ export async function GET(req: Request) {
           </div>
 
           <div class="footer-col">
-            <div style="font-size: 9px; font-weight: bold; margin-bottom: 24px;">For NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.</div>
+            <div style="font-size: 9px; font-weight: bold; margin-bottom: 24px;">For ${companyName}</div>
             <div style="font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; font-style: italic; color: #0f172a; margin-bottom: 2px;">Deepak Dayal</div>
             <div style="border-top: 1px solid #94a3b8; width: 140px; margin: 0 auto; padding-top: 2px;">
               <strong style="font-size: 8px; color: #1e293b;">DEEPAK DAYAL</strong><br>
@@ -243,9 +267,9 @@ export async function GET(req: Request) {
 
         <div class="contact-bar">
           <div>📍 OFFICE: DWARIKA MOR</div>
-          <div>🌐 WEBSITE: www.niventracapitaladvisory.com</div>
-          <div>📞 PHONE: 011 4051 5660</div>
-          <div>✉️ EMAIL: info@niventracapitaladvisory.com</div>
+          <div>🌐 WEBSITE: ${companyWebsite}</div>
+          <div>📞 PHONE: ${companyPhone}</div>
+          <div>✉️ EMAIL: ${companyEmail}</div>
         </div>
       </div>
     </div>

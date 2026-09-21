@@ -6,6 +6,7 @@ export interface IEmployee extends Document {
   // 1. Personal Details
   firstName: string;
   lastName: string;
+  fatherOrMotherName?: string;
   email: string;
   officeEmail?: string;
   phone: string;
@@ -21,7 +22,7 @@ export interface IEmployee extends Document {
   // 2. Official Details
   department?: string;
   designation?: string;
-  reportingManager?: mongoose.Types.ObjectId;
+  reportingManager?: string;
   dateOfJoining?: Date;
   workLocation?: string;
   createdBy?: mongoose.Types.ObjectId;
@@ -89,6 +90,23 @@ export interface IEmployee extends Document {
     fileUrl: string;
   }>;
 
+  // 12. Salary Structure
+  salaryStructure: {
+    ctcPerAnnum?: string;
+    basic?: string;
+    hra?: string;
+    conveyance?: string;
+    medicalAllowance?: string;
+    specialAllowance?: string;
+    pf?: string;
+    esi?: string;
+    insurance?: string;
+    leaves?: string;
+    lta?: string;
+    professionalTax?: string;
+    tds?: string;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -99,6 +117,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
     
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    fatherOrMotherName: { type: String },
     email: { type: String, required: true, unique: true },
     officeEmail: { type: String },
     phone: { type: String, required: true },
@@ -113,7 +132,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
 
     department: { type: String },
     designation: { type: String },
-    reportingManager: { type: Schema.Types.ObjectId, ref: "Employee" },
+    reportingManager: { type: String },
     dateOfJoining: { type: Date },
     workLocation: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -175,12 +194,34 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
       returnedDate: Date,
     }],
 
-    documents: [{
-      documentName: String,
-      fileUrl: String,
-    }],
+    documents: [
+      {
+        documentName: { type: String },
+        fileUrl: { type: String },
+      },
+    ],
+
+    salaryStructure: {
+      ctcPerAnnum: { type: String },
+      basic: { type: String },
+      hra: { type: String },
+      conveyance: { type: String },
+      medicalAllowance: { type: String },
+      specialAllowance: { type: String },
+      pf: { type: String },
+      esi: { type: String },
+      insurance: { type: String },
+      leaves: { type: String },
+      lta: { type: String },
+      professionalTax: { type: String },
+      tds: { type: String },
+    },
   },
   { timestamps: true }
 );
 
-export const Employee: Model<IEmployee> = mongoose.models.Employee || mongoose.model("Employee", EmployeeSchema);
+// Force Mongoose to re-compile the model in development
+if (mongoose.models.Employee) {
+  delete mongoose.models.Employee;
+}
+export const Employee: Model<IEmployee> = mongoose.model("Employee", EmployeeSchema);

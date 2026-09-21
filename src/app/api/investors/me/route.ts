@@ -196,7 +196,7 @@ export async function PUT(req: Request) {
 
     // If Admin/KeyAdmin/Manager/Staff verifying/editing an investor
     if (role !== "INVESTOR") {
-      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, investmentDate, bondMaturityMonths } = body;
+      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, investmentDate, bondMaturityMonths, bondMaturityDate } = body;
       const targetId = investorId || _id || id;
 
       if (!targetId) return NextResponse.json({ error: "Investor ID required" }, { status: 400 });
@@ -215,6 +215,9 @@ export async function PUT(req: Request) {
       }
       if (bondMaturityMonths !== undefined && !isNaN(Number(bondMaturityMonths))) {
         updateFields.bondMaturityMonths = Math.max(1, Number(bondMaturityMonths));
+      }
+      if (bondMaturityDate !== undefined) {
+        updateFields.bondMaturityDate = bondMaturityDate;
       }
       if (fullName) updateFields.fullName = fullName;
       if (phone) updateFields.phone = phone;
@@ -342,7 +345,7 @@ export async function DELETE(req: Request) {
     }
 
     const role = (payload.role || "").toUpperCase().replace("_", "");
-    if (role !== "KEYADMIN" && role !== "ADMIN" && role !== "MANAGER") {
+    if (role !== "KEYADMIN" && role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

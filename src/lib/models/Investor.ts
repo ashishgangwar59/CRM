@@ -81,6 +81,7 @@ export interface IInvestor extends Document {
   nomineeDocUrl?: string;
   investmentDate?: string;
   bondMaturityMonths?: number;
+  bondMaturityDate?: string;
 
   // Referral tracking (which employee submitted/referred this investor application)
   referralEmployeeId?: mongoose.Types.ObjectId;
@@ -182,6 +183,7 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
     nomineeDocUrl: { type: String },
     investmentDate: { type: String },
     bondMaturityMonths: { type: Number, default: 1 },
+    bondMaturityDate: { type: String },
 
     referralEmployeeId: { type: Schema.Types.ObjectId, ref: "Employee" },
     referralEmployeeName: { type: String },

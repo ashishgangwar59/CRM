@@ -88,7 +88,7 @@ export default function AdminInvestorsPage() {
     investmentAmount: 0,
     monthlyGrowthPercentage: 1.33,
     investmentDate: new Date().toISOString().split("T")[0],
-    bondMaturityMonths: 1,
+    bondMaturityDate: "",
     nomineeName: "",
     nomineeRelation: "",
     nomineeAge: "",
@@ -102,7 +102,7 @@ export default function AdminInvestorsPage() {
     investmentAmount: 0,
     monthlyGrowthPercentage: 2.5,
     investmentDate: "",
-    bondMaturityMonths: 1,
+    bondMaturityDate: "",
     nomineeName: "",
     nomineeRelation: "",
     nomineeAge: "",
@@ -158,14 +158,14 @@ export default function AdminInvestorsPage() {
       const json = await res.json();
       if (json.success) {
         setShowAddModal(false);
-        setAddForm({ 
-          fullName: "", 
-          email: "", 
-          phone: "", 
-          investmentAmount: 0, 
+        setAddForm({
+          fullName: "",
+          email: "",
+          phone: "",
+          investmentAmount: 0,
           monthlyGrowthPercentage: 1.33,
           investmentDate: new Date().toISOString().split("T")[0],
-          bondMaturityMonths: 1,
+          bondMaturityDate: "",
           nomineeName: "",
           nomineeRelation: "",
           nomineeAge: ""
@@ -262,6 +262,67 @@ export default function AdminInvestorsPage() {
     }
   };
 
+  const exportToExcel = async () => {
+    try {
+      // Fetch ALL data matching current filters by setting a huge limit
+      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}`);
+      const json = await res.json();
+
+      let dataToExport: any[] = [];
+      if (json.success && json.data) {
+        dataToExport = Array.isArray(json.data) ? json.data : [json.data];
+      }
+
+      if (dataToExport.length === 0) {
+        alert("No data available to export.");
+        return;
+      }
+
+      const headers = [
+        "Investor Code",
+        "Full Name",
+        "Email",
+        "Phone",
+        "Status",
+        "Investment Amount (Rs)",
+        "Monthly Growth (%)",
+        "Investment Date",
+        "Bond Maturity Date",
+        "Created At"
+      ];
+
+      const csvRows = [headers.join(",")];
+
+      dataToExport.forEach((inv) => {
+        const code = inv.investorCode || "";
+        const name = `"${(inv.fullName || "").replace(/"/g, '""')}"`;
+        const email = `"${(inv.email || "").replace(/"/g, '""')}"`;
+        const phone = `"${(inv.phone || "").replace(/"/g, '""')}"`;
+        const status = inv.status || "";
+        const amount = inv.investmentAmount || 0;
+        const rate = inv.monthlyGrowthPercentage || 0;
+        const invDate = inv.investmentDate ? new Date(inv.investmentDate).toLocaleDateString("en-GB") : "";
+        const matDate = inv.bondMaturityDate ? new Date(inv.bondMaturityDate).toLocaleDateString("en-GB") : "";
+        const created = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-GB") : "";
+
+        csvRows.push([code, name, email, phone, status, amount, rate, invDate, matDate, created].join(","));
+      });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Investors_Export_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error("Export error:", e);
+      alert("Failed to export data.");
+    }
+  };
+
   return (
     <div className="space-y-6 w-full mx-auto pb-24">
       {/* Title bar */}
@@ -293,6 +354,7 @@ export default function AdminInvestorsPage() {
             variant={statusFilter === "" ? "default" : "outline"}
             onClick={() => setStatusFilter("")}
             size="sm"
+            className="cursor-pointer"
           >
             All Status
           </Button>
@@ -300,7 +362,7 @@ export default function AdminInvestorsPage() {
             variant={statusFilter === "Pending" ? "default" : "outline"}
             onClick={() => setStatusFilter("Pending")}
             size="sm"
-            className="text-amber-600"
+            className="text-amber-600 cursor-pointer"
           >
             Pending
           </Button>
@@ -308,7 +370,7 @@ export default function AdminInvestorsPage() {
             variant={statusFilter === "Verified" ? "default" : "outline"}
             onClick={() => setStatusFilter("Verified")}
             size="sm"
-            className="text-emerald-600"
+            className="text-emerald-600 cursor-pointer"
           >
             Verified
           </Button>
@@ -316,7 +378,7 @@ export default function AdminInvestorsPage() {
             variant={statusFilter === "Rejected" ? "default" : "outline"}
             onClick={() => setStatusFilter("Rejected")}
             size="sm"
-            className="text-rose-600"
+            className="text-rose-600 cursor-pointer"
           >
             Rejected
           </Button>
@@ -324,9 +386,17 @@ export default function AdminInvestorsPage() {
             variant={statusFilter === "DebentureForms" ? "default" : "outline"}
             onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
             size="sm"
-            className="text-white bg-[#0c1c3d] border-[#0c1c3d]/30"
+            className="text-white bg-[#134086] cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 mr-1" /> Debenture Forms
+          </Button>
+          <Button
+            onClick={exportToExcel}
+            size="sm"
+            className="text-white bg-[#00a65a] hover:bg-[#008f4d] cursor-pointer shadow-md"
+            title="Export filtered data to CSV/Excel"
+          >
+            <FileText className="w-3.5 h-3.5 mr-1" /> Export to Excel
           </Button>
         </div>
       </div>
@@ -417,7 +487,7 @@ export default function AdminInvestorsPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => setDebentureModalInvestor(inv)}
-                          className="text-white border-[#0c1c3d]/30  font-bold"
+                          className="text-white border-[#0c1c3d]/30  font-bold cursor-pointer"
                           title="View Official Sheet Debenture Form"
                         >
                           <FileText className="w-3.5 h-3.5 mr-1" /> Form
@@ -425,11 +495,13 @@ export default function AdminInvestorsPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="cursor-pointer"
                           onClick={() => setSelectedInvestor(inv)}
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" /> View & Verify
                         </Button>
                         <Button
+                          className="cursor-pointer"
                           size="sm"
                           variant="secondary"
                           onClick={() => {
@@ -441,7 +513,7 @@ export default function AdminInvestorsPage() {
                               investmentAmount: inv.investmentAmount || 0,
                               monthlyGrowthPercentage: inv.monthlyGrowthPercentage || 1.33,
                               investmentDate: inv.investmentDate || (inv.verifiedAt ? new Date(inv.verifiedAt).toISOString().split("T")[0] : new Date(inv.createdAt).toISOString().split("T")[0]),
-                              bondMaturityMonths: inv.bondMaturityMonths || 1,
+                              bondMaturityDate: inv.bondMaturityDate || "",
                               nomineeName: inv.debentureForm?.nomineeName || inv.nomineeName || "",
                               nomineeRelation: inv.debentureForm?.nomineeRelation || inv.nomineeRelation || "",
                               nomineeAge: inv.debentureForm?.nomineeAge || inv.nomineeAge || "",
@@ -449,16 +521,18 @@ export default function AdminInvestorsPage() {
                             setShowEditModal(true);
                           }}
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3.5 h-3.5 " />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
-                          className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
+                            className="text-white border-[#134086] cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -554,8 +628,6 @@ export default function AdminInvestorsPage() {
                 const principal = selectedInvestor.investmentAmount || 0;
                 const rate = selectedInvestor.monthlyGrowthPercentage || 2;
                 const months = Number(selectedInvestor.bondMaturityMonths) || 1;
-                const totalInterest = Math.round(principal * (rate / 100) * months);
-                const maturityAmount = principal + totalInterest;
 
                 let issueDateObj: Date;
                 if (selectedInvestor.investmentDate) {
@@ -569,20 +641,33 @@ export default function AdminInvestorsPage() {
                   issueDateObj = selectedInvestor.verifiedAt ? new Date(selectedInvestor.verifiedAt) : new Date(selectedInvestor.createdAt);
                 }
 
+                let maturityDateObj: Date;
+                let days = 30; // fallback
+
+                if (selectedInvestor.bondMaturityDate) {
+                  maturityDateObj = new Date(selectedInvestor.bondMaturityDate);
+                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                } else {
+                  maturityDateObj = new Date(issueDateObj);
+                  maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
+                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                }
+
+                const totalInterest = Math.round(principal * ((rate * 12) / 365 / 100) * days);
+                const maturityAmount = principal + totalInterest;
+
                 const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                const maturityDateObj = new Date(issueDateObj);
-                maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
                 const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800/40">
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Investment Date</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{issueDateStr}</p>
+                      <p className="font-bold font-mono text-zinc-900 dark:text-zinc-100">{issueDateStr}</p>
                     </div>
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Maturity Period</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{months} {months === 1 ? 'Month' : 'Months'}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{days} Days ({months} {months === 1 ? 'Month' : 'Months'})</p>
                     </div>
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Maturity Date</p>
@@ -608,7 +693,7 @@ export default function AdminInvestorsPage() {
                       <Button
                         size="sm"
                         onClick={() => setDebentureModalInvestor(selectedInvestor)}
-                        className="bg-[#0c1c3d] hover:bg-[#132a5c] text-white font-bold text-xs h-7 px-2.5"
+                        className="bg-[#134086] hover:bg-[#134086] text-white font-bold text-xs h-7 px-2.5"
                       >
                         <FileText className="w-3.5 h-3.5 mr-1" /> View Full Sheet Form
                       </Button>
@@ -704,7 +789,7 @@ export default function AdminInvestorsPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-bold">{docItem.title}</p>
                             {docItem.sub && <span className="text-xs text-zinc-500 font-mono">({docItem.sub})</span>}
-                            {docItem.req && <span className="text-[10px] bg-indigo-950 text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
+                            {docItem.req && <span className="text-[10px] bg-[#134086] text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
@@ -728,7 +813,7 @@ export default function AdminInvestorsPage() {
                               <Eye className="w-3.5 h-3.5" /> View File
                             </button>
                           ) : (
-                            <span className="text-xs text-rose-500 font-semibold bg-rose-950/40 px-2.5 py-1 rounded border border-rose-800">
+                            <span className="text-xs text-white font-semibold bg-[#134086] px-2.5 py-1 rounded border border-rose-800">
                               Missing / Not Uploaded
                             </span>
                           )}
@@ -741,7 +826,7 @@ export default function AdminInvestorsPage() {
                               className={`font-bold h-8 px-3 text-xs ${!docItem.url
                                 ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                                 : currentStatus === "Approved"
-                                  ? "bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-sm"
+                                  ? "bg-emerald-600 text-white  shadow-sm"
                                   : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
                                 }`}
                             >
@@ -889,7 +974,7 @@ export default function AdminInvestorsPage() {
       {/* --- Add Investor Modal --- */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Add New Investor</h2>
               <Button variant="ghost" onClick={() => setShowAddModal(false)}>✕</Button>
@@ -921,32 +1006,18 @@ export default function AdminInvestorsPage() {
                 </div>
                 <div className="space-y-1">
                   <Label>Issue / Investment Date</Label>
-                  <Input type="date" value={addForm.investmentDate} onChange={(e) => setAddForm({ ...addForm, investmentDate: e.target.value })} />
+                  <Input type="date" min={new Date().toISOString().split("T")[0]} value={addForm.investmentDate} onChange={(e) => setAddForm({ ...addForm, investmentDate: e.target.value })} />
                 </div>
                 <div className="space-y-1">
-                  <Label>Bond Maturity Tenure (Months)</Label>
-                  <select
-                    value={String(addForm.bondMaturityMonths || "1")}
-                    onChange={(e) => setAddForm({ ...addForm, bondMaturityMonths: parseInt(e.target.value) })}
-                    className="w-full h-10 px-3 rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900"
-                  >
-                    <option value="1">1 Month</option>
-                    <option value="2">2 Months</option>
-                    <option value="3">3 Months</option>
-                    <option value="4">4 Months</option>
-                    <option value="5">5 Months</option>
-                    <option value="6">6 Months</option>
-                    <option value="7">7 Months</option>
-                    <option value="8">8 Months</option>
-                    <option value="9">9 Months</option>
-                    <option value="10">10 Months</option>
-                    <option value="11">11 Months</option>
-                    <option value="12">12 Months (1 Year)</option>
-                    <option value="18">18 Months</option>
-                    <option value="24">24 Months (2 Years)</option>
-                    <option value="36">36 Months (3 Years)</option>
-                  </select>
+                  <Label>Bond Maturity Date (To Date)</Label>
+                  <Input type="date" min={addForm.investmentDate || new Date().toISOString().split("T")[0]} value={addForm.bondMaturityDate} onChange={(e) => setAddForm({ ...addForm, bondMaturityDate: e.target.value })} />
                 </div>
+                {addForm.investmentDate && addForm.bondMaturityDate && (
+                  <div className="col-span-1 sm:col-span-2 text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
+                    <span>Total Duration:</span>
+                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)))} Days</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -978,7 +1049,7 @@ export default function AdminInvestorsPage() {
       {/* --- Edit Investor Modal --- */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Edit Investor Profile</h2>
               <Button variant="ghost" onClick={() => setShowEditModal(false)}>✕</Button>
@@ -1012,33 +1083,19 @@ export default function AdminInvestorsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label>Investment Date</Label>
-                    <Input type="date" value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
+                    <Input type="date" min={new Date().toISOString().split("T")[0]} value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
                   </div>
                   <div className="space-y-1">
-                    <Label>Bond Tenure (Months)</Label>
-                    <select
-                      value={String(editForm.bondMaturityMonths || "1")}
-                      onChange={(e) => setEditForm({ ...editForm, bondMaturityMonths: parseInt(e.target.value) })}
-                      className="w-full h-10 px-3 rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-zinc-900"
-                    >
-                      <option value="1">1 Month</option>
-                      <option value="2">2 Months</option>
-                      <option value="3">3 Months</option>
-                      <option value="4">4 Months</option>
-                      <option value="5">5 Months</option>
-                      <option value="6">6 Months</option>
-                      <option value="7">7 Months</option>
-                      <option value="8">8 Months</option>
-                      <option value="9">9 Months</option>
-                      <option value="10">10 Months</option>
-                      <option value="11">11 Months</option>
-                      <option value="12">12 Months (1 Year)</option>
-                      <option value="18">18 Months</option>
-                      <option value="24">24 Months (2 Years)</option>
-                      <option value="36">36 Months (3 Years)</option>
-                    </select>
+                    <Label>Bond Maturity Date</Label>
+                    <Input type="date" min={editForm.investmentDate || new Date().toISOString().split("T")[0]} value={editForm.bondMaturityDate} onChange={(e) => setEditForm({ ...editForm, bondMaturityDate: e.target.value })} />
                   </div>
                 </div>
+                {editForm.investmentDate && editForm.bondMaturityDate && (
+                  <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
+                    <span>Total Duration:</span>
+                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(editForm.bondMaturityDate).getTime() - new Date(editForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)))} Days</span>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label>Nominee Name</Label>
@@ -1058,22 +1115,32 @@ export default function AdminInvestorsPage() {
                 {(() => {
                   const principal = editForm.investmentAmount || 0;
                   const rate = editForm.monthlyGrowthPercentage || 0;
-                  const months = editForm.bondMaturityMonths || 1;
-                  const totalInterest = Math.round(principal * (rate / 100) * months);
-                  const totalMaturityAmount = principal + totalInterest;
 
+                  let days = 0;
                   let matDateStr = "—";
-                  if (editForm.investmentDate) {
-                    const d = new Date(editForm.investmentDate);
-                    d.setMonth(d.getMonth() + months);
-                    matDateStr = d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+                  if (editForm.investmentDate && editForm.bondMaturityDate) {
+                    const invDate = new Date(editForm.investmentDate);
+                    const matDate = new Date(editForm.bondMaturityDate);
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  } else if (editForm.investmentDate) {
+                    const invDate = new Date(editForm.investmentDate);
+                    const months = 1;
+                    const matDate = new Date(invDate);
+                    matDate.setMonth(matDate.getMonth() + months);
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   }
+
+                  const totalInterest = Math.round(principal * ((rate * 12) / 365 / 100) * days);
+                  const totalMaturityAmount = principal + totalInterest;
 
                   return (
                     <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 mt-2 text-amber-900 dark:text-amber-200">
                       <p className="font-bold uppercase text-[10px] tracking-wider text-amber-600 dark:text-amber-400">✦ Bond Maturity Auto-Calculation Preview ✦</p>
                       <div className="flex justify-between">
-                        <span>Total Interest ({months} mo @ {rate}%/mo):</span>
+                        <span>Total Interest ({days} days @ {rate}%/mo):</span>
                         <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{totalInterest.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between border-t border-amber-500/20 pt-1 font-bold">

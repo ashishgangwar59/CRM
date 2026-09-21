@@ -3,7 +3,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Calculator, AlertCircle, X } from "lucide-react";
+import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Calculator, AlertCircle, X, UserCircle, Briefcase, Landmark, Receipt, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
@@ -18,22 +18,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState<string>("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [hoveredTooltip, setHoveredTooltip] = useState<{name: string, top: number, left: number} | null>(null);
+  const [hoveredTooltip, setHoveredTooltip] = useState<{ name: string, top: number, left: number } | null>(null);
   const { theme, toggleTheme } = useTheme();
 
 
-  const [toastMsg, setToastMsg] = useState<{title: string, desc: string} | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ title: string, desc: string } | null>(null);
 
   useEffect(() => {
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
       const response = await originalFetch(...args);
       if (response.status === 401 || response.status === 403) {
-         setToastMsg({
-            title: "Unauthorized Access",
-            desc: "You do not have permission to perform this action or access this resource."
-         });
-         setTimeout(() => setToastMsg(null), 5000);
+        setToastMsg({
+          title: "Unauthorized Access",
+          desc: "You do not have permission to perform this action or access this resource."
+        });
+        setTimeout(() => setToastMsg(null), 5000);
       }
       return response;
     };
@@ -81,19 +81,23 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Investor Details", href: "/dashboard", icon: LayoutDashboard, roles: ["INVESTOR"] },
+    { name: "Investor Details", href: "/dashboard", icon: UserCircle, roles: ["INVESTOR"] },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Attendance List", href: "/dashboard/attendance-list", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Investors", href: "/dashboard/investors", icon: DollarSign, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Employees", href: "/dashboard/employees", icon: Users, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Investors", href: "/dashboard/investors", icon: Landmark, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Teams", href: "/dashboard/teams", icon: Users, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Employees", href: "/dashboard/employees", icon: Briefcase, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Invoice Form", href: "/dashboard/invoice", icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Invoice Form", href: "/dashboard/invoice", icon: Receipt, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Calculator", href: "/dashboard/calculator", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN", "Employee", "INVESTOR"] },
+    { name: "Cash Memo", href: "/dashboard/expenses", icon: DollarSign, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Letter Register", href: "/dashboard/letters", icon: Mail, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee", "INVESTOR"] },
   ];
@@ -109,9 +113,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   });
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900">
+    <div className="flex h-screen bg-white dark:bg-gray-900 print:h-auto print:bg-white">
       {/* Sidebar */}
-      <aside className={cn("relative border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300 shrink-0", isCollapsed ? "w-16" : "w-64")}>
+      <aside className={cn("relative border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300 shrink-0 print:hidden", isCollapsed ? "w-16" : "w-64")}>
         {/* Toggle Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -184,7 +188,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
 
         {hoveredTooltip && (
-          <div 
+          <div
             className="fixed z-50 flex items-center pointer-events-none"
             style={{ top: hoveredTooltip.top, left: hoveredTooltip.left }}
           >
@@ -196,9 +200,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden print:h-auto print:overflow-visible print:block">
         {/* Top Header */}
-        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-between px-8 shrink-0">
+        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex items-center justify-between px-8 shrink-0 print:hidden">
           <div>
             <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
               Welcome back, <span className="text-zinc-900 dark:text-zinc-50 font-semibold">{empCode || role || "User"}</span>
@@ -231,7 +235,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Scrollable Middle Part */}
-        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6", role === "INVESTOR" ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/40")}>
+        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6 print:overflow-visible print:p-0", role === "INVESTOR" ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/40")}>
           {children}
         </main>
         {/* Global Toast Notification */}
