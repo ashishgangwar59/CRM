@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool } from "lucide-react";
+import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-
+import Cropper from "react-easy-crop";
+import { getCroppedImg } from "@/lib/cropImage";
 function DebentureFormContent() {
   const searchParams = useSearchParams();
   const refCodeParam = searchParams.get("ref") || "";
@@ -121,6 +122,12 @@ function DebentureFormContent() {
   const [pollingQr, setPollingQr] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Cropper States
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const startQrSignature = async () => {
     try {
       const res = await fetch("/api/signature-session/create", { method: "POST" });
@@ -393,6 +400,68 @@ function DebentureFormContent() {
       }
     } catch (e) {
       alert("Error uploading file.");
+    }
+  };
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    if (file.size > 100 * 1024 * 1024) {
+      alert("File size exceeds 100MB limit.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setCropImageSrc(reader.result?.toString() || "");
+      setCropModalOpen(true);
+    });
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleCropConfirm = async () => {
+    if (!cropImageSrc || !croppedAreaPixels) return;
+
+    try {
+      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      if (!croppedBlob) {
+        alert("Crop failed. Please try again.");
+        return;
+      }
+
+      const file = new File([croppedBlob], `signature_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
+      const json = await res.json();
+      
+      if (json.success) {
+        setForm((prev) => ({ ...prev, signatureUrl: json.url }));
+        
+        // Draw onto canvas
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          };
+          img.src = json.url;
+        }
+        
+        // Close modal
+        setCropModalOpen(false);
+        setCropImageSrc(null);
+      } else {
+        alert(json.error || "Signature upload failed.");
+      }
+    } catch (e) {
+      alert("Error uploading signature.");
     }
   };
 
@@ -1645,14 +1714,24 @@ function DebentureFormContent() {
             </div>
           </div>
           <div className="sign-line">
-            <div>
-              Place :{" "}
-              <input
-                type="text"
-                name="place"
-                value={form.place}
-                onChange={(e) => setForm({ ...form, place: e.target.value })}
-              />
+            <div className="flex flex-col gap-4">
+              <div>
+                Place :{" "}
+                <input
+                  type="text"
+                  name="place"
+                  value={form.place}
+                  onChange={(e) => setForm({ ...form, place: e.target.value })}
+                />
+              </div>
+              <div style={{ fontSize: "12px" }}>
+                Date :
+                <span className="date-trio ml-1">
+                  <input type="text" maxLength={2} placeholder="DD" name="declDay" value={form.declDay} onChange={(e) => setForm({ ...form, declDay: e.target.value })} />/
+                  <input type="text" maxLength={2} placeholder="MM" name="declMonth" value={form.declMonth} onChange={(e) => setForm({ ...form, declMonth: e.target.value })} />/
+                  <input type="text" maxLength={4} placeholder="YYYY" style={{ width: "44px" }} name="declYear" value={form.declYear} onChange={(e) => setForm({ ...form, declYear: e.target.value })} />
+                </span>
+              </div>
             </div>
             <div className="sig-pad-wrap">
               <canvas className="sig-pad" ref={canvasRef} width={220} height={60}></canvas>
@@ -1668,16 +1747,21 @@ function DebentureFormContent() {
                 >
                   <QrCode className="w-3 h-3 mr-1" /> Sign via Mobile QR
                 </button>
+                <label
+                  htmlFor="sigUploadInput"
+                  className="cursor-pointer inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                >
+                  <Upload className="w-3 h-3 mr-1" /> Upload Image
+                </label>
+                <input
+                  type="file"
+                  id="sigUploadInput"
+                  accept="image/png, image/jpeg"
+                  className="hidden"
+                  onChange={handleSignatureUpload}
+                />
               </div>
             </div>
-          </div>
-          <div style={{ fontSize: "12px", marginTop: "10px" }}>
-            Date :
-            <span className="date-trio">
-              <input type="text" maxLength={2} placeholder="DD" name="declDay" value={form.declDay} onChange={(e) => setForm({ ...form, declDay: e.target.value })} />/
-              <input type="text" maxLength={2} placeholder="MM" name="declMonth" value={form.declMonth} onChange={(e) => setForm({ ...form, declMonth: e.target.value })} />/
-              <input type="text" maxLength={4} placeholder="YYYY" style={{ width: "44px" }} name="declYear" value={form.declYear} onChange={(e) => setForm({ ...form, declYear: e.target.value })} />
-            </span>
           </div>
         </div>
 
@@ -1991,6 +2075,72 @@ function DebentureFormContent() {
                 >
                   {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                   {copiedLink ? "Copied" : "Copy Link"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signature Crop Modal */}
+      {cropModalOpen && cropImageSrc && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-bold text-lg text-zinc-900">Crop Signature</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setCropModalOpen(false);
+                  setCropImageSrc(null);
+                }}
+                className="text-zinc-500 hover:text-black rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="relative w-full h-[300px] bg-zinc-900">
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={3 / 1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+              />
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-zinc-600">Zoom</label>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  aria-labelledby="Zoom"
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCropModalOpen(false);
+                    setCropImageSrc(null);
+                  }}
+                  className="px-4 py-2 text-sm font-bold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCropConfirm}
+                  className="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-md"
+                >
+                  Crop & Upload
                 </button>
               </div>
             </div>
