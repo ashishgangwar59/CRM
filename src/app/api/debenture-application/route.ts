@@ -278,7 +278,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Debenture Application API Error:", error);
     if (error.code === 11000) {
-      return NextResponse.json({ error: "This Email or Application Number is already registered. DB_ERROR: " }, { status: 400 });
+      return NextResponse.json({ error: `This Email or Application Number is already registered. DB_ERROR: ${error.message}` }, { status: 400 });
     }
     return NextResponse.json({ error: error.message || "Failed to submit application." }, { status: 400 });
   }
