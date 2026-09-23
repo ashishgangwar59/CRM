@@ -359,7 +359,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                       <div><b>Investor Name</b><span>:</span>
                         <p>{investor.fullName}</p>
                       </div>
-                      <div><b>Father's Name</b><span>:</span>
+                      <div><b>Father's Name/Spouse Name</b><span>:</span>
                         <p>{fatherName}</p>
                       </div>
                       <div><b>Address</b><span>:</span>
