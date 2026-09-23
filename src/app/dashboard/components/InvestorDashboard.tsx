@@ -221,7 +221,7 @@ export function InvestorDashboard() {
   if (!investor) return <div className="p-8">Investor profile not found. Please log in again.</div>;
 
   const monthlyReturnAmount = investor.status === "Verified" ? (investor.investmentAmount * (investor.monthlyGrowthPercentage || 2.5)) / 100 : 0;
-  
+
   const investmentDate = investor.investmentDate ? new Date(investor.investmentDate) : null;
   const maturityDate = investor.bondMaturityDate ? new Date(investor.bondMaturityDate) : null;
   let durationDays = 0;
@@ -251,7 +251,7 @@ export function InvestorDashboard() {
         <Button
           variant="outline"
           onClick={() => setShowQuickModal(true)}
-          className="border-amber-500 text-white hover:bg-amber-50"
+          className="border-amber-500 text-white "
         >
           + Add New Investment
         </Button>
