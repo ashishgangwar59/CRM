@@ -15,6 +15,9 @@ export default function AdminInvestorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+  const [filterDays, setFilterDays] = useState("");
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -111,7 +114,7 @@ export default function AdminInvestorsPage() {
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}&page=${page}&limit=${limit}`;
+      const query = `?search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -139,11 +142,11 @@ export default function AdminInvestorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, limit]);
+  }, [search, statusFilter, filterDate, filterMonth, filterDays, limit]);
 
   useEffect(() => {
     fetchInvestors();
-  }, [search, statusFilter, page, limit]);
+  }, [search, statusFilter, filterDate, filterMonth, filterDays, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,10 +265,10 @@ export default function AdminInvestorsPage() {
     }
   };
 
-  const exportToExcel = async () => {
+    const exportToExcel = async () => {
     try {
       // Fetch ALL data matching current filters by setting a huge limit
-      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}`);
+      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}`);
       const json = await res.json();
 
       let dataToExport: any[] = [];
@@ -360,66 +363,123 @@ export default function AdminInvestorsPage() {
       </div>
 
       {/* Search & Filter Controls */}
-      <div className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
-          <Input
-            placeholder="Search Investor Name, Email, Phone, Code..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      <div className="flex flex-col gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-col xl:flex-row items-center gap-4 w-full">
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+            <Input
+              placeholder="Search Investor Name, Email, Phone, Code..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+  
+          <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+            <Button
+              variant={statusFilter === "" ? "default" : "outline"}
+              onClick={() => setStatusFilter("")}
+              size="sm"
+              className="cursor-pointer"
+            >
+              All Status
+            </Button>
+            <Button
+              variant={statusFilter === "Pending" ? "default" : "outline"}
+              onClick={() => setStatusFilter("Pending")}
+              size="sm"
+              className="text-amber-600 cursor-pointer"
+            >
+              Pending
+            </Button>
+            <Button
+              variant={statusFilter === "Verified" ? "default" : "outline"}
+              onClick={() => setStatusFilter("Verified")}
+              size="sm"
+              className="text-emerald-600 cursor-pointer"
+            >
+              Verified
+            </Button>
+            <Button
+              variant={statusFilter === "Rejected" ? "default" : "outline"}
+              onClick={() => setStatusFilter("Rejected")}
+              size="sm"
+              className="text-rose-600 cursor-pointer"
+            >
+              Rejected
+            </Button>
+            <Button
+              variant={statusFilter === "DebentureForms" ? "default" : "outline"}
+              onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
+              size="sm"
+              className="text-white bg-[#134086] cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5 mr-1" /> Debenture Forms
+            </Button>
+            <Button
+              onClick={exportToExcel}
+              size="sm"
+              className="text-white bg-[#00a65a] hover:bg-[#008f4d] cursor-pointer shadow-md"
+              title="Export filtered data to CSV/Excel"
+            >
+              <FileText className="w-3.5 h-3.5 mr-1" /> Export to Excel
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button
-            variant={statusFilter === "" ? "default" : "outline"}
-            onClick={() => setStatusFilter("")}
-            size="sm"
-            className="cursor-pointer"
-          >
-            All Status
-          </Button>
-          <Button
-            variant={statusFilter === "Pending" ? "default" : "outline"}
-            onClick={() => setStatusFilter("Pending")}
-            size="sm"
-            className="text-amber-600 cursor-pointer"
-          >
-            Pending
-          </Button>
-          <Button
-            variant={statusFilter === "Verified" ? "default" : "outline"}
-            onClick={() => setStatusFilter("Verified")}
-            size="sm"
-            className="text-emerald-600 cursor-pointer"
-          >
-            Verified
-          </Button>
-          <Button
-            variant={statusFilter === "Rejected" ? "default" : "outline"}
-            onClick={() => setStatusFilter("Rejected")}
-            size="sm"
-            className="text-rose-600 cursor-pointer"
-          >
-            Rejected
-          </Button>
-          <Button
-            variant={statusFilter === "DebentureForms" ? "default" : "outline"}
-            onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
-            size="sm"
-            className="text-white bg-[#134086] cursor-pointer"
-          >
-            <FileText className="w-3.5 h-3.5 mr-1" /> Debenture Forms
-          </Button>
-          <Button
-            onClick={exportToExcel}
-            size="sm"
-            className="text-white bg-[#00a65a] hover:bg-[#008f4d] cursor-pointer shadow-md"
-            title="Export filtered data to CSV/Excel"
-          >
-            <FileText className="w-3.5 h-3.5 mr-1" /> Export to Excel
-          </Button>
+        <div className="flex flex-wrap items-center gap-4 w-full border-t dark:border-zinc-800 pt-4">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Filter by Days:</Label>
+            <select
+              className="text-sm border rounded-md px-3 py-1.5 bg-transparent dark:border-zinc-800 outline-none focus:ring-2 focus:ring-indigo-500"
+              value={filterDays}
+              onChange={(e) => {
+                setFilterDays(e.target.value);
+                setFilterDate("");
+                setFilterMonth("");
+              }}
+            >
+              <option value="">All Time</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="last7">Last 7 Days</option>
+              <option value="last30">Last 30 Days</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Or by Month:</Label>
+            <Input
+              type="month"
+              className="h-9 w-40 text-sm"
+              value={filterMonth}
+              onChange={(e) => {
+                setFilterMonth(e.target.value);
+                setFilterDate("");
+                setFilterDays("");
+              }}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Or Exact Date:</Label>
+            <Input
+              type="date"
+              className="h-9 w-40 text-sm"
+              value={filterDate}
+              onChange={(e) => {
+                setFilterDate(e.target.value);
+                setFilterMonth("");
+                setFilterDays("");
+              }}
+            />
+          </div>
+          
+          {(filterDays || filterMonth || filterDate) && (
+            <Button variant="ghost" size="sm" onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); }} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 ml-auto">
+              Clear Filters
+            </Button>
+          )}
         </div>
       </div>
 
@@ -965,7 +1025,7 @@ export default function AdminInvestorsPage() {
                       </Button>
                       {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (role === "ADMIN" || role === "KEY_ADMIN") && (
                         <Button
-                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md"
+                          className="bg-amber-500 hover:bg-amber-600 text-white font-black shadow-md"
                           onClick={() => setBondModalInvestor(selectedInvestor)}
                         >
                           <Award className="w-4 h-4 mr-2" /> Download Payment Bond (PDF)

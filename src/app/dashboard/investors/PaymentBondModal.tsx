@@ -3,7 +3,89 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, ShieldCheck, X, Printer } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
+
+const bondStyles = `
+        @page { size: A4 landscape; margin: 0; }
+        :root { --navy: #134086; --gold: #c6a14f; --ink: #134086; --paper: #fffdf2; }
+        * { box-sizing: border-box; }
+        .certificate-wrapper { display: flex; justify-content: center; align-items: flex-start; padding: 15px; font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
+        .certificate { position: relative;  overflow: hidden; padding: 27px 30px 10px; background: radial-gradient(ellipse at 20% 20%, rgba(207, 178, 101, .10), transparent 38%), radial-gradient(ellipse at 80% 75%, rgba(207, 178, 101, .09), transparent 35%), repeating-linear-gradient(0deg, rgba(132, 98, 30, .025) 0 1px, transparent 1px 4px), var(--paper); border: 8px solid var(--navy); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 0 5px #f7e9b9, inset 0 0 0 7px var(--gold); }
+        .certificate::before, .certificate::after { content: ""; position: absolute; pointer-events: none; border: 1px solid var(--gold); }
+        .certificate::before { inset: 10px; }
+        .certificate::after { inset: 14px; border-color: rgba(198, 161, 79, .55); }
+        .ornament { position: absolute; z-index: 5; color: var(--gold); font-family: Georgia, serif; font-size: 65px; line-height: .7; text-shadow: 1px 1px #f8e9b2; }
+        .ornament-tl { top: 5px; left: -3px; transform: rotate(-17deg); }
+        .ornament-tr { top: 5px; right: -3px; transform: scaleX(-1) rotate(-17deg); }
+        .ornament-bl { bottom: 2px; left: -3px; transform: scaleY(-1) rotate(-17deg); }
+        .ornament-br { bottom: 2px; right: -3px; transform: scale(-1) rotate(-17deg); }
+        .header { position: relative; z-index: 2; display: grid; grid-template-columns: 135px 1fr 205px; align-items: center; gap: 8px; height: 125px; }
+        .logo { position: relative; width: 105px; height: 105px; margin-left: 26px; font-family: Arial, sans-serif; font-weight: 800; }
+        .logo-ring { position: absolute; }
+        .logo img { position: absolute; width: 100%; max-width: 100%; border-radius: 50%; }
+        .company { text-align: center; }
+        .company h1 { margin: 0; color: var(--navy); font-size: 31px; font-weight: 700; line-height: 1.08; white-space: nowrap; }
+        .tagline { margin: 7px 0 5px; color: #997331; font-size: 19px; white-space: nowrap; }
+        .tag-line { display: inline-block; width: 58px; margin: 0 13px 5px; border-top: 1px solid #b89b62; }
+        .tag-separator { display: inline-block; width: 35px; margin: 0 8px 5px; border-top: 1px solid #b89b62; }
+        .company p { margin: 0; font-family: Arial, sans-serif; font-size: 9px; white-space: nowrap; }
+        .company p b { margin: 0 5px; }
+        .bond-meta { padding: 8px 10px; border: 1px solid #c9ad6c; border-radius: 8px; background: rgba(255, 248, 218, .55); font-family: Arial, sans-serif; font-size: 11px; }
+        .bond-meta div { display: grid; grid-template-columns: 76px 1fr; gap: 3px; margin: 4px 0; }
+        .bond-meta b { font-weight: 700; }
+        .ribbon { position: relative; z-index: 2; display: grid; grid-template-columns: 45px 1fr 45px; align-items: center; margin: 4px 20px 9px; padding: 8px 12px 7px; border: 2px solid var(--gold); border-radius: 35px; background: linear-gradient(#0b3d5e, #042c49); box-shadow: inset 0 0 0 2px #092940; text-align: center; color: #f5e5af; }
+        .ribbon h2 { margin: 0; font-size: 25px; line-height: 1; letter-spacing: .5px; }
+        .ribbon h3 { margin: 5px 0 0; font-size: 16px; line-height: 1; letter-spacing: 6px; }
+        .ribbon-flourish { font-size: 28px; color: #e6c56a; }
+        .intro { position: relative; z-index: 2; margin: 0 0 8px; text-align: center; font-size: 12px; line-height: 1.35; }
+        .intro p { margin: 2px 0; }
+        .intro strong { font-size: 13px; letter-spacing: .2px; }
+        .principal { display: inline-block; margin: 4px 0; padding: 1px 13px; color: var(--navy); background: #f3e4b1; border-radius: 3px; font-size: 20px; font-weight: 700; }
+        .principal small { font-size: 10px; font-weight: 400; margin-left: 6px; }
+        .main-grid { position: relative; z-index: 2; display: grid; grid-template-columns: 1.03fr 1fr; gap: 12px; }
+        .panel { position: relative; height: 365px; border: 1px solid #c8aa61; border-radius: 8px; background: rgba(255, 253, 243, .48); }
+        .panel-title { display: inline-block; margin: -9px 0 5px -1px; padding: 4px 18px 5px; border: 1px solid #d3b56b; border-radius: 12px 12px 12px 2px; background: linear-gradient(#0b405f, #082d49); color: #f6e7b7; font-size: 14px; font-weight: 700; letter-spacing: 1.1px; }
+        .details { padding: 0 10px 8px; }
+        .detail-table { font-family: Arial, sans-serif; font-size: 10px; }
+        .detail-table > div { display: grid; grid-template-columns: 145px 13px 1fr; gap: 0; padding: 2.6px 0; border-bottom: 1px solid rgba(181, 151, 87, .18); }
+        .detail-table b { font-weight: 700; }
+        .detail-table span { text-align: center; }
+        .detail-table p { margin: 0; line-height: 1.22; }
+        .acknowledgement { margin: 8px 0 3px; font-family: Arial, sans-serif; font-size: 10px; line-height: 1.25; }
+        .issuer { margin-top: 5px; font-size: 11px; font-weight: 700; }
+        .left-signature { position: absolute; left: 28px; bottom: 1px; text-align: center; }
+        .hand-sign { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 27px; font-style: italic; color: #153e68; line-height: 1; }
+        .sign-line { width: 160px; border-top: 1px solid #75828a; }
+        .sign-label { width: 160px; font-family: Arial, sans-serif; font-size: 9px; font-weight: 700; line-height: 1.25; }
+        .sign-label span { font-weight: 400; }
+        .seal { position: absolute; right: 14px; bottom: 9px; width: 99px; height: 99px; padding: 5px; }
+        .seal-inner { width: 100%; height: 100%; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .seal-inner img { width: 100%; max-width: 100%; transform: scale(0.9); }
+        .seal-top { font-family: Arial, sans-serif; font-size: 5px; letter-spacing: .2px; }
+        .seal b { font-family: Arial, sans-serif; font-size: 27px; line-height: 1; }
+        .seal small { font-family: Arial, sans-serif; font-size: 7px; letter-spacing: 1px; color: #666; }
+        .seal-stars { font-size: 7px; margin-top: 4px; color: #666; }
+        .terms { padding: 0 12px 8px; }
+        .terms-list { margin: 0 0 8px 17px; padding: 0; font-family: Arial, sans-serif; font-size: 9.2px; }
+        .terms-list li { padding: 15px 0 3px 2px; line-height: 1.21; color: #134086; }
+        .terms-list li b { display: inline-block; width: 72px; vertical-align: top; }
+        .terms-list li span { display: inline-block; width: calc(100% - 78px); vertical-align: top; }
+        .note { padding: 7px 8px; border: 1px solid #c5a55e; border-radius: 5px; background: rgba(255, 248, 213, .4); font-family: Arial, sans-serif; font-size: 8.5px; line-height: 1.25; display: none; }
+        .right-signature { position: absolute; left: 126px; bottom: 10px; text-align: center; }
+        .right-signature .hand-sign { margin-bottom: 1px; }
+        .right-signature .sign-line { width: 145px; }
+        .right-signature .sign-label { width: 145px; }
+        .qr { position: absolute; right: 9px; bottom: 8px; width: 64px; text-align: center; font-family: Arial, sans-serif; font-size: 7px; color: #1c3448; line-height: 1.15; }
+        .qr-pattern { position: relative; width: 64px; height: 64px; margin: 0 auto 2px; }
+        .footer { position: relative; z-index: 2; margin-top: 10px; padding: 6px 12px; border-top: 2px solid #d4b468; border-bottom: 2px solid #d4b468; background: linear-gradient(#134086, #134086); color: #f3e2ad; text-align: center; font-size: 10px; letter-spacing: .55px; }
+        .footer span { margin: 0 8px; }
+        @media print {
+            html, body { width: 297mm; height: 209mm; min-height: 0; margin: 0; padding: 0; background: #fff; overflow: hidden; page-break-inside: avoid; }
+            .certificate-wrapper { padding: 0 !important; margin: 0 !important; background: transparent; page-break-inside: avoid; }
+            .certificate { width: 297mm; height: 209mm; max-height: 209mm; transform: none; box-shadow: none; margin: 0; padding: 10px; overflow: hidden; page-break-inside: avoid; }
+        }
+`;
+
 
 interface PaymentBondModalProps {
   investor: any;
@@ -80,7 +162,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
     periodText = `${days} Days (${maturityPeriodMonths} Months)`;
   }
   const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-  
+
   const interestAmount = Math.round(principalAmount * ((growthRate * 12) / 365 / 100) * days);
   const maturityAmount = principalAmount + interestAmount;
 
@@ -129,115 +211,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   <meta charset="UTF-8" />
   <title>Payment Bond - ${investor.fullName}</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: white; font-family: Georgia, serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page { size: A4; margin: 0; }
-    @media print {
-      body { margin: 0; }
-      .no-print { display: none !important; }
-    }
-    .font-serif { font-family: Georgia, 'Times New Roman', serif; }
-    .font-sans { font-family: Arial, Helvetica, sans-serif; }
-    .font-mono { font-family: 'Courier New', Courier, monospace; }
-    .uppercase { text-transform: uppercase; }
-    .text-center { text-align: center; }
-    .font-black { font-weight: 900; }
-    .font-bold { font-weight: 700; }
-    .font-semibold { font-weight: 600; }
-    .italic { font-style: italic; }
-    .flex { display: flex; }
-    .grid { display: grid; }
-    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .gap-4 { gap: 1rem; }
-    .items-center { align-items: center; }
-    .items-end { align-items: flex-end; }
-    .justify-between { justify-content: space-between; }
-    .justify-center { justify-content: center; }
-    .flex-col { flex-direction: column; }
-    .flex-1 { flex: 1 1 0%; }
-    .relative { position: relative; }
-    .absolute { position: absolute; }
-    .inset-0 { top:0; right:0; bottom:0; left:0; }
-    .w-full { width: 100%; }
-    .h-full { height: 100%; }
-    .overflow-hidden { overflow: hidden; }
-    .rounded-full { border-radius: 9999px; }
-    .rounded-md { border-radius: 0.375rem; }
-    .rounded-sm { border-radius: 0.125rem; }
-    .border { border-width: 1px; border-style: solid; }
-    .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
-    .border-2 { border-width: 2px; border-style: solid; }
-    .pointer-events-none { pointer-events: none; }
-    .select-none { user-select: none; }
-    .opacity-\\[0\\.04\\] { opacity: 0.04; }
-    .tracking-tight { letter-spacing: -0.025em; }
-    .tracking-wider { letter-spacing: 0.05em; }
-    .tracking-widest { letter-spacing: 0.1em; }
-    .tracking-tighter { letter-spacing: -0.05em; }
-    .space-x-2 > * + * { margin-left: 0.5rem; }
-    .space-y-0\\.5 > * + * { margin-top: 0.125rem; }
-    .space-y-2 > * + * { margin-top: 0.5rem; }
-    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
-    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
-    .px-4 { padding-left: 1rem; padding-right: 1rem; }
-    .py-0\\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
-    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-    .py-1\\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
-    .p-1 { padding: 0.25rem; }
-    .p-2 { padding: 0.5rem; }
-    .p-3 { padding: 0.75rem; }
-    .p-4 { padding: 1rem; }
-    .my-3 { margin-top: 0.75rem; margin-bottom: 0.75rem; }
-    .mt-0\\.5 { margin-top: 0.125rem; }
-    .mb-1 { margin-bottom: 0.25rem; }
-    .mb-2 { margin-bottom: 0.5rem; }
-    .mb-3 { margin-bottom: 0.75rem; }
-    .pb-3 { padding-bottom: 0.75rem; }
-    .pb-1 { padding-bottom: 0.25rem; }
-    .pt-0\\.5 { padding-top: 0.125rem; }
-    .w-16 { width: 4rem; } .h-16 { height: 4rem; }
-    .w-28 { width: 7rem; }
-    .w-32 { width: 8rem; }
-    .text-\\[7px\\] { font-size: 7px; }
-    .text-\\[9px\\] { font-size: 9px; }
-    .text-\\[10px\\] { font-size: 10px; }
-    .text-xs { font-size: 0.75rem; }
-    .text-sm { font-size: 0.875rem; }
-    .text-2xl { font-size: 1.5rem; }
-    .text-\\[280px\\] { font-size: 280px; }
-    .bg-\\[\\#fdfbf7\\] { background-color: #fdfbf7; }
-    .bg-\\[\\#fffdfa\\] { background-color: #fffdfa; }
-    .bg-\\[\\#0a192f\\] { background-color: #0a192f; }
-    .bg-\\[\\#134086\\] { background-color: #134086; }
-    .bg-white { background-color: white; }
-    .bg-amber-50\\/20 { background-color: rgba(255,251,235,0.2); }
-    .bg-amber-50\\/40 { background-color: rgba(255,251,235,0.4); }
-    .bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--tw-gradient-stops)); }
-    .from-\\[\\#dfb76c\\] { --tw-gradient-from: #dfb76c; }
-    .via-\\[\\#c5a059\\] { --tw-gradient-stops: var(--tw-gradient-from), #c5a059, var(--tw-gradient-to, rgba(197,160,89,0)); }
-    .to-\\[\\#997327\\] { --tw-gradient-to: #997327; }
-    .from-\\[\\#b8860b\\] { --tw-gradient-from: #b8860b; }
-    .to-\\[\\#785404\\] { --tw-gradient-to: #785404; }
-    .text-\\[\\#0a192f\\] { color: #0a192f; }
-    .text-\\[\\#c5a059\\] { color: #c5a059; }
-    .text-white { color: white; }
-    .text-slate-900 { color: #0f172a; }
-    .text-slate-800 { color: #1e293b; }
-    .text-slate-700 { color: #334155; }
-    .text-slate-500 { color: #64748b; }
-    .text-amber-100 { color: #fef3c7; }
-    .text-rose-700 { color: #be123c; }
-    .border-\\[\\#0a192f\\] { border-color: #0a192f; }
-    .border-\\[\\#c5a059\\] { border-color: #c5a059; }
-    .border-amber-200 { border-color: #fde68a; }
-    .border-amber-200\\/80 { border-color: rgba(253,230,138,0.8); }
-    .border-amber-200\\/60 { border-color: rgba(253,230,138,0.6); }
-    .border-amber-100 { border-color: #fef3c7; }
-    .border-slate-100 { border-color: #f1f5f9; }
-    .border-zinc-300 { border-color: #d4d8e0; }
-    .border-\\[8px\\] { border-width: 8px; }
-    .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+    ${bondStyles}
   </style>
 </head>
 <body>
@@ -278,15 +252,15 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   }, [autoDownload, handlePrintPDF]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-xl max-w-4xl w-full flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-white/50 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-white border border-zinc-700 rounded-xl max-w-6xl w-full flex flex-col max-h-[95vh] shadow-2xl overflow-hidden">
 
         {/* Modal Header Bar */}
-        <div className="flex justify-between items-center border-b border-zinc-800 pb-4 px-4 pt-4 shrink-0 bg-zinc-900 rounded-t-xl">
+        <div className="flex justify-between items-center border-b border-zinc-800 pb-4 px-4 pt-4 shrink-0 bg-white rounded-t-xl">
           <div className="flex items-center space-x-2 text-emerald-400 font-bold">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            <span className="text-lg text-white">Payment Bond Certificate</span>
-            <span className="text-xs bg-emerald-950 text-emerald-300 border border-emerald-700/50 px-2.5 py-0.5 rounded-full font-mono">
+            <span className="text-lg text-[#134086]">Payment Bond Certificate</span>
+            <span className="text-xs bg-[#134086] text-white px-2.5 py-0.5 rounded-full font-mono">
               VERIFIED & APPROVED
             </span>
           </div>
@@ -294,7 +268,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
             <Button
               onClick={handlePrintPDF}
               disabled={printing}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-lg"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-black shadow-lg"
             >
               <Printer className="w-4 h-4 mr-2" />
               {printing ? "Opening Print Dialog..." : "Download Bond PDF"}
@@ -306,334 +280,174 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
         </div>
 
         {/* Modal Body (Scrollable) */}
-        <div className="overflow-y-auto p-4 flex-1 space-y-4">
+        <div className="overflow-y-auto p-1 flex-1 space-y-1">
 
           {/* Auto-download status banner */}
           {autoDownloadStatus === "pending" && (
-            <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-2.5 text-amber-300 text-sm font-semibold animate-pulse">
+            <div className="flex items-center gap-3 bg-white/10 border border-amber-500/30 rounded-lg px-4 py-2.5 text-amber-300 text-sm font-semibold animate-pulse">
               <Download className="w-4 h-4 shrink-0" />
               Generating your Payment Bond PDF... please wait
             </div>
           )}
           {autoDownloadStatus === "done" && (
-            <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-emerald-300 text-sm font-semibold">
+            <div className="flex items-center gap-3 bg-emerald-500/60 border border-emerald-500/30 rounded-lg px-4 py-2.5 text-black text-sm font-semibold">
               <ShieldCheck className="w-4 h-4 shrink-0" />
               PDF Downloaded Successfully! Bond saved to your device.
             </div>
           )}
 
           {/* Printable Bond Container */}
-          <div className="overflow-x-auto flex justify-center py-2 bg-zinc-950 rounded-lg">
+          <div className="overflow-auto flex justify-center py-1 bg-white rounded-lg">
             <div
               ref={bondRef}
-              className="relative bg-[#fdfbf7] text-slate-900 shadow-2xl overflow-hidden font-serif"
-              style={{
-                width: "794px",
-                minHeight: "1123px",
-                padding: "24px",
-                boxSizing: "border-box"
-              }}
+              className="certificate-wrapper"
+              style={{ background: "#fff", transformOrigin: "top center", marginBottom: "-150px" }}
             >
-              {/* Outer Royal Gold & Navy Border Frame */}
-              <div className="w-full h-full border-[8px] border-[#0a192f] p-2 relative rounded-sm shadow-inner bg-[#fffdfa]">
-                <div className="w-full h-full border-2 border-[#c5a059] p-4 relative">
+              <style dangerouslySetInnerHTML={{ __html: bondStyles }} />
+              <main className="certificate">
 
-                  {/* Background Watermark NC Emblem */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none select-none">
-                    <div className="text-[280px] font-black text-[#0a192f] tracking-tighter">NC</div>
+
+                <header className="header">
+                  <div className="logo" aria-label="NC logo">
+                    <div className="logo-ring"></div>
+                    <img src={logoBase64} alt="Company Logo" crossOrigin="anonymous" />
                   </div>
 
-                  {/* Top Header Layout */}
-                  <div className="flex justify-between items-center mb-3 border-b border-[#c5a059]/40 pb-3">
-
-                    {/* Left Gold Emblem Ribbon */}
-                    <div className="w-28 text-center flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-b from-[#dfb76c] via-[#c5a059] to-[#997327] p-[2px] shadow-md flex items-center justify-center">
-                        <div className="w-full h-full rounded-full border border-amber-100 flex flex-col items-center justify-center bg-gradient-to-b from-[#b8860b] to-[#785404] text-white p-1 text-center">
-                          <span className="text-[7px] font-bold leading-tight uppercase tracking-tighter text-amber-100">BUILDING WEALTH</span>
-                          <span className="text-[7px] font-bold leading-tight uppercase tracking-tighter text-amber-100">CREATING FUTURES</span>
-                        </div>
-                      </div>
+                  <section className="company">
+                    <h1>{settings?.companyProfile?.name || "Niventra Capital Advisory India Pvt Ltd"}</h1>
+                    <div className="tagline">
+                      <span className="tag-line"></span>
+                      Invest Today
+                      <span className="tag-separator"></span>
+                      Prosper Tomorrow
+                      <span className="tag-line"></span>
                     </div>
+                    <p>
+                      {settings?.data?.companyProfile?.address}
+                    </p>
+                  </section>
 
-                    {/* Center Brand Heading */}
-                    <div className="text-center flex-1 px-2">
-                      <div className="flex justify-center mb-1">
-                        {/* Brand Icon Logo */}
-                        <div className="w-18 h-18 rounded-full bg-[#0a192f] flex items-center justify-center border-2 border-[#c5a059] shadow-md">
-                          <img src={logoBase64}
-                            style={{
-                              width: "64px",
-                              height: "64px",
-                              objectFit: "contain",
-                              display: "block"
-                            }}
-                            alt="Logo" className="w-full h-full rounded-full object-cover" crossOrigin="anonymous" />
-                        </div>
-                      </div>
-                      <h1 className="text-2xl font-black tracking-tight text-[#0a192f] font-serif uppercase">
-                        {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."}
-                      </h1>
-                      <p className="text-[10px] tracking-widest font-sans font-bold text-[#c5a059] uppercase mt-0.5">
-                        — INVEST TODAY • PROSPER TOMORROW —
-                      </p>
-                    </div>
+                  <section className="bond-meta">
+                    <div><b>Bond No.</b><span>{bondNo}</span></div>
+                    <div><b>Issue Date</b><span>{issueDateStr}</span></div>
+                    <div><b>Maturity Date</b><span>{maturityDateStr}</span></div>
+                  </section>
+                </header>
 
-                    {/* Right Gold Trust Shield & QR Code */}
-                    {/* <div className="w-32 flex flex-col items-end">
-                    <div className="flex items-center space-x-2">
-                      <div className="text-center">
-                        <QRCodeSVG
-                          value={`BOND:${bondNo}|INV:${investor.fullName}|AMT:${principalAmount}|DATE:${issueDateStr}`}
-                          size={56}
-                          bgColor="#ffffff"
-                          fgColor="#0a192f"
-                          level="M"
-                          className="border border-zinc-300 p-0.5 rounded shadow-sm bg-white"
-                        />
-                        <span className="text-[7px] font-sans font-bold text-slate-600 block mt-0.5">SCAN TO VERIFY</span>
-                      </div>
-                    </div>
-                  </div> */}
+                <section className="ribbon">
+                  <div className="ribbon-flourish">✦</div>
+                  <div>
+                    <h2>SECURED NON-CONVERTIBLE DEBENTURE</h2>
+                    <h3>B O N D &nbsp; C E R T I F I C A T E</h3>
                   </div>
+                  <div className="ribbon-flourish">✦</div>
+                </section>
 
-                  {/* Bond Header Metadata */}
-                  <div className="flex justify-between items-center text-xs font-sans font-bold text-slate-800 mb-2 px-2 border-y border-amber-200/60 py-1.5 bg-amber-50/40">
-                    <div className="space-y-0.5">
-                      <p><span className="text-slate-500">BOND NO.</span> : <span className="text-rose-700 font-mono font-bold text-sm">{bondNo}</span></p>
-                      <p><span className="text-slate-500">ISSUE DATE</span> : <span>{issueDateStr}</span></p>
-                    </div>
+                <section className="intro">
+                  <p>This is to certify that the bearer is the registered holder of a Secured Non-Convertible Debenture issued by</p>
+                  <strong>{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</strong>
+                  <p>hereinafter referred to as the “Company” for the principal sum of</p>
+                  <div className="principal">₹ {principalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/- <small>(Rupees {numberToWords(principalAmount)} Only)</small></div>
+                  <p>on the terms and conditions set out herein and in the Debenture Trust Deed / Offer Document.</p>
+                </section>
 
-                    <div className="text-center">
-                      <h2 className="text-2xl font-black text-[#c5a059] tracking-wider font-serif uppercase drop-shadow-xs">
-                        PAYMENT BOND
-                      </h2>
-                      <div className="inline-block bg-[#134086] text-[#c5a059] text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest mt-0.5">
-                        ✦ INVESTMENT ACKNOWLEDGEMENT ✦
+                <section className="main-grid">
+                  <section className="details panel">
+                    <div className="panel-title">BOND DETAILS</div>
+
+                    <div className="detail-table">
+                      <div><b>Investor Name</b><span>:</span>
+                        <p>{investor.fullName}</p>
+                      </div>
+                      <div><b>Father's Name</b><span>:</span>
+                        <p>{fatherName}</p>
+                      </div>
+                      <div><b>Address</b><span>:</span>
+                        <p>{address}</p>
+                      </div>
+                      <div><b>Mobile No.</b><span>:</span>
+                        <p>{investor.phone}</p>
+                      </div>
+                      <div><b>Email ID</b><span>:</span>
+                        <p>{investor.email || "N/A"}</p>
+                      </div>
+                      <div><b>Nominee Name</b><span>:</span>
+                        <p>{nomineeName}</p>
+                      </div>
+                      <div><b>Nominee Relation</b><span>:</span>
+                        <p>{nomineeRelation}{nomineeAge ? ` (${nomineeAge})` : ""}</p>
+                      </div>
+                      <div><b>Principal Amount</b><span>:</span>
+                        <p>₹ {principalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/- (Rupees {numberToWords(principalAmount)} Only)</p>
+                      </div>
+                      <div><b>Maturity Period</b><span>:</span>
+                        <p>{periodText}</p>
+                      </div>
+                      <div><b>Amount Payable on Maturity</b><span>:</span>
+                        <p>₹ {maturityAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/- (Rupees {numberToWords(maturityAmount)} Only)</p>
                       </div>
                     </div>
 
-                    <div className="text-right space-y-0.5">
-                      <p><span className="text-slate-500">REFERENCE NO.</span> : <span>{refNo}</span></p>
-                    </div>
-                  </div>
+                    <p className="acknowledgement">
+                      For value received, the Company hereby acknowledges the terms of this Secured Non-Convertible Debenture Certificate and agrees to abide by the terms and conditions mentioned herein and in the Debenture Trust Deed.
+                    </p>
 
-                  {/* Certificate Main Receipt Statement */}
-                  <div className="text-center px-6 py-2 my-2 font-serif text-xs leading-relaxed text-slate-800 italic bg-white border border-amber-100 rounded">
-                    This is to certify that <strong className="text-[#0a192f] not-italic">{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."}</strong> has received an amount of <strong className="text-slate-900 not-italic">₹{principalAmount.toLocaleString()}/- ({numberToWords(principalAmount)} Rupees Only)</strong> from the investor named below on the terms and conditions mentioned herein.
-                  </div>
+                    <div className="issuer">For {settings?.companyProfile?.name || "Niventra Capital Advisory India Pvt Ltd"}</div>
 
-                  {/* Grid Section: Investor Info & Investment Details */}
-                  <div className="grid grid-cols-2 gap-4 my-3">
+                    {/* <div className="left-signature">
+                      <div className="hand-sign">Deepak Dayal</div>
+                      <div className="sign-line"></div>
+                      <div className="sign-label">Authorised Signatory<br /><span>(Director)</span></div>
+                    </div> */}
 
-                    {/* Left Column: Investor Information */}
-                    <div className="border border-amber-200 rounded-md overflow-hidden bg-white shadow-xs">
-                      <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
-                        ✦ INVESTOR INFORMATION ✦
-                      </div>
-                      <div className="p-3 text-xs font-sans space-y-2">
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Investor Name</span>
-                          <span className="font-bold text-slate-900 uppercase">{investor.fullName}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Father's Name</span>
-                          <span className="font-bold text-slate-900 uppercase">{fatherName}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Address</span>
-                          <span className="font-bold text-slate-900 text-right max-w-[160px] truncate">{address}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Mobile No.</span>
-                          <span className="font-bold text-slate-900">{investor.phone}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Email ID</span>
-                          <span className="font-bold text-slate-900">{investor.email}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Nominee Name</span>
-                          <span className="font-bold text-slate-900 uppercase">{nomineeName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Nominee Relation</span>
-                          <span className="font-bold text-slate-900 uppercase">{nomineeRelation}{nomineeAge ? ` (${nomineeAge})` : ""}</span>
-                        </div>
+                    <div className="seal">
+                      <div className="seal-inner">
+                        <img src={sealBase64} alt="Company Seal" crossOrigin="anonymous" />
+
                       </div>
                     </div>
+                  </section>
 
-                    {/* Right Column: Investment Details */}
-                    <div className="border border-amber-200 rounded-md overflow-hidden bg-white shadow-xs">
-                      <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
-                        ✦ INVESTMENT DETAILS ✦
-                      </div>
-                      <div className="p-3 text-xs font-sans space-y-2">
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Principal Amount</span>
-                          <span className="font-bold text-slate-900">₹{principalAmount.toLocaleString()}/-</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Investment Date</span>
-                          <span className="font-bold text-slate-900">{issueDateStr}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Maturity Period</span>
-                          <span className="font-bold text-slate-900">{periodText}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-100 pb-1">
-                          <span className="text-slate-500 font-medium">Maturity Date</span>
-                          <span className="font-bold text-slate-900">{maturityDateStr}</span>
-                        </div>
-                        <div className="flex justify-between pt-0.5">
-                          <span className="text-slate-700 font-bold">Amount Payable on Maturity</span>
-                          <span className="font-black text-rose-700 text-sm">₹{maturityAmount.toLocaleString()}/-</span>
-                        </div>
-                        <p className="text-[9px] text-rose-600 font-semibold italic text-right">
-                          (Rupees {numberToWords(maturityAmount)} Only)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <section className="terms panel">
+                    <div className="panel-title">TERMS &amp; CONDITIONS</div>
 
-                  {/* Terms & Conditions Section */}
-                  <div className="border border-amber-200/80 rounded-md overflow-hidden bg-amber-50/20 my-3">
-                    <div className="bg-[#134086] text-[#c5a059] text-center text-[10px] font-sans font-bold uppercase tracking-wider py-1">
-                      ✦ TERMS & CONDITIONS ✦
-                    </div>
-                    <div className="p-3 text-[9px] font-sans text-slate-700 grid grid-cols-2 gap-x-4 gap-y-1.5 leading-tight">
-                      <p>1. This Bond is issued by {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."} as an acknowledgement of receipt of the above amount.</p>
-                      <p>4. This Bond is non-transferable unless approved in writing by the Company.</p>
-                      <p>2. On successful completion of the one-month period, the Company shall pay the maturity amount stated above, subject to the terms of this Bond.</p>
-                      <p>5. Any alteration or overwriting without the Company's authorization shall render this Bond invalid.</p>
-                      <p>3. Payment shall be made through NEFT/RTGS/IMPS/Cheque or any other approved banking mode.</p>
-                      <p>6. Any dispute shall be subject to the jurisdiction of the competent courts.</p>
-                    </div>
-                  </div>
+                    <ol className="terms-list">
+                      <li><b>Interest</b><span>The Company shall pay interest @ 14-16% per yearly on the principal amount.</span></li>
+                      <li><b>Security</b><span>The Debenture is secured by a charge on the Company's specified assets, as per the Debenture Trust Deed.</span></li>
+                      <li><b>Transferability</b><span>The Debenture is non-convertible and non-transferable without the prior written consent of the Company.</span></li>
+                      <li><b>Default</b><span>In case of default, the Company shall be liable to pay penal interest as per the terms in the Debenture Trust Deed.</span></li>
+                      <li><b>Governing Law</b><span>This Certificate shall be governed by and construed in accordance with the laws of India.</span></li>
+                      <li><b>Dispute Resolution</b><span>Any dispute arising shall be subject to the jurisdiction of competent courts at Delhi.</span></li>
+                    </ol>
 
-                  {/* Bottom Signatures & Company Seals */}
-                  <div className="flex justify-between items-end pt-4 mt-4 border-t border-amber-200">
-
-                    {/* Left: Round Company Stamp */}
-                    <div className="text-center">
-                      <div className="w-20 h-20 rounded-full overflow-hidden mx-auto opacity-90 shadow-sm">
-                        <img
-                          style={{
-                            textAlign: "center",
-                            fontFamily: "Arial, Helvetica, sans-serif",
-                            fontSize: "8px",
-                            lineHeight: "10px",
-                            fontStyle: "italic",
-                            fontWeight: "400",
-                            wordBreak: "break-word",
-                          }}
-                          src={sealBase64}
-                          alt="Company Seal"
-                          className="w-full h-full object-cover"
-
-                        />
-                      </div>
-                      <p className="text-[8px] font-sans font-bold text-slate-500 mt-1">COMPANY SEAL</p>
+                    <div className="right-signature">
+                      <div className="hand-sign">Deepak Dayal</div>
+                      <div className="sign-line"></div>
+                      <div className="sign-label">Authorised Signatory<br /><span>(Director)</span></div>
                     </div>
 
-                    {/* SCAN TO VERIFY & DOWNLOAD QR Code */}
                     {downloadUrl && (
-                      <div className="text-center flex flex-col items-center">
-                        <div className="bg-white p-1 rounded border border-amber-200 shadow-xs">
-                          <QRCodeSVG
+                      <div className="qr">
+                        <div className="qr-pattern">
+                          <QRCodeCanvas
                             value={downloadUrl}
                             size={64}
                             level="H"
                             includeMargin={false}
                           />
                         </div>
-                        <p className="text-[7px] font-sans font-bold text-slate-600 mt-1 uppercase tracking-wider">
-                          SCAN TO DOWNLOAD
-                        </p>
+                        <span>Scan to Verify<br />Authenticity</span>
                       </div>
                     )}
-
-                    {/* Center Assurance Text */}
-                    <div className="text-center max-w-[200px] text-[8px] font-sans text-slate-500 italic"
-                      style={{
-                        maxWidth: "200px",
-                        textAlign: "center",
-                        fontFamily: "Arial, Helvetica, sans-serif",
-                        fontSize: "8px",
-                        lineHeight: "10px",
-                        color: "#64748b",
-                        fontStyle: "italic",
-                        fontWeight: "400",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      The Company hereby certifies that this Bond has been issued under its authority and shall be governed by the terms and conditions mentioned herein.
-                    </div>
-
-                    {/* Right: Director Signature & Authority */}
-                    <div className="text-center">
-                      <p className="text-[9px] font-sans font-bold text-slate-800 mb-1">For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD."}</p>
-
-                      {/* Cursive Signature Graphic */}
-                      <div className="h-10 flex items-center justify-center font-serif text-xl font-bold italic text-indigo-950 tracking-wider">
-                        Deepak Dayal
-                      </div>
-                      <div className="border-t border-slate-400 w-36 mx-auto pt-0.5">
-                        <p className="text-[10px] font-sans font-black text-slate-900 uppercase">DEEPAK DAYAL</p>
-                        <p className="text-[8px] font-sans font-bold text-slate-600 uppercase">DIRECTOR / AUTHORIZED SIGNATORY</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom Contact Bar */}
-                  <div className="mt-35 bg-[#134086] text-white text-[8px] font-sans font-semibold py-2 px-4 flex justify-between items-center border-t-2 border-[#c5a059]">
-                    {/* <div className="absolute bottom-0 left-0 right-0 bg-[#134086] text-white text-[8px] font-sans font-semibold py-1.5 px-4 flex justify-between items-center border-t-2 border-[#c5a059]"> */}
-                    <div style={{
-                      textAlign: "center",
-                      fontFamily: "Arial, Helvetica, sans-serif",
-                      fontSize: "8px",
-                      lineHeight: "10px",
-                      color: "#fff",
-                      fontStyle: "italic",
-                      fontWeight: "400",
-                      wordBreak: "break-word",
-                    }}>📍 REGISTERED OFFICE: DWARIKA MOR</div>
-                    <div style={{
-                      textAlign: "center",
-                      fontFamily: "Arial, Helvetica, sans-serif",
-                      fontSize: "8px",
-                      lineHeight: "10px",
-                      color: "#fff",
-                      fontStyle: "italic",
-                      fontWeight: "400",
-                      wordBreak: "break-word",
-                    }}>🌐 WEBSITE: www.niventracapitaladvisory.com</div>
-                    <div style={{
-                      textAlign: "center",
-                      fontFamily: "Arial, Helvetica, sans-serif",
-                      fontSize: "8px",
-                      lineHeight: "10px",
-                      color: "#fff",
-                      fontStyle: "italic",
-                      fontWeight: "400",
-                      wordBreak: "break-word",
-                    }}>📞 CUSTOMER CARE: {settings?.companyProfile?.phone || "011 4051 5660"}</div>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        fontFamily: "Arial, Helvetica, sans-serif",
-                        fontSize: "8px",
-                        lineHeight: "10px",
-                        color: "#fff",
-                        fontStyle: "italic",
-                        fontWeight: "400",
-                        wordBreak: "break-word",
-                      }}
-                    >✉️ EMAIL: info@niventracapitaladvisory.com</div>
-                  </div>
-
-                </div>
-              </div>
+                  </section>
+                </section>
+                <footer className="footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "8px", fontStyle: "italic", fontWeight: 500, fontFamily: "Arial, Helvetica, sans-serif", padding: "8px 12px", color: "#fff", wordBreak: "break-word" }}>
+                  {/* <div style={{ fontSize: "6.5px" }}>📍 REGISTERED OFFICE: {settings?.data?.companyProfile?.address}</div> */}
+                  <div style={{ fontSize: "6.5px" }}>🌐 WEBSITE: {settings?.data?.companyProfile?.website}</div>
+                  <div style={{ fontSize: "6.5px" }}>📞 CUSTOMER CARE: {settings?.data?.companyProfile?.phone}</div>
+                  <div style={{ fontSize: "6.5px" }}>✉️ EMAIL: {settings?.data?.companyProfile?.email}</div>
+                </footer>
+              </main>
             </div>
           </div>
 

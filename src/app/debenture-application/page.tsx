@@ -58,6 +58,9 @@ function DebentureFormContent() {
     aadharDocUrl: "",
     bankPassbookUrl: "",
     place: "",
+    investmentDate: "",
+    bondMaturityDate: "",
+    monthlyGrowthPercentage: 1.333,
     declDay: new Date().getDate().toString().padStart(2, "0"),
     declMonth: (new Date().getMonth() + 1).toString().padStart(2, "0"),
     declYear: new Date().getFullYear().toString(),
@@ -260,6 +263,40 @@ function DebentureFormContent() {
       .catch(() => {
         if (!refCodeParam) setUnauthorized(true);
       });
+    if (searchParams.get("existing") === "true") {
+      fetch("/api/investors/me")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.allInvestments && data.allInvestments.length > 0) {
+            const inv = data.allInvestments[0];
+            setForm((prev) => ({
+              ...prev,
+              fullName: inv.fullName || prev.fullName,
+              email: inv.email || prev.email,
+              phone: inv.phone || prev.phone,
+              fatherSpouseName: inv.debentureForm?.fatherSpouseName || prev.fatherSpouseName,
+              dob: inv.debentureForm?.dob || prev.dob,
+              address: inv.debentureForm?.address || prev.address,
+              city: inv.debentureForm?.city || prev.city,
+              state: inv.debentureForm?.state || prev.state,
+              pinCode: inv.debentureForm?.pinCode || prev.pinCode,
+              panNumber: inv.kycDocs?.panNumber || prev.panNumber,
+              aadharNumber: inv.kycDocs?.aadharNumber || prev.aadharNumber,
+              bankName: inv.kycDocs?.bankName || prev.bankName,
+              accountNo: inv.kycDocs?.accountNumber || prev.accountNo,
+              ifscCode: inv.kycDocs?.ifscCode || prev.ifscCode,
+              panDocUrl: inv.kycDocs?.panDocUrl || prev.panDocUrl,
+              aadharDocUrl: inv.kycDocs?.aadharDocUrl || prev.aadharDocUrl,
+              bankPassbookUrl: inv.kycDocs?.bankPassbookUrl || prev.bankPassbookUrl,
+              nomineeName: inv.nomineeName || prev.nomineeName,
+              nomineeRelation: inv.nomineeRelation || prev.nomineeRelation,
+              nomineeAge: inv.nomineeAge || prev.nomineeAge,
+              nomineeDocUrl: inv.nomineeDocUrl || prev.nomineeDocUrl,
+            }));
+          }
+        })
+        .catch(console.error);
+    }
 
     if (refCodeParam) {
       setForm((prev) => ({ ...prev, refEmpCode: refCodeParam }));
@@ -406,7 +443,7 @@ function DebentureFormContent() {
   const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    
+
     if (file.size > 100 * 1024 * 1024) {
       alert("File size exceeds 100MB limit.");
       return;
@@ -437,10 +474,10 @@ function DebentureFormContent() {
 
       const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
       const json = await res.json();
-      
+
       if (json.success) {
         setForm((prev) => ({ ...prev, signatureUrl: json.url }));
-        
+
         // Draw onto canvas
         const canvas = canvasRef.current;
         if (canvas) {
@@ -453,7 +490,7 @@ function DebentureFormContent() {
           };
           img.src = json.url;
         }
-        
+
         // Close modal
         setCropModalOpen(false);
         setCropImageSrc(null);
@@ -1044,7 +1081,7 @@ function DebentureFormContent() {
 
         /* ACTION BAR */
         .action-bar {
-          max-width: 90%;
+          max-width: 70%;
           margin: 16px auto 0;
           display: flex;
           justify-content: flex-end;
@@ -1130,7 +1167,7 @@ function DebentureFormContent() {
             {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
           </div>
           <div className="contact-row">
-            <span>&#128222; {settings?.companyProfile?.phone || "011 4051 5660"}</span>
+            <span>&#128222; {settings?.companyProfile?.phone || "+9118008900818"}</span>
             <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
             <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
           </div>
@@ -1500,6 +1537,76 @@ function DebentureFormContent() {
               <small className="faded">(In Words)</small>
             </div>
           </div>
+          <div className="field-row">
+            <div className="field-label" style={{ width: "170px" }}>Investment Details</div>
+            <div className="field-colon">:</div>
+            <div className="field-fill" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <span style={{ fontSize: "12px", fontWeight: "bold" }}>Date:</span>
+                <input
+                  type="date"
+                  value={form.investmentDate}
+                  onChange={(e) => setForm({ ...form, investmentDate: e.target.value })}
+                  style={{ maxWidth: "130px" }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <span style={{ fontSize: "12px", fontWeight: "bold" }}>Maturity:</span>
+                <input
+                  type="date"
+                  value={form.bondMaturityDate}
+                  onChange={(e) => setForm({ ...form, bondMaturityDate: e.target.value })}
+                  style={{ maxWidth: "130px" }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <span style={{ fontSize: "12px", fontWeight: "bold" }}>Growth (%):</span>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={form.monthlyGrowthPercentage}
+                  onChange={(e) => setForm({ ...form, monthlyGrowthPercentage: parseFloat(e.target.value) || 0 })}
+                  style={{ maxWidth: "80px" }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {(() => {
+            const principal = form.totalApplicationAmount || 0;
+            const rate = form.monthlyGrowthPercentage || 0;
+
+            let days = 0;
+            let matDateStr = "—";
+
+            if (form.investmentDate && form.bondMaturityDate) {
+              const invDate = new Date(form.investmentDate);
+              const matDate = new Date(form.bondMaturityDate);
+              days = Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              matDateStr = matDate.toLocaleDateString("en-GB");
+            }
+
+            if (days > 0) {
+              const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
+              const totalMaturityAmount = principal + totalInterest;
+
+              return (
+                <div style={{ margin: "10px 0", padding: "10px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "8px", fontSize: "12px", color: "#78350f" }}>
+                  <p style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "1px", color: "#d97706", margin: "0 0 5px 0" }}>✦ Bond Maturity Auto-Calculation Preview ✦</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span>Total Interest ({days} days @ {rate}%/mo):</span>
+                    <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{totalInterest.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "5px", fontWeight: "bold" }}>
+                    <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
+                    <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{totalMaturityAmount.toFixed(2)}/-</span></span>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           <div className="field-row">
             <div className="field-label" style={{ width: "170px" }}>Mode of Payment</div>
             <div className="field-colon">:</div>

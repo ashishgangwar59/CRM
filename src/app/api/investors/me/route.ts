@@ -62,6 +62,38 @@ export async function GET(req: Request) {
         }
       }
 
+      const filterDate = searchParams.get("date") || "";
+      const filterMonth = searchParams.get("month") || "";
+      const filterDays = searchParams.get("days") || "";
+
+      if (filterDate) {
+        query.investmentDate = filterDate;
+      } else if (filterMonth) {
+        query.investmentDate = { $regex: `^${filterMonth}` };
+      }
+
+      if (filterDays) {
+        const now = new Date();
+        let startDate = new Date();
+        if (filterDays === "today") {
+          startDate.setHours(0, 0, 0, 0);
+        } else if (filterDays === "yesterday") {
+          startDate.setDate(now.getDate() - 1);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(startDate);
+          endDate.setHours(23, 59, 59, 999);
+          query.createdAt = { $gte: startDate, $lte: endDate };
+        } else if (filterDays === "last7") {
+          startDate.setDate(now.getDate() - 7);
+        } else if (filterDays === "last30") {
+          startDate.setDate(now.getDate() - 30);
+        }
+        
+        if (filterDays !== "yesterday") {
+          query.createdAt = { $gte: startDate };
+        }
+      }
+
       const page = parseInt(searchParams.get("page") || "0");
       const limit = parseInt(searchParams.get("limit") || "0");
 
@@ -93,16 +125,16 @@ export async function GET(req: Request) {
     // If Investor self login: Return their investor profile
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    let investor = await Investor.findOne({ userId: user._id });
-    if (!investor) {
-      investor = await Investor.findOne({ email: { $regex: `^${user.email}$`, $options: "i" } });
+    let investors = await Investor.find({ userId: user._id }).sort({ createdAt: -1 });
+    if (!investors || investors.length === 0) {
+      investors = await Investor.find({ email: { $regex: `^${user.email}$`, $options: "i" } }).sort({ createdAt: -1 });
     }
 
-    if (!investor) {
+    if (!investors || investors.length === 0) {
       return NextResponse.json({ error: "Investor profile not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: investor });
+    return NextResponse.json({ success: true, data: investors[0], allInvestments: investors });
   } catch (error) {
     console.error("Get Investor Profile Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -276,9 +308,15 @@ export async function PUT(req: Request) {
     const user = await User.findById(payload.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    let investor = await Investor.findOne({ userId: user._id });
+    let investor;
+    if (body.investorId) {
+      investor = await Investor.findOne({ _id: body.investorId, userId: user._id });
+    } else {
+      investor = await Investor.findOne({ userId: user._id }).sort({ createdAt: -1 });
+    }
+    
     if (!investor) {
-      investor = await Investor.findOne({ email: { $regex: `^${user.email}$`, $options: "i" } });
+      investor = await Investor.findOne({ email: { $regex: `^${user.email}$`, $options: "i" } }).sort({ createdAt: -1 });
     }
 
     if (!investor) {

@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
     const settings = await SystemSettings.findOne().lean();
     const companyName = settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT. LTD.";
-    const companyPhone = settings?.companyProfile?.phone || "011 4051 5660";
+    const companyPhone = settings?.companyProfile?.phone || "+9118008900818";
     const companyEmail = settings?.companyProfile?.email || "info@niventracapitaladvisory.com";
     const companyWebsite = settings?.companyProfile?.website || "www.niventracapitaladvisory.com";
 

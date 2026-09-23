@@ -5,15 +5,18 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award, IndianRupee } from "lucide-react";
+import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award, IndianRupee, CalendarDays } from "lucide-react";
 import PaymentBondModal from "../investors/PaymentBondModal";
 
 export function InvestorDashboard() {
+  const [allInvestments, setAllInvestments] = useState<any[]>([]);
   const [investor, setInvestor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showBondModal, setShowBondModal] = useState(false);
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickAmount, setQuickAmount] = useState<number>(0);
 
   // Form states
   const [investmentAmount, setInvestmentAmount] = useState<number>(0);
@@ -38,32 +41,36 @@ export function InvestorDashboard() {
 
   const [bondTemplate, setBondTemplate] = useState<string>("");
 
+  const loadInvestmentData = (data: any) => {
+    setInvestor(data);
+    setInvestmentAmount(data.investmentAmount || 0);
+    setKycDocs({
+      aadharNumber: data.kycDocs?.aadharNumber || "",
+      aadharDocUrl: data.kycDocs?.aadharDocUrl || "",
+      panNumber: data.kycDocs?.panNumber || "",
+      panDocUrl: data.kycDocs?.panDocUrl || "",
+      marksheet10thUrl: data.kycDocs?.marksheet10thUrl || "",
+      marksheet12thUrl: data.kycDocs?.marksheet12thUrl || "",
+      graduationUrl: data.kycDocs?.graduationUrl || "",
+      postGraduationUrl: data.kycDocs?.postGraduationUrl || "",
+      bankPassbookUrl: data.kycDocs?.bankPassbookUrl || "",
+      bankName: data.kycDocs?.bankName || "",
+      accountNumber: data.kycDocs?.accountNumber || "",
+      ifscCode: data.kycDocs?.ifscCode || "",
+      branchName: data.kycDocs?.branchName || "",
+    });
+    setBondAccepted(!!data.bondAgreement?.accepted);
+    setSignatureText(data.bondAgreement?.signatureText || data.fullName || "");
+  };
+
   const fetchProfile = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/investors/me");
       const json = await res.json();
-      if (json.success && json.data) {
-        const data = json.data;
-        setInvestor(data);
-        setInvestmentAmount(data.investmentAmount || 0);
-        setKycDocs({
-          aadharNumber: data.kycDocs?.aadharNumber || "",
-          aadharDocUrl: data.kycDocs?.aadharDocUrl || "",
-          panNumber: data.kycDocs?.panNumber || "",
-          panDocUrl: data.kycDocs?.panDocUrl || "",
-          marksheet10thUrl: data.kycDocs?.marksheet10thUrl || "",
-          marksheet12thUrl: data.kycDocs?.marksheet12thUrl || "",
-          graduationUrl: data.kycDocs?.graduationUrl || "",
-          postGraduationUrl: data.kycDocs?.postGraduationUrl || "",
-          bankPassbookUrl: data.kycDocs?.bankPassbookUrl || "",
-          bankName: data.kycDocs?.bankName || "",
-          accountNumber: data.kycDocs?.accountNumber || "",
-          ifscCode: data.kycDocs?.ifscCode || "",
-          branchName: data.kycDocs?.branchName || "",
-        });
-        setBondAccepted(!!data.bondAgreement?.accepted);
-        setSignatureText(data.bondAgreement?.signatureText || data.fullName || "");
+      if (json.success && json.allInvestments && json.allInvestments.length > 0) {
+        setAllInvestments(json.allInvestments);
+        loadInvestmentData(json.allInvestments[0]);
       }
 
       // Fetch SystemSettings for dynamic legal bond agreement text
@@ -139,6 +146,7 @@ export function InvestorDashboard() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          investorId: investor._id,
           investmentAmount,
           kycDocs,
           bondAgreement: {
@@ -169,12 +177,110 @@ export function InvestorDashboard() {
       return () => clearTimeout(timer);
     }
   }, [msg]);
+  const handleQuickSubmit = async () => {
+    if (!quickAmount || quickAmount <= 0) {
+      setMsg({ type: "error", text: "Please enter a valid investment amount." });
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        fullName: investor.fullName,
+        email: investor.email,
+        phone: investor.phone,
+        noOfDebentures: 1,
+        faceValue: quickAmount,
+        totalApplicationAmount: quickAmount,
+        investmentDate: new Date().toISOString().split("T")[0],
+        bondMaturityDate: "",
+        monthlyGrowthPercentage: investor.monthlyGrowthPercentage || 1.333,
+        panNumber: investor.kycDocs?.panNumber || "PANPENDING",
+      };
+
+      const res = await fetch("/api/debenture-application", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMsg({ type: "success", text: "New investment added successfully!" });
+        setShowQuickModal(false);
+        setQuickAmount(0);
+        fetchProfile();
+      } else {
+        setMsg({ type: "error", text: json.error || "Failed to add investment." });
+      }
+    } catch (e: any) {
+      setMsg({ type: "error", text: e.message || "An error occurred." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!investor) return <div className="p-8">Investor profile not found. Please log in again.</div>;
 
-  const monthlyReturnAmount = investor.status === "Verified" ? Math.round((investor.investmentAmount * (investor.monthlyGrowthPercentage || 2.5)) / 100) : 0;
+  const monthlyReturnAmount = investor.status === "Verified" ? (investor.investmentAmount * (investor.monthlyGrowthPercentage || 2.5)) / 100 : 0;
+  
+  const investmentDate = investor.investmentDate ? new Date(investor.investmentDate) : null;
+  const maturityDate = investor.bondMaturityDate ? new Date(investor.bondMaturityDate) : null;
+  let durationDays = 0;
+  let durationMonths = investor.bondMaturityMonths || 1;
+  if (investmentDate && maturityDate) {
+    durationDays = Math.ceil((maturityDate.getTime() - investmentDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  } else {
+    durationDays = durationMonths * 30; // fallback
+  }
 
   return (
     <div className="space-y-6 w-full pb-24">
+      {/* Investments Selector */}
+      <div className="flex flex-wrap gap-2 items-center justify-between bg-white p-4 border border-[#eee] rounded-xl shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          {allInvestments.map((inv, idx) => (
+            <Button
+              key={inv._id}
+              variant={investor._id === inv._id ? "default" : "outline"}
+              onClick={() => loadInvestmentData(inv)}
+              className={investor._id === inv._id ? "bg-[#134086] text-white" : "border-[#134086] text-white"}
+            >
+              Investment {idx + 1} ({inv.investorCode})
+            </Button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setShowQuickModal(true)}
+          className="border-amber-500 text-white hover:bg-amber-50"
+        >
+          + Add New Investment
+        </Button>
+      </div>
+
+      {showQuickModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h2 className="text-xl font-bold text-[#134086]">Quick Investment</h2>
+            <p className="text-sm text-zinc-500">Enter the amount for your new investment. Your existing profile details will be used.</p>
+            <div className="space-y-2">
+              <Label>Investment Amount (₹)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 50000"
+                value={quickAmount || ""}
+                onChange={(e) => setQuickAmount(Number(e.target.value))}
+              />
+            </div>
+            <div className="flex gap-3 justify-end pt-2">
+              <Button variant="outline" onClick={() => setShowQuickModal(false)} disabled={saving}>Cancel</Button>
+              <Button onClick={handleQuickSubmit} disabled={saving || quickAmount <= 0} className="bg-[#134086] text-white">
+                {saving ? "Adding..." : "Confirm Investment"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header banner */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 bg-white border border-[#eee] rounded-xl text-zinc-900 shadow-sm">
         <div>
@@ -191,7 +297,7 @@ export function InvestorDashboard() {
           {investor.status === "Verified" && (
             <Button
               onClick={() => setShowBondModal(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-black shadow-md flex items-center gap-2"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md flex items-center gap-2"
             >
               <Award className="w-4 h-4" />
               Download Payment Bond (PDF)
@@ -253,7 +359,7 @@ export function InvestorDashboard() {
 
       {/* Verified Status Performance Card */}
       {investor.status === "Verified" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
@@ -261,7 +367,7 @@ export function InvestorDashboard() {
                   <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Investment Cost</p>
                   <h3 className="text-3xl font-bold mt-2 text-zinc-900 dark:text-zinc-50 flex items-center">
                     <IndianRupee className="w-6 h-6 mr-1 text-zinc-400" />
-                    {investor.investmentAmount.toLocaleString()}
+                    {investor.investmentAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </h3>
                 </div>
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl">
@@ -294,11 +400,28 @@ export function InvestorDashboard() {
                   <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Est. Monthly Return Payout</p>
                   <h3 className="text-3xl font-bold mt-2 text-indigo-600 dark:text-indigo-400 flex items-center">
                     <IndianRupee className="w-6 h-6 mr-1" />
-                    {monthlyReturnAmount.toLocaleString()} <span className="text-lg text-zinc-500 font-normal ml-1">/ mo</span>
+                    {monthlyReturnAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-lg text-zinc-500 font-normal ml-1">/ mo</span>
                   </h3>
                 </div>
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
                   <IndianRupee className="w-6 h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Maturity Period</p>
+                  <h3 className="text-3xl font-bold mt-2 text-amber-600 dark:text-amber-400 flex items-center">
+                    {durationDays} <span className="text-lg text-zinc-500 font-normal ml-1">Days</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 font-medium mt-1">({durationMonths} Month{durationMonths > 1 ? 's' : ''})</p>
+                </div>
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl">
+                  <CalendarDays className="w-6 h-6" />
                 </div>
               </div>
             </CardContent>

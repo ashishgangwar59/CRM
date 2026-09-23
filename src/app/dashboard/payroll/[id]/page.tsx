@@ -18,7 +18,7 @@ export default function SalarySlipPage() {
     address: "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
     email: "info@niventracapitaladvisory.com",
     website: "www.niventracapitaladvisory.com",
-    phone: "011 4051 5660",
+    phone: "+9118008900818",
     gstNo: "07AAICN4810R1Z2"
   });
 
@@ -58,7 +58,7 @@ export default function SalarySlipPage() {
             address: cp.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
             email: cp.email || "info@niventracapitaladvisory.com",
             website: cp.website || "www.niventracapitaladvisory.com",
-            phone: cp.phone || "011 4051 5660",
+            phone: cp.phone || "+9118008900818",
             gstNo: cp.gstNo || "07AAICN4810R1Z2"
           });
         }

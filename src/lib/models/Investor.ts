@@ -104,7 +104,7 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
     investorCode: { type: String, required: true, unique: true },
     userId: { type: Schema.Types.ObjectId, ref: "User" },
     fullName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true },
     phone: { type: String, required: true },
     investmentAmount: { type: Number, default: 0 },
     monthlyGrowthPercentage: { type: Number, default: 2 }, // Default 2% monthly return

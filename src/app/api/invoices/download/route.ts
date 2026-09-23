@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     const settings = await SystemSettings.findOne().lean();
     const address = settings?.companyProfile?.address || "A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi – 110059, India.";
     const companyName = settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD";
-    const companyPhone = settings?.companyProfile?.phone || "011 4051 5660";
+    const companyPhone = settings?.companyProfile?.phone || "+9118008900818";
     const companyEmail = settings?.companyProfile?.email || "info@niventracapitaladvisory.com";
     const companyWebsite = settings?.companyProfile?.website || "www.niventracapitaladvisory.com";
 

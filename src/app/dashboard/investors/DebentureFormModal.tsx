@@ -512,7 +512,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
               </div>
               <div className="contact-row">
-                <span>&#128222; {settings?.companyProfile?.phone || "011 4051 5660"}</span>
+                <span>&#128222; {settings?.companyProfile?.phone || "+9118008900818"}</span>
                 <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
                 <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
               </div>
@@ -551,21 +551,21 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-label">Full Name (Applicant)</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.fullName} onChange={e => setEditableForm({...editableForm, fullName: e.target.value})} />
+                  <input type="text" value={editableForm.fullName} onChange={e => setEditableForm({ ...editableForm, fullName: e.target.value })} />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Father's / Spouse Name</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.fatherSpouseName} onChange={e => setEditableForm({...editableForm, fatherSpouseName: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.fatherSpouseName} onChange={e => setEditableForm({ ...editableForm, fatherSpouseName: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Date of Birth / Incorporation</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
-                  <input type="date" value={editableForm.dob} onChange={e => setEditableForm({...editableForm, dob: e.target.value})} style={{width: "120px"}} />
+                  <input type="date" value={editableForm.dob} onChange={e => setEditableForm({ ...editableForm, dob: e.target.value })} style={{ width: "120px" }} />
                   <span><b>PAN No:</b> <span className="font-mono">{kyc.panNumber || "—"}</span> | <b>Aadhar No:</b> <span className="font-mono">{kyc.aadharNumber || "—"}</span></span>
                 </div>
               </div>
@@ -573,16 +573,16 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-label">Address</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.address} onChange={e => setEditableForm({...editableForm, address: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.address} onChange={e => setEditableForm({ ...editableForm, address: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">City / State / PIN</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ display: "flex", gap: "5px" }}>
-                  <input type="text" value={editableForm.city} onChange={e => setEditableForm({...editableForm, city: e.target.value})} placeholder="City" />
-                  <input type="text" value={editableForm.state} onChange={e => setEditableForm({...editableForm, state: e.target.value})} placeholder="State" />
-                  <input type="text" value={editableForm.pinCode} onChange={e => setEditableForm({...editableForm, pinCode: e.target.value})} placeholder="PIN" style={{width: "80px"}} />
+                  <input type="text" value={editableForm.city} onChange={e => setEditableForm({ ...editableForm, city: e.target.value })} placeholder="City" />
+                  <input type="text" value={editableForm.state} onChange={e => setEditableForm({ ...editableForm, state: e.target.value })} placeholder="State" />
+                  <input type="text" value={editableForm.pinCode} onChange={e => setEditableForm({ ...editableForm, pinCode: e.target.value })} placeholder="PIN" style={{ width: "80px" }} />
                 </div>
               </div>
               <div className="field-row">
@@ -597,43 +597,43 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-label">Occupation</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.occupation} onChange={e => setEditableForm({...editableForm, occupation: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.occupation} onChange={e => setEditableForm({ ...editableForm, occupation: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Bank Name</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.bankName} onChange={e => setEditableForm({...editableForm, bankName: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.bankName} onChange={e => setEditableForm({ ...editableForm, bankName: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Account No.</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.accountNo} onChange={e => setEditableForm({...editableForm, accountNo: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.accountNo} onChange={e => setEditableForm({ ...editableForm, accountNo: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">IFSC Code</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.ifscCode} onChange={e => setEditableForm({...editableForm, ifscCode: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.ifscCode} onChange={e => setEditableForm({ ...editableForm, ifscCode: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Nominee Name</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill font-bold">
-                  <input type="text" value={editableForm.nomineeName} onChange={e => setEditableForm({...editableForm, nomineeName: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.nomineeName} onChange={e => setEditableForm({ ...editableForm, nomineeName: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Nominee Relation / Age</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
-                  <input type="text" value={editableForm.nomineeRelation} onChange={e => setEditableForm({...editableForm, nomineeRelation: e.target.value})} placeholder="Relation" />
-                  <input type="text" value={editableForm.nomineeAge} onChange={e => setEditableForm({...editableForm, nomineeAge: e.target.value})} placeholder="Age" style={{width: "60px"}} />
+                  <input type="text" value={editableForm.nomineeRelation} onChange={e => setEditableForm({ ...editableForm, nomineeRelation: e.target.value })} placeholder="Relation" />
+                  <input type="text" value={editableForm.nomineeAge} onChange={e => setEditableForm({ ...editableForm, nomineeAge: e.target.value })} placeholder="Age" style={{ width: "60px" }} />
                 </div>
               </div>
             </div>
@@ -645,23 +645,23 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-label">Type of Debenture</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.typeOfDebenture} onChange={e => setEditableForm({...editableForm, typeOfDebenture: e.target.value})} placeholder="Secured" />
+                  <input type="text" value={editableForm.typeOfDebenture} onChange={e => setEditableForm({ ...editableForm, typeOfDebenture: e.target.value })} placeholder="Secured" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Face Value (Per Debenture)</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill" style={{display: "flex", alignItems: "center"}}>
+                <div className="field-fill" style={{ display: "flex", alignItems: "center" }}>
                   <span>₹</span>
-                  <input type="number" value={editableForm.faceValue} onChange={e => setEditableForm({...editableForm, faceValue: Number(e.target.value)})} placeholder="1000" />
+                  <input type="number" value={editableForm.faceValue} onChange={e => setEditableForm({ ...editableForm, faceValue: Number(e.target.value) })} placeholder="1000" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">No. of Debentures Applied</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
-                  <input type="number" value={editableForm.noOfDebentures} onChange={e => setEditableForm({...editableForm, noOfDebentures: Number(e.target.value)})} placeholder="1" style={{width: "80px"}} />
-                  <input type="text" value={editableForm.numDebenturesWords} onChange={e => setEditableForm({...editableForm, numDebenturesWords: e.target.value})} placeholder="Units" />
+                  <input type="number" value={editableForm.noOfDebentures} onChange={e => setEditableForm({ ...editableForm, noOfDebentures: Number(e.target.value) })} placeholder="1" style={{ width: "80px" }} />
+                  <input type="text" value={editableForm.numDebenturesWords} onChange={e => setEditableForm({ ...editableForm, numDebenturesWords: e.target.value })} placeholder="Units" />
                 </div>
               </div>
               <div className="field-row">
@@ -669,36 +669,36 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <span>₹</span>
-                  <input type="number" value={editableForm.totalApplicationAmount} onChange={e => setEditableForm({...editableForm, totalApplicationAmount: Number(e.target.value)})} placeholder="1000" style={{width: "100px", color: "#00a65a", fontWeight: "bold"}} />
-                  <input type="text" value={editableForm.totalApplicationAmountWords} onChange={e => setEditableForm({...editableForm, totalApplicationAmountWords: e.target.value})} placeholder="Amount in words" style={{flex: 1, fontSize: "12px", color: "#666"}} />
+                  <input type="number" value={editableForm.totalApplicationAmount} onChange={e => setEditableForm({ ...editableForm, totalApplicationAmount: Number(e.target.value) })} placeholder="1000" style={{ width: "100px", color: "#00a65a", fontWeight: "bold" }} />
+                  <input type="text" value={editableForm.totalApplicationAmountWords} onChange={e => setEditableForm({ ...editableForm, totalApplicationAmountWords: e.target.value })} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666" }} />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Mode of Payment</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.modeOfPayment} onChange={e => setEditableForm({...editableForm, modeOfPayment: e.target.value})} placeholder="NEFT/RTGS" />
+                  <input type="text" value={editableForm.modeOfPayment} onChange={e => setEditableForm({ ...editableForm, modeOfPayment: e.target.value })} placeholder="NEFT/RTGS" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Transaction / UTR No.</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill font-mono">
-                  <input type="text" value={editableForm.transactionId} onChange={e => setEditableForm({...editableForm, transactionId: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.transactionId} onChange={e => setEditableForm({ ...editableForm, transactionId: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Cheque / DD No.</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill font-mono">
-                  <input type="date" value={editableForm.paymentDate} onChange={e => setEditableForm({...editableForm, paymentDate: e.target.value})} placeholder="—" />
+                  <input type="date" value={editableForm.paymentDate} onChange={e => setEditableForm({ ...editableForm, paymentDate: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Bank Name (Payment)</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.bankNamePayment} onChange={e => setEditableForm({...editableForm, bankNamePayment: e.target.value})} placeholder="—" />
+                  <input type="text" value={editableForm.bankNamePayment} onChange={e => setEditableForm({ ...editableForm, bankNamePayment: e.target.value })} placeholder="—" />
                 </div>
               </div>
             </div>

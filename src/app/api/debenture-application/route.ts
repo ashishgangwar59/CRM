@@ -4,7 +4,22 @@ import { User } from "@/lib/models/User";
 import { Investor } from "@/lib/models/Investor";
 import { Employee } from "@/lib/models/Employee";
 import { Counter } from "@/lib/models/Counter";
+import { verifyAccessToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+
+function getToken(req: Request): string | null {
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) {
+    const match = cookieHeader.match(/accessToken=([^;]+)/);
+    if (match) return match[1];
+  }
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) {
+    if (authHeader.startsWith("Bearer ")) return authHeader.substring(7).trim();
+    return authHeader.trim();
+  }
+  return null;
+}
 
 async function getNextInvestorCode() {
   const counter = await Counter.findByIdAndUpdate(
@@ -73,6 +88,9 @@ export async function POST(req: Request) {
       nomineeRelation,
       nomineeAge,
       nomineeDocUrl,
+      investmentDate,
+      bondMaturityDate,
+      monthlyGrowthPercentage,
     } = data;
 
     // --- Validation Rules ---
@@ -107,15 +125,30 @@ export async function POST(req: Request) {
 
     const calculatedTotal = Number(faceValue || 1000) * Number(noOfDebentures || 1);
 
-    // Check if user or investor already exists with this email
-    const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
-      return NextResponse.json({ error: "This Email is already registered in the system." }, { status: 400 });
+    // Check authentication for existing users
+    let authenticatedUserId = null;
+    const token = getToken(req);
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        if (payload && payload.userId) {
+          authenticatedUserId = payload.userId;
+        }
+      } catch (e) {
+        // invalid token, ignore
+      }
     }
 
-    const existingInvestor = await Investor.findOne({ email: cleanEmail });
-    if (existingInvestor) {
-      return NextResponse.json({ error: "An application with this email already exists." }, { status: 400 });
+    // Check if user already exists with this email
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      // If user exists, they MUST be logged in and matching this user
+      if (!authenticatedUserId || existingUser._id.toString() !== authenticatedUserId.toString()) {
+        return NextResponse.json({ error: "This Email is already registered. Please login to add a new investment." }, { status: 400 });
+      }
+      if (existingUser.role !== "INVESTOR") {
+        return NextResponse.json({ error: "Only Investor accounts can submit additional applications." }, { status: 400 });
+      }
     }
 
     // Resolve referral employee if provided
@@ -137,14 +170,20 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create login User account for Investor (Default password: Investor@123)
-    const hashedPassword = await bcrypt.hash("Investor@123", 10);
-    const user = await User.create({
-      email: cleanEmail,
-      password: hashedPassword,
-      role: "INVESTOR",
-      accessibleModules: ["Investor Details", "Profile"],
-    });
+    // Create login User account for Investor if they don't exist
+    let userId = null;
+    if (existingUser) {
+      userId = existingUser._id;
+    } else {
+      const hashedPassword = await bcrypt.hash("Investor@123", 10);
+      const user = await User.create({
+        email: cleanEmail,
+        password: hashedPassword,
+        role: "INVESTOR",
+        accessibleModules: ["Investor Details", "Profile"],
+      });
+      userId = user._id;
+    }
 
     const investorCode = await getNextInvestorCode();
     const applicationNo = data.applicationNo && data.applicationNo.trim() ? data.applicationNo.trim() : await getNextApplicationNo();
@@ -155,13 +194,15 @@ export async function POST(req: Request) {
 
     const investor = await Investor.create({
       investorCode,
-      userId: user._id,
+      userId,
       fullName: fullName.trim(),
       email: cleanEmail,
       phone: cleanPhone,
       investmentAmount: calculatedTotal,
-      monthlyGrowthPercentage: 2.5,
+      monthlyGrowthPercentage: Number(monthlyGrowthPercentage) || 1.333,
       status: "Pending",
+      investmentDate: investmentDate || applicationDateStr,
+      bondMaturityDate: bondMaturityDate || "",
       referralEmployeeId,
       referralEmployeeName,
       debentureForm: {
