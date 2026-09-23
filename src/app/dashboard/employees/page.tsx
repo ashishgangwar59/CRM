@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, User, Upload, Download, Loader2, List, Layers, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 
 function TreeNode({ node, router }: { node: any; router: any }) {
   return (
@@ -47,6 +48,7 @@ export default function EmployeesPage() {
   const [loadingHierarchy, setLoadingHierarchy] = useState(false);
   const [role, setRole] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebounce(search, 500);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -57,7 +59,7 @@ export default function EmployeesPage() {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/employees?search=${search}&status=${status}&page=${page}&limit=${limit}`);
+      const res = await fetch(`/api/employees?search=${encodeURIComponent(debouncedSearch)}&status=${status}&page=${page}&limit=${limit}`);
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);
@@ -93,7 +95,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, status, limit]);
+  }, [debouncedSearch, status, limit]);
 
   const fetchAuth = async () => {
     try {
@@ -113,7 +115,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchEmployees();
-  }, [search, status, page, limit]);
+  }, [debouncedSearch, status, page, limit]);
 
   useEffect(() => {
     if (activeTab === "hierarchy" && allEmployees.length === 0) {
@@ -122,7 +124,7 @@ export default function EmployeesPage() {
   }, [activeTab]);
 
   const handleExport = () => {
-    window.location.href = `/api/employees/export?search=${search}&status=${status}`;
+    window.location.href = `/api/employees/export?search=${encodeURIComponent(debouncedSearch)}&status=${status}`;
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {

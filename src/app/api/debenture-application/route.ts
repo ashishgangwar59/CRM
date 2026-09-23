@@ -127,12 +127,14 @@ export async function POST(req: Request) {
 
     // Check authentication for existing users
     let authenticatedUserId = null;
+    let authenticatedUserRole = null;
     const token = getToken(req);
     if (token) {
       try {
         const payload = verifyAccessToken(token);
         if (payload && payload.userId) {
           authenticatedUserId = payload.userId;
+          authenticatedUserRole = payload.role;
         }
       } catch (e) {
         // invalid token, ignore
@@ -142,8 +144,9 @@ export async function POST(req: Request) {
     // Check if user already exists with this email
     const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
-      // If user exists, they MUST be logged in and matching this user
-      if (!authenticatedUserId || existingUser._id.toString() !== authenticatedUserId.toString()) {
+      // If user exists, they MUST be logged in and matching this user, UNLESS they are an admin/employee acting on behalf
+      const isAdminOrEmployee = ["ADMIN", "KEY_ADMIN", "SUPER_ADMIN", "MANAGER", "EMPLOYEE"].includes(authenticatedUserRole || "");
+      if (!isAdminOrEmployee && (!authenticatedUserId || existingUser._id.toString() !== authenticatedUserId.toString())) {
         return NextResponse.json({ error: "This Email is already registered. Please login to add a new investment." }, { status: 400 });
       }
       if (existingUser.role !== "INVESTOR") {

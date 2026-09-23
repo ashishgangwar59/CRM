@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download, Loader2 } from "lucide-react";
 import PaymentBondModal from "./PaymentBondModal";
 import DebentureFormModal from "./DebentureFormModal";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function AdminInvestorsPage() {
   const [investors, setInvestors] = useState<any[]>([]);
@@ -18,6 +19,7 @@ export default function AdminInvestorsPage() {
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
   const [filterDays, setFilterDays] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -64,6 +66,8 @@ export default function AdminInvestorsPage() {
   const [debentureModalInvestor, setDebentureModalInvestor] = useState<any>(null);
   const [bondAutoDownload, setBondAutoDownload] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [quickAddModal, setQuickAddModal] = useState<any>(null);
+  const [quickAmount, setQuickAmount] = useState<number>(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [rejectReasonInput, setRejectReasonInput] = useState("");
   const [showRejectBox, setShowRejectBox] = useState(false);
@@ -114,7 +118,7 @@ export default function AdminInvestorsPage() {
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&page=${page}&limit=${limit}`;
+      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -142,11 +146,11 @@ export default function AdminInvestorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, filterDate, filterMonth, filterDays, limit]);
+  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, limit]);
 
   useEffect(() => {
     fetchInvestors();
-  }, [search, statusFilter, filterDate, filterMonth, filterDays, page, limit]);
+  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,7 +272,7 @@ export default function AdminInvestorsPage() {
     const exportToExcel = async () => {
     try {
       // Fetch ALL data matching current filters by setting a huge limit
-      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(search)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}`);
+      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}`);
       const json = await res.json();
 
       let dataToExport: any[] = [];
@@ -565,6 +569,15 @@ export default function AdminInvestorsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setQuickAddModal(inv)}
+                          className="text-white border-amber-500 bg-amber-500 hover:bg-amber-600 font-bold cursor-pointer"
+                          title="Add New Investment on behalf of investor"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Invest
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -1059,6 +1072,76 @@ export default function AdminInvestorsPage() {
             fetchInvestors();
           }}
         />
+      )}
+
+      {/* --- Quick Investment Modal (Admin acting on behalf) --- */}
+      {quickAddModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 max-w-md w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+            <h2 className="text-xl font-bold text-[#134086] dark:text-indigo-400">Quick Investment</h2>
+            <p className="text-sm text-zinc-500">
+              Enter the amount for a new investment on behalf of <strong>{quickAddModal.fullName}</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label>Investment Amount (₹)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 50000"
+                value={quickAmount || ""}
+                onChange={(e) => setQuickAmount(Number(e.target.value))}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => { setQuickAddModal(null); setQuickAmount(0); }}>
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#134086] hover:bg-[#0c1c3d] text-white"
+                onClick={async () => {
+                  if (!quickAmount || quickAmount <= 0) {
+                    alert("Please enter a valid investment amount.");
+                    return;
+                  }
+                  setSubmitting(true);
+                  try {
+                    const payload = {
+                      fullName: quickAddModal.fullName,
+                      email: quickAddModal.email,
+                      phone: quickAddModal.phone,
+                      noOfDebentures: 1,
+                      faceValue: quickAmount,
+                      totalApplicationAmount: quickAmount,
+                      investmentDate: new Date().toISOString().split("T")[0],
+                      bondMaturityDate: "",
+                      monthlyGrowthPercentage: quickAddModal.monthlyGrowthPercentage || 1.333,
+                      panNumber: quickAddModal.kycDocs?.panNumber || "PANPENDING",
+                    };
+                    const res = await fetch("/api/debenture-application", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(payload),
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                      setQuickAddModal(null);
+                      setQuickAmount(0);
+                      fetchInvestors();
+                    } else {
+                      alert(json.error || "Failed to add investment.");
+                    }
+                  } catch (e) {
+                    alert("Error adding investment.");
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                disabled={submitting}
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* --- Add Investor Modal --- */}

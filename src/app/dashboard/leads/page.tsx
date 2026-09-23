@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, Filter, Calendar, Users, CheckSquare, Square, RefreshCw, CalendarDays, Check, Upload, Download, Lock, Unlock, CheckCircle, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function LeadsDashboardPage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function LeadsDashboardPage() {
 
   // Filters
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [status, setStatus] = useState("");
   const [stage, setStage] = useState("");
   const [priority, setPriority] = useState("");
@@ -211,7 +213,7 @@ export default function LeadsDashboardPage() {
     setLoading(true);
     try {
       const query = new URLSearchParams();
-      if (search) query.append("search", search);
+      if (debouncedSearch) query.append("search", debouncedSearch);
       if (status) query.append("status", status);
       if (stage) query.append("stage", stage);
       if (priority) query.append("priority", priority);
@@ -247,15 +249,14 @@ export default function LeadsDashboardPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [status, stage, priority, employeeIdFilter, dateFilter, customDate, limit]);
+  }, [debouncedSearch, status, stage, priority, employeeIdFilter, dateFilter, customDate, limit]);
 
   useEffect(() => {
     fetchLeads();
-  }, [status, stage, priority, employeeIdFilter, dateFilter, customDate, page, limit]); // Search requires explicit submission
+  }, [debouncedSearch, status, stage, priority, employeeIdFilter, dateFilter, customDate, page, limit]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchLeads();
   };
 
   const getDistributableLeads = () => leads.filter(l => !l.isLocked);
