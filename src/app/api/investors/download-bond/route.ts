@@ -209,7 +209,7 @@ export async function GET(req: Request) {
                 <div class="card-header">✦ INVESTOR INFORMATION ✦</div>
                 <div class="card-body">
                   <div class="detail-row"><span>Investor Name</span><strong>${investor.fullName}</strong></div>
-                  <div class="detail-row"><span>Father's Name</span><strong>${fatherName}</strong></div>
+                  <div class="detail-row"><span>Father's Name/Spouse Name</span><strong>${fatherName}</strong></div>
                   <div class="detail-row"><span>Address</span><strong>${address}</strong></div>
                   <div class="detail-row"><span>Mobile No.</span><strong>${investor.phone}</strong></div>
                   <div class="detail-row"><span>Email ID</span><strong>${investor.email}</strong></div>
