@@ -1638,7 +1638,7 @@ export default function InvoicePage() {
                   <div className="bank-details">
                     <div>
                       <span className="k">Bank Name</span>
-                      <span className="v">Kotak Mahindra Bank.</span>
+                      <span className="v">Indian Overseas Bank</span>
                     </div>
                     <div>
                       <span className="k">A/c Name</span>
@@ -1646,18 +1646,16 @@ export default function InvoicePage() {
                     </div>
                     <div>
                       <span className="k">A/C Number</span>
-                      <span className="v font-mono">2151206126</span>
+                      <span className="v font-mono">084002000002213</span>
                     </div>
                     <div>
                       <span className="k">IFSC Code</span>
-                      <span className="v font-mono">KKBK0000287</span>
+                      <span className="v font-mono">IOBA0000840</span>
                     </div>
                     <div>
                       <span className="k">Branch</span>
                       <span className="v">
-                        SCO 16, Sector 14,Urban Estate
-                        Gurgaon - 122001
-                        Haryana Inidia
+                        Golf Market Narela North Delhi 110001
                       </span>
                     </div>
                   </div>

@@ -612,6 +612,9 @@ export default function AdminInvestorsPage() {
               <div>
                 <h2 className="text-2xl font-bold">{selectedInvestor.fullName}</h2>
                 <p className="text-xs text-zinc-500 font-mono">{selectedInvestor.investorCode} • {selectedInvestor.email} • {selectedInvestor.phone}</p>
+                <p className="text-xs text-zinc-500 font-mono mt-1">
+                  <b>Aadhar:</b> {selectedInvestor.kycDocs?.aadharNumber || "N/A"} • <b>PAN:</b> {selectedInvestor.kycDocs?.panNumber || "N/A"}
+                </p>
               </div>
               <Button variant="ghost" onClick={() => setSelectedInvestor(null)}>✕</Button>
             </div>
@@ -668,14 +671,19 @@ export default function AdminInvestorsPage() {
 
                 if (selectedInvestor.bondMaturityDate) {
                   maturityDateObj = new Date(selectedInvestor.bondMaturityDate);
-                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                  if (issueDateObj.getDate() === maturityDateObj.getDate()) {
+                    const monthDiff = (maturityDateObj.getFullYear() - issueDateObj.getFullYear()) * 12 + (maturityDateObj.getMonth() - issueDateObj.getMonth());
+                    days = Math.max(0, monthDiff * 30 + 1); // +1 for inclusive
+                  } else {
+                    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                  }
                 } else {
                   maturityDateObj = new Date(issueDateObj);
                   maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
-                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                  days = 30; // 1 month is considered exactly 30 days
                 }
 
-                const totalInterest = Math.round(principal * ((rate * 12) / 365 / 100) * days);
+                const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
                 const maturityAmount = principal + totalInterest;
 
                 const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -697,7 +705,7 @@ export default function AdminInvestorsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Payable on Maturity</p>
-                      <p className="text-sm font-black text-rose-600 dark:text-rose-400">₹{maturityAmount.toLocaleString()}/-</p>
+                      <p className="text-sm font-black text-rose-600 dark:text-rose-400">₹{maturityAmount.toFixed(2)}/-</p>
                     </div>
                   </div>
                 );
@@ -1037,7 +1045,7 @@ export default function AdminInvestorsPage() {
                 {addForm.investmentDate && addForm.bondMaturityDate && (
                   <div className="col-span-1 sm:col-span-2 text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)))} Days</span>
+                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)} Days</span>
                   </div>
                 )}
 
@@ -1115,7 +1123,7 @@ export default function AdminInvestorsPage() {
                 {editForm.investmentDate && editForm.bondMaturityDate && (
                   <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(editForm.bondMaturityDate).getTime() - new Date(editForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)))} Days</span>
+                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(editForm.bondMaturityDate).getTime() - new Date(editForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)} Days</span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
@@ -1144,18 +1152,23 @@ export default function AdminInvestorsPage() {
                   if (editForm.investmentDate && editForm.bondMaturityDate) {
                     const invDate = new Date(editForm.investmentDate);
                     const matDate = new Date(editForm.bondMaturityDate);
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    if (invDate.getDate() === matDate.getDate()) {
+                      const months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
+                      days = Math.max(0, months * 30 + 1); // +1 for inclusive counting
+                    } else {
+                      days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                    }
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   } else if (editForm.investmentDate) {
                     const invDate = new Date(editForm.investmentDate);
                     const months = 1;
                     const matDate = new Date(invDate);
                     matDate.setMonth(matDate.getMonth() + months);
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    days = 30; // 1 month is considered exactly 30 days
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   }
 
-                  const totalInterest = Math.round(principal * ((rate * 12) / 365 / 100) * days);
+                  const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
                   const totalMaturityAmount = principal + totalInterest;
 
                   return (
@@ -1163,11 +1176,11 @@ export default function AdminInvestorsPage() {
                       <p className="font-bold uppercase text-[10px] tracking-wider text-amber-600 dark:text-amber-400">✦ Bond Maturity Auto-Calculation Preview ✦</p>
                       <div className="flex justify-between">
                         <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{totalInterest.toLocaleString()}</span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{totalInterest.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between border-t border-amber-500/20 pt-1 font-bold">
                         <span>Auto Maturity Date: <span className="text-indigo-600 dark:text-indigo-400 font-mono">{matDateStr}</span></span>
-                        <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{totalMaturityAmount.toLocaleString()}/-</span></span>
+                        <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{totalMaturityAmount.toFixed(2)}/-</span></span>
                       </div>
                     </div>
                   );

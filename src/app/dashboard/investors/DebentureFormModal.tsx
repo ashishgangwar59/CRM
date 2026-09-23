@@ -22,6 +22,35 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   const bankPassbookUrl = kyc.bankPassbookUrl || form.bankPassbookUrl || investor.bankPassbookUrl || "";
   const nomineeDocUrl = form.nomineeDocUrl || kyc.nomineeDocUrl || investor.nomineeDocUrl || "";
 
+  const [editableForm, setEditableForm] = useState({
+    fullName: investor.fullName || "",
+    fatherSpouseName: form.fatherSpouseName || "",
+    dob: form.dob || "",
+    address: form.address || "",
+    city: form.city || "",
+    state: form.state || "",
+    pinCode: form.pinCode || "",
+    occupation: form.occupation || "",
+    bankName: form.bankName || "",
+    accountNo: form.accountNo || "",
+    ifscCode: form.ifscCode || "",
+    nomineeName: form.nomineeName || investor.nomineeName || "",
+    nomineeRelation: form.nomineeRelation || investor.nomineeRelation || "",
+    nomineeAge: form.nomineeAge || investor.nomineeAge || "",
+    typeOfDebenture: form.typeOfDebenture || "Secured",
+    faceValue: form.faceValue || 1000,
+    noOfDebentures: form.noOfDebentures || 1,
+    numDebenturesWords: form.numDebenturesWords || "Units",
+    totalApplicationAmount: form.totalApplicationAmount || investor.investmentAmount || 0,
+    totalApplicationAmountWords: form.totalApplicationAmountWords || "",
+    bankNamePayment: form.bankNamePayment || "",
+    branchNamePayment: form.branchNamePayment || "",
+    amountPayment: form.amountPayment || "",
+    modeOfPayment: form.modeOfPayment || "",
+    transactionId: form.transactionId || "",
+    paymentDate: form.paymentDate || "",
+  });
+
   const [saving, setSaving] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
 
@@ -84,23 +113,38 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
     approvedSignDate: form.approvedSignDate || new Date().toISOString().split("T")[0],
   });
 
-  const handleSaveOfficeUse = async () => {
+  const handleSaveForm = async () => {
     setSaving(true);
     try {
+      // Need to update investor root data if they edit the fullName or investmentAmount
+      const updatedInvestorRoot: any = {};
+      if (editableForm.fullName !== investor.fullName) updatedInvestorRoot.fullName = editableForm.fullName;
+      if (editableForm.totalApplicationAmount !== investor.investmentAmount) updatedInvestorRoot.investmentAmount = editableForm.totalApplicationAmount;
+      if (editableForm.nomineeName !== investor.nomineeName) updatedInvestorRoot.nomineeName = editableForm.nomineeName;
+      if (editableForm.nomineeRelation !== investor.nomineeRelation) updatedInvestorRoot.nomineeRelation = editableForm.nomineeRelation;
+      if (editableForm.nomineeAge !== investor.nomineeAge) updatedInvestorRoot.nomineeAge = editableForm.nomineeAge;
+
+      const bodyPayload: any = {
+        investorId: investor._id,
+        debentureForm: {
+          ...form,
+          ...editableForm,
+          ...officeData,
+        },
+      };
+
+      if (Object.keys(updatedInvestorRoot).length > 0) {
+        Object.assign(bodyPayload, updatedInvestorRoot);
+      }
+
       const res = await fetch("/api/investors/me", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          investorId: investor._id,
-          debentureForm: {
-            ...form,
-            ...officeData,
-          },
-        }),
+        body: JSON.stringify(bodyPayload),
       });
       const json = await res.json();
       if (json.success) {
-        alert("Office Use details saved successfully!");
+        alert("Form details saved successfully!");
         onUpdate();
       } else {
         alert(json.error || "Failed to save details");
@@ -134,12 +178,12 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
           <div className="flex items-center space-x-2">
             <Button
               size="sm"
-              onClick={handleSaveOfficeUse}
+              onClick={handleSaveForm}
               disabled={saving}
               className="bg-[#c9972f] hover:bg-[#e8b84b] text-zinc-950 font-bold text-xs"
             >
               <Save className="w-3.5 h-3.5 mr-1.5" />
-              {saving ? "Saving..." : "Save Office Use"}
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
             <Button
               size="sm"
@@ -191,12 +235,15 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               font-family: inherit;
               font-size: 12px;
               color: #0c1c3d;
-              background: #fbf6e8;
+              background: transparent;
               border: none;
-              border-bottom: 1px solid #999;
+              border-bottom: 1px dashed #c9972f;
               padding: 2px 4px;
               outline: none;
               width: 100%;
+            }
+            .sheet-view input:focus {
+              background: #fdf5e6;
             }
             .sheet-view .header {
               background: linear-gradient(180deg, #0c1c3d, #132a5c);
@@ -503,31 +550,39 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div className="field-row">
                 <div className="field-label">Full Name (Applicant)</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{investor.fullName}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.fullName} onChange={e => setEditableForm({...editableForm, fullName: e.target.value})} />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Father's / Spouse Name</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.fatherSpouseName || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.fatherSpouseName} onChange={e => setEditableForm({...editableForm, fatherSpouseName: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Date of Birth / Incorporation</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>{form.dob || "—"}</span>
+                <div className="field-fill" style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+                  <input type="date" value={editableForm.dob} onChange={e => setEditableForm({...editableForm, dob: e.target.value})} style={{width: "120px"}} />
                   <span><b>PAN No:</b> <span className="font-mono">{kyc.panNumber || "—"}</span> | <b>Aadhar No:</b> <span className="font-mono">{kyc.aadharNumber || "—"}</span></span>
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Address</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.address || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.address} onChange={e => setEditableForm({...editableForm, address: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">City / State / PIN</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">
-                  {form.city || "—"}, {form.state || "—"} &ndash; {form.pinCode || "—"}
+                <div className="field-fill" style={{ display: "flex", gap: "5px" }}>
+                  <input type="text" value={editableForm.city} onChange={e => setEditableForm({...editableForm, city: e.target.value})} placeholder="City" />
+                  <input type="text" value={editableForm.state} onChange={e => setEditableForm({...editableForm, state: e.target.value})} placeholder="State" />
+                  <input type="text" value={editableForm.pinCode} onChange={e => setEditableForm({...editableForm, pinCode: e.target.value})} placeholder="PIN" style={{width: "80px"}} />
                 </div>
               </div>
               <div className="field-row">
@@ -541,34 +596,44 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div className="field-row">
                 <div className="field-label">Occupation</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.occupation || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.occupation} onChange={e => setEditableForm({...editableForm, occupation: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Bank Name</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.bankName || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.bankName} onChange={e => setEditableForm({...editableForm, bankName: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Account No.</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.accountNo || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.accountNo} onChange={e => setEditableForm({...editableForm, accountNo: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">IFSC Code</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.ifscCode || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.ifscCode} onChange={e => setEditableForm({...editableForm, ifscCode: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Nominee Name</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill font-bold">{form.nomineeName || investor.nomineeName || "—"}</div>
+                <div className="field-fill font-bold">
+                  <input type="text" value={editableForm.nomineeName} onChange={e => setEditableForm({...editableForm, nomineeName: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Nominee Relation / Age</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">
-                  {form.nomineeRelation || investor.nomineeRelation || "—"}
-                  {(form.nomineeAge || investor.nomineeAge) ? ` (${form.nomineeAge || investor.nomineeAge})` : ""}
+                <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
+                  <input type="text" value={editableForm.nomineeRelation} onChange={e => setEditableForm({...editableForm, nomineeRelation: e.target.value})} placeholder="Relation" />
+                  <input type="text" value={editableForm.nomineeAge} onChange={e => setEditableForm({...editableForm, nomineeAge: e.target.value})} placeholder="Age" style={{width: "60px"}} />
                 </div>
               </div>
             </div>
@@ -579,51 +644,62 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div className="field-row">
                 <div className="field-label">Type of Debenture</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.typeOfDebenture || "Secured"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.typeOfDebenture} onChange={e => setEditableForm({...editableForm, typeOfDebenture: e.target.value})} placeholder="Secured" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Face Value (Per Debenture)</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">₹{(form.faceValue || 1000).toLocaleString()}</div>
+                <div className="field-fill" style={{display: "flex", alignItems: "center"}}>
+                  <span>₹</span>
+                  <input type="number" value={editableForm.faceValue} onChange={e => setEditableForm({...editableForm, faceValue: Number(e.target.value)})} placeholder="1000" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">No. of Debentures Applied</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">
-                  {form.noOfDebentures || 1} <span style={{ fontWeight: "normal", fontSize: "11px", color: "#666" }}>({form.numDebenturesWords || "Units"})</span>
+                <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
+                  <input type="number" value={editableForm.noOfDebentures} onChange={e => setEditableForm({...editableForm, noOfDebentures: Number(e.target.value)})} placeholder="1" style={{width: "80px"}} />
+                  <input type="text" value={editableForm.numDebenturesWords} onChange={e => setEditableForm({...editableForm, numDebenturesWords: e.target.value})} placeholder="Units" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Total Application Amount</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                  <span>₹{(investor.investmentAmount || form.totalApplicationAmount || 0).toLocaleString()}</span>
-                  {form.totalApplicationAmountWords && (
-                    <span className="text-xs text-zinc-500 font-normal">
-                      ({form.totalApplicationAmountWords})
-                    </span>
-                  )}
+                  <span>₹</span>
+                  <input type="number" value={editableForm.totalApplicationAmount} onChange={e => setEditableForm({...editableForm, totalApplicationAmount: Number(e.target.value)})} placeholder="1000" style={{width: "100px", color: "#00a65a", fontWeight: "bold"}} />
+                  <input type="text" value={editableForm.totalApplicationAmountWords} onChange={e => setEditableForm({...editableForm, totalApplicationAmountWords: e.target.value})} placeholder="Amount in words" style={{flex: 1, fontSize: "12px", color: "#666"}} />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Mode of Payment</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.modeOfPayment || "NEFT/RTGS"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.modeOfPayment} onChange={e => setEditableForm({...editableForm, modeOfPayment: e.target.value})} placeholder="NEFT/RTGS" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Transaction / UTR No.</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill font-mono">{form.transactionUtrNo || "—"}</div>
+                <div className="field-fill font-mono">
+                  <input type="text" value={editableForm.transactionId} onChange={e => setEditableForm({...editableForm, transactionId: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Cheque / DD No.</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill font-mono">{form.chequeDdNo || "—"}</div>
+                <div className="field-fill font-mono">
+                  <input type="date" value={editableForm.paymentDate} onChange={e => setEditableForm({...editableForm, paymentDate: e.target.value})} placeholder="—" />
+                </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Bank Name (Payment)</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill">{form.drawnOnBank || "—"}</div>
+                <div className="field-fill">
+                  <input type="text" value={editableForm.bankNamePayment} onChange={e => setEditableForm({...editableForm, bankNamePayment: e.target.value})} placeholder="—" />
+                </div>
               </div>
             </div>
 

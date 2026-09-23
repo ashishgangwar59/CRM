@@ -642,7 +642,7 @@ export async function GET(req: Request) {
           <div class="bank-details">
             <div>
               <span class="k">Bank Name</span>
-              <span class="v">Kotak Mahindra Bank.</span>
+              <span class="v">Indian Overseas Bank</span>
             </div>
             <div>
               <span class="k">A/c Name</span>
@@ -650,16 +650,16 @@ export async function GET(req: Request) {
             </div>
             <div>
               <span class="k">A/C Number</span>
-              <span class="v font-mono">2151206126</span>
+              <span class="v font-mono">084002000002213</span>
             </div>
             <div>
               <span class="k">IFSC Code</span>
-              <span class="v font-mono">KKBK0000287</span>
+              <span class="v font-mono">IOBA0000840</span>
             </div>
             <div>
               <span class="k">Branch</span>
               <span class="v">
-                SCO 16, Sector 14,Urban Estate Gurgaon - 122001 Haryana India
+               Golf Market Narela North Delhi 110001
               </span>
             </div>
           </div>
