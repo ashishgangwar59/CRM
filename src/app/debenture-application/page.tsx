@@ -1167,7 +1167,7 @@ function DebentureFormContent() {
             {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
           </div>
           <div className="contact-row">
-            <span>&#128222; {settings?.companyProfile?.phone || "+9118008900818"}</span>
+            <span>&#128222; {settings?.companyProfile?.phone || "118008900818"}</span>
             <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
             <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
           </div>

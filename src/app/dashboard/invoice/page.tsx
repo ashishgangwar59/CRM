@@ -41,7 +41,7 @@ export default function InvoicePage() {
   const [viewInvoice, setViewInvoice] = useState<any>(null);
   const [printRef, setPrintRef] = useState<any>(null);
   const [companyName, setCompanyName] = useState<string>("NIVENTRA CAPITAL ADVISORY INDIA PVT LTD");
-  const [companyPhone, setCompanyPhone] = useState<string>("+9118008900818");
+  const [companyPhone, setCompanyPhone] = useState<string>("18008900818");
   const [companyEmail, setCompanyEmail] = useState<string>("info@niventracapitaladvisory.com");
   const [companyWebsite, setCompanyWebsite] = useState<string>("www.niventracapitaladvisory.com");
   const [saving, setSaving] = useState(false);
