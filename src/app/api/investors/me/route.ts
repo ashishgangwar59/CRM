@@ -102,38 +102,34 @@ export async function GET(req: Request) {
         }
       }
 
-      const page = parseInt(searchParams.get("page") || "0");
-      const limit = parseInt(searchParams.get("limit") || "0");
+      // Parse pagination parameters with defaults
+      const pageParam = parseInt(searchParams.get("page") || "0");
+      const limitParam = parseInt(searchParams.get("limit") || "0");
+      const page = pageParam > 0 ? pageParam : 1;
+      const limit = limitParam > 0 ? limitParam : 10;
 
       let investors;
-      let total = 0;
       // Define exclusion for heavy document fields
       const excludeFields = "-kycDocs.passportPhotoUrl -kycDocs.signatureUrl -kycDocs.panDocUrl -kycDocs.aadharDocUrl -kycDocs.nomineeDocUrl -debentureForm.passportPhotoUrl -debentureForm.signatureUrl -debentureForm.panDocUrl -debentureForm.aadharDocUrl -debentureForm.nomineeDocUrl";
 
-      if (page > 0 && limit > 0) {
-        total = await Investor.countDocuments(query);
-        investors = await Investor.find(query)
-          .select(excludeFields)
-          .sort({ createdAt: -1 })
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .lean();
-      } else {
-        investors = await Investor.find(query)
-          .select(excludeFields)
-          .sort({ createdAt: -1 })
-          .lean();
-      }
+      // Get total count for pagination
+      const total = await Investor.countDocuments(query);
+      investors = await Investor.find(query)
+        .select(excludeFields)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         data: investors,
-        pagination: page > 0 && limit > 0 ? {
+        pagination: {
           total,
           page,
           limit,
           totalPages: Math.ceil(total / limit)
-        } : null
+        }
       });
     }
 
