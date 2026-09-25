@@ -100,18 +100,43 @@ export async function GET(req: Request) {
     let days = 30;
     let periodText = "";
 
+    const getFormattedPeriod = (startDate: Date, endDate: Date, totalDays: number) => {
+      let years = endDate.getFullYear() - startDate.getFullYear();
+      
+      let tempDate = new Date(startDate);
+      tempDate.setFullYear(startDate.getFullYear() + years);
+      
+      if (tempDate.getTime() > endDate.getTime()) {
+        years--;
+        tempDate = new Date(startDate);
+        tempDate.setFullYear(startDate.getFullYear() + years);
+      }
+      
+      if (years > 0) {
+        const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
+        let text = `${years} Year${years > 1 ? 's' : ''}`;
+        if (remainingDays > 0) {
+          text += ` ${remainingDays} Day${remainingDays > 1 ? 's' : ''}`;
+        }
+        return `${totalDays} Days (${text})`;
+      } else {
+        const displayMonths = Math.max(1, Math.round(totalDays / 30));
+        return `${totalDays} Days (${displayMonths} Month${displayMonths === 1 ? '' : 's'})`;
+      }
+    };
+
     const maturityDateParam = searchParams.get("maturityDate");
     const matDateVal = maturityDateParam || investor.bondMaturityDate;
 
     if (matDateVal) {
       maturityDateObj = new Date(matDateVal);
       days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
-      periodText = `${days} Days`;
+      periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
     } else {
       maturityDateObj = new Date(issueDateObj);
       maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
       days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
-      periodText = `${days} Days (${maturityPeriodMonths} Months)`;
+      periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
     }
 
     const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });

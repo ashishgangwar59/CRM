@@ -4,6 +4,23 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Save, X, ExternalLink, Eye, Download, FileText } from "lucide-react";
 
+function numberToIndianWords(num: number): string {
+  if (num === 0) return "Zero";
+  const a = ["", "One ", "Two ", "Three ", "Four ", "Five ", "Six ", "Seven ", "Eight ", "Nine ", "Ten ", "Eleven ", "Twelve ", "Thirteen ", "Fourteen ", "Fifteen ", "Sixteen ", "Seventeen ", "Eighteen ", "Nineteen "];
+  const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  const n = ("000000000" + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+  if (!n) return "";
+
+  let str = "";
+  str += (n[1] != "00") ? (a[Number(n[1])] || b[n[1][0] as any] + " " + a[n[1][1] as any]) + "Crore " : "";
+  str += (n[2] != "00") ? (a[Number(n[2])] || b[n[2][0] as any] + " " + a[n[2][1] as any]) + "Lakh " : "";
+  str += (n[3] != "00") ? (a[Number(n[3])] || b[n[3][0] as any] + " " + a[n[3][1] as any]) + "Thousand " : "";
+  str += (n[4] != "0") ? (a[Number(n[4])] || b[n[4][0] as any] + " " + a[n[4][1] as any]) + "Hundred " : "";
+  str += (n[5] != "00") ? ((str != "") ? "and " : "") + (a[Number(n[5])] || b[n[5][0] as any] + " " + a[n[5][1] as any]) : "";
+  return str.trim();
+}
+
 interface DebentureFormModalProps {
   investor: any;
   onClose: () => void;
@@ -49,6 +66,11 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
     modeOfPayment: form.modeOfPayment || "",
     transactionId: form.transactionId || "",
     paymentDate: form.paymentDate || "",
+    investmentDate: form.investmentDate || investor.investmentDate || "",
+    bondMaturityDate: form.bondMaturityDate || investor.bondMaturityDate || "",
+    monthlyGrowthPercentage: form.monthlyGrowthPercentage || investor.monthlyGrowthPercentage || 0,
+    panNumber: kyc.panNumber || "",
+    aadharNumber: kyc.aadharNumber || "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -123,6 +145,9 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
       if (editableForm.nomineeName !== investor.nomineeName) updatedInvestorRoot.nomineeName = editableForm.nomineeName;
       if (editableForm.nomineeRelation !== investor.nomineeRelation) updatedInvestorRoot.nomineeRelation = editableForm.nomineeRelation;
       if (editableForm.nomineeAge !== investor.nomineeAge) updatedInvestorRoot.nomineeAge = editableForm.nomineeAge;
+      if (editableForm.investmentDate !== investor.investmentDate) updatedInvestorRoot.investmentDate = editableForm.investmentDate;
+      if (editableForm.bondMaturityDate !== investor.bondMaturityDate) updatedInvestorRoot.bondMaturityDate = editableForm.bondMaturityDate;
+      if (editableForm.monthlyGrowthPercentage !== investor.monthlyGrowthPercentage) updatedInvestorRoot.monthlyGrowthPercentage = editableForm.monthlyGrowthPercentage;
 
       const bodyPayload: any = {
         investorId: investor._id,
@@ -131,6 +156,11 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
           ...editableForm,
           ...officeData,
         },
+        kycDocs: {
+          ...kyc,
+          panNumber: editableForm.panNumber,
+          aadharNumber: editableForm.aadharNumber,
+        }
       };
 
       if (Object.keys(updatedInvestorRoot).length > 0) {
@@ -162,7 +192,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 print:static print:bg-transparent print:p-0 print:block print:backdrop-blur-none">
-      <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden relative shadow-2xl print:shadow-none print:border-none print:bg-white print:max-w-none print:max-h-none print:overflow-visible print:rounded-none print:static">
+      <div className="bg-[#e7e7e7] border border-zinc-300 rounded-lg w-full max-w-6xl max-h-[96vh] flex flex-col overflow-hidden relative shadow-2xl print:shadow-none print:border-none print:bg-white print:max-w-none print:max-h-none print:overflow-visible print:rounded-none print:static">
 
         {/* Top Control Header Bar (Hidden during print) */}
         <div className="sticky top-0 z-20 bg-[#0c1c3d] text-white px-6 py-3.5 flex justify-between items-center border-b border-[#c9972f] print:hidden">
@@ -564,9 +594,12 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div className="field-row">
                 <div className="field-label">Date of Birth / Incorporation</div>
                 <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+                <div className="field-fill" style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
                   <input type="date" value={editableForm.dob} onChange={e => setEditableForm({ ...editableForm, dob: e.target.value })} style={{ width: "120px" }} />
-                  <span><b>PAN No:</b> <span className="font-mono">{kyc.panNumber || "—"}</span> | <b>Aadhar No:</b> <span className="font-mono">{kyc.aadharNumber || "—"}</span></span>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <b>PAN No:</b> <input type="text" value={editableForm.panNumber} onChange={e => setEditableForm({ ...editableForm, panNumber: e.target.value.toUpperCase() })} placeholder="PAN Number" style={{ width: "110px", fontFamily: "monospace" }} />
+                    <b>| Aadhar No:</b> <input type="text" value={editableForm.aadharNumber} onChange={e => setEditableForm({ ...editableForm, aadharNumber: e.target.value })} placeholder="Aadhar Number" style={{ width: "130px", fontFamily: "monospace" }} />
+                  </div>
                 </div>
               </div>
               <div className="field-row">
@@ -661,7 +694,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-colon">:</div>
                 <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
                   <input type="number" value={editableForm.noOfDebentures} onChange={e => setEditableForm({ ...editableForm, noOfDebentures: Number(e.target.value) })} placeholder="1" style={{ width: "80px" }} />
-                  <input type="text" value={editableForm.numDebenturesWords} onChange={e => setEditableForm({ ...editableForm, numDebenturesWords: e.target.value })} placeholder="Units" />
+                  <input type="text" disabled value={numberToIndianWords(editableForm.noOfDebentures) ? `${numberToIndianWords(editableForm.noOfDebentures)} Units` : ""} placeholder="Units" style={{ backgroundColor: "transparent", border: "none", width: "100%" }} />
                 </div>
               </div>
               <div className="field-row">
@@ -670,8 +703,85 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <span>₹</span>
                   <input type="number" value={editableForm.totalApplicationAmount} onChange={e => setEditableForm({ ...editableForm, totalApplicationAmount: Number(e.target.value) })} placeholder="1000" style={{ width: "100px", color: "#00a65a", fontWeight: "bold" }} />
-                  <input type="text" value={editableForm.totalApplicationAmountWords} onChange={e => setEditableForm({ ...editableForm, totalApplicationAmountWords: e.target.value })} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666" }} />
+                  <input type="text" disabled value={numberToIndianWords(editableForm.totalApplicationAmount) ? `${numberToIndianWords(editableForm.totalApplicationAmount)} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
                 </div>
+              </div>
+              <div className="field-row">
+                <div className="field-label">Investment Details</div>
+                <div className="field-colon">:</div>
+                <div className="field-fill" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "bold" }}>Date:</span>
+                    <input
+                      type="date"
+                      value={editableForm.investmentDate}
+                      onChange={(e) => setEditableForm({ ...editableForm, investmentDate: e.target.value })}
+                      style={{ maxWidth: "130px" }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "bold" }}>Maturity:</span>
+                    <input
+                      type="date"
+                      value={editableForm.bondMaturityDate}
+                      onChange={(e) => setEditableForm({ ...editableForm, bondMaturityDate: e.target.value })}
+                      style={{ maxWidth: "130px" }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "bold" }}>Growth (%):</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editableForm.monthlyGrowthPercentage}
+                      onChange={(e) => setEditableForm({ ...editableForm, monthlyGrowthPercentage: parseFloat(e.target.value) || 0 })}
+                      style={{ maxWidth: "70px" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Bond Auto-Calculation Preview (Hidden on print) */}
+              <div className="print:hidden">
+                {(() => {
+                  const principal = Number(editableForm.totalApplicationAmount) || 0;
+                  const rate = Number(editableForm.monthlyGrowthPercentage) || 0;
+
+                  let days = 0;
+                  let matDateStr = "—";
+
+                  if (editableForm.investmentDate && editableForm.bondMaturityDate) {
+                    const invDate = new Date(editableForm.investmentDate);
+                    const matDate = new Date(editableForm.bondMaturityDate);
+
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  } else if (editableForm.investmentDate) {
+                    const invDate = new Date(editableForm.investmentDate);
+                    const months = 1;
+                    const matDate = new Date(invDate);
+                    matDate.setMonth(matDate.getMonth() + months);
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  }
+
+                  const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
+                  const totalMaturityAmount = principal + totalInterest;
+
+                  return (
+                    <div style={{ padding: "8px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#78350f", marginBottom: "8px" }}>
+                      <div style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px", color: "#d97706", marginBottom: "4px" }}>✦ Bond Maturity Auto-Calculation Preview ✦</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                        <span>Total Interest ({days} days @ {rate}%/mo):</span>
+                        <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{totalInterest.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "4px", fontWeight: "bold" }}>
+                        <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
+                        <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{totalMaturityAmount.toFixed(2)}/-</span></span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="field-row">
                 <div className="field-label">Mode of Payment</div>

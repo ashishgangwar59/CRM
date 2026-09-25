@@ -723,8 +723,8 @@ export default function AdminInvestorsPage() {
 
               {/* Payment Bond Maturity Calculation Summary */}
               {(() => {
-                const principal = selectedInvestor.investmentAmount || 0;
-                const rate = selectedInvestor.monthlyGrowthPercentage || 2;
+                const principal = Number(selectedInvestor.investmentAmount) || 0;
+                const rate = Number(selectedInvestor.monthlyGrowthPercentage) || 2;
                 const months = Number(selectedInvestor.bondMaturityMonths) || 1;
 
                 let issueDateObj: Date;
@@ -744,23 +744,46 @@ export default function AdminInvestorsPage() {
 
                 if (selectedInvestor.bondMaturityDate) {
                   maturityDateObj = new Date(selectedInvestor.bondMaturityDate);
-                  if (issueDateObj.getDate() === maturityDateObj.getDate()) {
-                    const monthDiff = (maturityDateObj.getFullYear() - issueDateObj.getFullYear()) * 12 + (maturityDateObj.getMonth() - issueDateObj.getMonth());
-                    days = Math.max(0, monthDiff * 30 + 1); // +1 for inclusive
-                  } else {
-                    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-                  }
+                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
                 } else {
                   maturityDateObj = new Date(issueDateObj);
                   maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
-                  days = 30; // 1 month is considered exactly 30 days
+                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
                 }
-
-                const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
-                const maturityAmount = principal + totalInterest;
 
                 const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                 const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                
+                const getFormattedPeriod = (startDate: Date, endDate: Date, totalDays: number) => {
+                  let years = endDate.getFullYear() - startDate.getFullYear();
+                  
+                  let tempDate = new Date(startDate);
+                  tempDate.setFullYear(startDate.getFullYear() + years);
+                  
+                  if (tempDate.getTime() > endDate.getTime()) {
+                    years--;
+                    tempDate = new Date(startDate);
+                    tempDate.setFullYear(startDate.getFullYear() + years);
+                  }
+                  
+                  if (years > 0) {
+                    const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
+                    let text = `${years} Year${years > 1 ? 's' : ''}`;
+                    if (remainingDays > 0) {
+                      text += ` ${remainingDays} Day${remainingDays > 1 ? 's' : ''}`;
+                    }
+                    return `${totalDays} Days (${text})`;
+                  } else {
+                    const displayMonths = Math.max(1, Math.round(totalDays / 30));
+                    return `${totalDays} Days (${displayMonths} Month${displayMonths === 1 ? '' : 's'})`;
+                  }
+                };
+                
+                const periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
+
+                // Calculate interest based on standard daily formula
+                const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
+                const maturityAmount = principal + totalInterest;
 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800/40">
@@ -770,14 +793,14 @@ export default function AdminInvestorsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Maturity Period</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{days} Days ({months} {months === 1 ? 'Month' : 'Months'})</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{periodText}</p>
                     </div>
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Maturity Date</p>
                       <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{maturityDateStr}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Payable on Maturity</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Amount Payable on Maturity</p>
                       <p className="text-sm font-black text-rose-600 dark:text-rose-400">₹{maturityAmount.toFixed(2)}/-</p>
                     </div>
                   </div>
@@ -1286,8 +1309,8 @@ export default function AdminInvestorsPage() {
 
                 {/* Payment Bond Auto-Calculation Preview */}
                 {(() => {
-                  const principal = editForm.investmentAmount || 0;
-                  const rate = editForm.monthlyGrowthPercentage || 0;
+                  const principal = Number(editForm.investmentAmount) || 0;
+                  const rate = Number(editForm.monthlyGrowthPercentage) || 0;
 
                   let days = 0;
                   let matDateStr = "—";
@@ -1295,19 +1318,15 @@ export default function AdminInvestorsPage() {
                   if (editForm.investmentDate && editForm.bondMaturityDate) {
                     const invDate = new Date(editForm.investmentDate);
                     const matDate = new Date(editForm.bondMaturityDate);
-                    if (invDate.getDate() === matDate.getDate()) {
-                      const months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
-                      days = Math.max(0, months * 30 + 1); // +1 for inclusive counting
-                    } else {
-                      days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-                    }
+                    
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   } else if (editForm.investmentDate) {
                     const invDate = new Date(editForm.investmentDate);
                     const months = 1;
                     const matDate = new Date(invDate);
                     matDate.setMonth(matDate.getMonth() + months);
-                    days = 30; // 1 month is considered exactly 30 days
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   }
 
