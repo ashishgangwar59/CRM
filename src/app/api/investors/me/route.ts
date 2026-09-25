@@ -119,6 +119,7 @@ export async function GET(req: Request) {
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
+        .setOptions({ allowDiskUse: true })
         .lean();
 
       return NextResponse.json({
@@ -136,9 +137,9 @@ export async function GET(req: Request) {
     // If Investor self login: Return their investor profile
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    let investors = await Investor.find({ userId: user._id }).sort({ createdAt: -1 });
+    let investors = await Investor.find({ userId: user._id }).sort({ createdAt: -1 }).setOptions({ allowDiskUse: true });
     if (!investors || investors.length === 0) {
-      investors = await Investor.find({ email: { $regex: `^${user.email}$`, $options: "i" } }).sort({ createdAt: -1 });
+      investors = await Investor.find({ email: { $regex: `^${user.email}$`, $options: "i" } }).sort({ createdAt: -1 }).setOptions({ allowDiskUse: true });
     }
 
     if (!investors || investors.length === 0) {

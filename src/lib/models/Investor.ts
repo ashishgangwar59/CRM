@@ -200,6 +200,10 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
   { timestamps: true }
 );
 
+InvestorSchema.index({ createdAt: -1 });
+InvestorSchema.index({ userId: 1 });
+InvestorSchema.index({ email: 1 });
+
 // Clear the mongoose model cache for Investor so Next.js HMR picks up schema changes
 if (mongoose.models.Investor) {
   delete mongoose.models.Investor;
