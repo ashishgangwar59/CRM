@@ -128,20 +128,36 @@ export async function GET(req: Request) {
     const maturityDateParam = searchParams.get("maturityDate");
     const matDateVal = maturityDateParam || investor.bondMaturityDate;
 
+    let interestAmount = 0;
     if (matDateVal) {
       maturityDateObj = new Date(matDateVal);
+      
+      let months = (maturityDateObj.getFullYear() - issueDateObj.getFullYear()) * 12 + (maturityDateObj.getMonth() - issueDateObj.getMonth());
+      let tempDate = new Date(issueDateObj);
+      tempDate.setMonth(tempDate.getMonth() + months);
+      if (tempDate.getTime() > maturityDateObj.getTime()) {
+        months--;
+        tempDate = new Date(issueDateObj);
+        tempDate.setMonth(tempDate.getMonth() + months);
+      }
+      const remainingDays = Math.max(0, Math.ceil((maturityDateObj.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24)));
       days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
       periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
+
+      const monthlyInterest = principalAmount * (growthRate / 100);
+      const dailyInterest = principalAmount * ((growthRate * 12) / 365 / 100);
+      interestAmount = (monthlyInterest * months) + (dailyInterest * remainingDays);
     } else {
       maturityDateObj = new Date(issueDateObj);
       maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
       days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
       periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
+      
+      const monthlyInterest = principalAmount * (growthRate / 100);
+      interestAmount = monthlyInterest * maturityPeriodMonths;
     }
 
     const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-
-    const interestAmount = Math.round(principalAmount * ((growthRate * 12) / 365 / 100) * days);
     const maturityAmount = principalAmount + interestAmount;
 
     const rawSeq = (investor.investorCode || "").replace(/\D/g, "");

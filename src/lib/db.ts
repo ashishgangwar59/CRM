@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { initCronJobs } from "./cronService";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crm";
 
@@ -13,6 +14,8 @@ if (!cached) {
 }
 
 async function connectToDatabase() {
+  initCronJobs(); // Starts the daily cron backup
+
   if (cached.conn) {
     return cached.conn;
   }

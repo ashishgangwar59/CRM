@@ -106,7 +106,7 @@ function numberToWords(num: number): string {
     if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + inWords(n % 100000) : '');
     return inWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + inWords(n % 10000000) : '');
   }
-  return inWords(num).trim();
+  return inWords(Math.floor(num)).trim();
 }
 
 export default function PaymentBondModal({ investor, onClose, autoDownload }: PaymentBondModalProps) {
@@ -153,16 +153,16 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
 
   const getFormattedPeriod = (startDate: Date, endDate: Date, totalDays: number) => {
     let years = endDate.getFullYear() - startDate.getFullYear();
-    
+
     let tempDate = new Date(startDate);
     tempDate.setFullYear(startDate.getFullYear() + years);
-    
+
     if (tempDate.getTime() > endDate.getTime()) {
       years--;
       tempDate = new Date(startDate);
       tempDate.setFullYear(startDate.getFullYear() + years);
     }
-    
+
     if (years > 0) {
       const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
       let text = `${years} Year${years > 1 ? 's' : ''}`;
@@ -176,19 +176,35 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
     }
   };
 
+  let interestAmount = 0;
   if (investor.bondMaturityDate) {
     maturityDateObj = new Date(investor.bondMaturityDate);
-    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+
+    let months = (maturityDateObj.getFullYear() - issueDateObj.getFullYear()) * 12 + (maturityDateObj.getMonth() - issueDateObj.getMonth());
+    let tempDate = new Date(issueDateObj);
+    tempDate.setMonth(tempDate.getMonth() + months);
+    if (tempDate.getTime() > maturityDateObj.getTime()) {
+      months--;
+      tempDate = new Date(issueDateObj);
+      tempDate.setMonth(tempDate.getMonth() + months);
+    }
+
+    days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
+
+    console.log(days)
+    interestAmount = (principalAmount * growthRate * days / (100 * 30));
   } else {
     maturityDateObj = new Date(issueDateObj);
     maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
     days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
+    const monthlyInterest = principalAmount * (growthRate / 100);
+    interestAmount = monthlyInterest * maturityPeriodMonths;
   }
   const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-  const interestAmount = Math.round(principalAmount * ((growthRate * 12) / 365 / 100) * days);
   const maturityAmount = principalAmount + interestAmount;
 
   const rawSeq = (investor.investorCode || "").replace(/\D/g, "");

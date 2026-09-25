@@ -75,6 +75,20 @@ export default function AdminInvestorsPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
+  const fetchFullInvestorData = async (invId: string) => {
+    try {
+      const res = await fetch(`/api/investors/me?id=${invId}`);
+      const json = await res.json();
+      if (json.success) return json.data;
+      alert("Failed to load complete investor data");
+      return null;
+    } catch (e) {
+      console.error(e);
+      alert("Error fetching complete investor data");
+      return null;
+    }
+  };
+
   // Fetch Role
   useEffect(() => {
     fetch("/api/auth/me")
@@ -269,7 +283,7 @@ export default function AdminInvestorsPage() {
     }
   };
 
-    const exportToExcel = async () => {
+  const exportToExcel = async () => {
     try {
       // Fetch ALL data matching current filters by setting a huge limit
       const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}`);
@@ -378,7 +392,7 @@ export default function AdminInvestorsPage() {
               className="pl-9"
             />
           </div>
-  
+
           <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
             <Button
               variant={statusFilter === "" ? "default" : "outline"}
@@ -478,7 +492,7 @@ export default function AdminInvestorsPage() {
               }}
             />
           </div>
-          
+
           {(filterDays || filterMonth || filterDate) && (
             <Button variant="ghost" size="sm" onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); }} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 ml-auto">
               Clear Filters
@@ -581,7 +595,10 @@ export default function AdminInvestorsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setDebentureModalInvestor(inv)}
+                          onClick={async () => {
+                            const fullData = await fetchFullInvestorData(inv._id);
+                            if (fullData) setDebentureModalInvestor(fullData);
+                          }}
                           className="text-white border-[#0c1c3d]/30  font-bold cursor-pointer"
                           title="View Official Sheet Debenture Form"
                         >
@@ -591,7 +608,10 @@ export default function AdminInvestorsPage() {
                           size="sm"
                           variant="outline"
                           className="cursor-pointer"
-                          onClick={() => setSelectedInvestor(inv)}
+                          onClick={async () => {
+                            const fullData = await fetchFullInvestorData(inv._id);
+                            if (fullData) setSelectedInvestor(fullData);
+                          }}
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" /> View & Verify
                         </Button>
@@ -599,21 +619,24 @@ export default function AdminInvestorsPage() {
                           className="cursor-pointer"
                           size="sm"
                           variant="secondary"
-                          onClick={() => {
-                            setEditForm({
-                              investorId: inv._id,
-                              fullName: inv.fullName,
-                              email: inv.email,
-                              phone: inv.phone,
-                              investmentAmount: inv.investmentAmount || 0,
-                              monthlyGrowthPercentage: inv.monthlyGrowthPercentage || 1.33,
-                              investmentDate: inv.investmentDate || (inv.verifiedAt ? new Date(inv.verifiedAt).toISOString().split("T")[0] : new Date(inv.createdAt).toISOString().split("T")[0]),
-                              bondMaturityDate: inv.bondMaturityDate || "",
-                              nomineeName: inv.debentureForm?.nomineeName || inv.nomineeName || "",
-                              nomineeRelation: inv.debentureForm?.nomineeRelation || inv.nomineeRelation || "",
-                              nomineeAge: inv.debentureForm?.nomineeAge || inv.nomineeAge || "",
-                            });
-                            setShowEditModal(true);
+                          onClick={async () => {
+                            const fullData = await fetchFullInvestorData(inv._id);
+                            if (fullData) {
+                              setEditForm({
+                                investorId: fullData._id,
+                                fullName: fullData.fullName,
+                                email: fullData.email,
+                                phone: fullData.phone,
+                                investmentAmount: fullData.investmentAmount || 0,
+                                monthlyGrowthPercentage: fullData.monthlyGrowthPercentage || 1.33,
+                                investmentDate: fullData.investmentDate || (fullData.verifiedAt ? new Date(fullData.verifiedAt).toISOString().split("T")[0] : new Date(fullData.createdAt).toISOString().split("T")[0]),
+                                bondMaturityDate: fullData.bondMaturityDate || "",
+                                nomineeName: fullData.debentureForm?.nomineeName || fullData.nomineeName || "",
+                                nomineeRelation: fullData.debentureForm?.nomineeRelation || fullData.nomineeRelation || "",
+                                nomineeAge: fullData.debentureForm?.nomineeAge || fullData.nomineeAge || "",
+                              });
+                              setShowEditModal(true);
+                            }
                           }}
                         >
                           <Edit3 className="w-3.5 h-3.5 " />
@@ -724,8 +747,8 @@ export default function AdminInvestorsPage() {
               {/* Payment Bond Maturity Calculation Summary */}
               {(() => {
                 const principal = Number(selectedInvestor.investmentAmount) || 0;
-                const rate = Number(selectedInvestor.monthlyGrowthPercentage) || 2;
-                const months = Number(selectedInvestor.bondMaturityMonths) || 1;
+                const rate = Number(selectedInvestor.monthlyGrowthPercentage);
+                // const months = Number(selectedInvestor.bondMaturityMonths);
 
                 let issueDateObj: Date;
                 if (selectedInvestor.investmentDate) {
@@ -740,32 +763,50 @@ export default function AdminInvestorsPage() {
                 }
 
                 let maturityDateObj: Date;
-                let days = 30; // fallback
+                let days = 0; // fallback
+                let months = Number(selectedInvestor.bondMaturityMonths) || 1;
+                let totalInterest = 0;
 
                 if (selectedInvestor.bondMaturityDate) {
                   maturityDateObj = new Date(selectedInvestor.bondMaturityDate);
-                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+
+                  // calculate months and remaining days
+                  months = (maturityDateObj.getFullYear() - issueDateObj.getFullYear()) * 12 + (maturityDateObj.getMonth() - issueDateObj.getMonth());
+                  let tempDate = new Date(issueDateObj);
+                  tempDate.setMonth(tempDate.getMonth() + months);
+                  if (tempDate.getTime() > maturityDateObj.getTime()) {
+                    months--;
+                    tempDate = new Date(issueDateObj);
+                    tempDate.setMonth(tempDate.getMonth() + months);
+                  }
+                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+
+
+                  totalInterest = (principal * rate * days / (100 * 30));
                 } else {
                   maturityDateObj = new Date(issueDateObj);
                   maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
-                  days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+
+                  const monthlyInterest = principal * (rate / 100);
+                  totalInterest = monthlyInterest * months;
                 }
 
                 const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                 const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                
+
                 const getFormattedPeriod = (startDate: Date, endDate: Date, totalDays: number) => {
                   let years = endDate.getFullYear() - startDate.getFullYear();
-                  
+
                   let tempDate = new Date(startDate);
                   tempDate.setFullYear(startDate.getFullYear() + years);
-                  
+
                   if (tempDate.getTime() > endDate.getTime()) {
                     years--;
                     tempDate = new Date(startDate);
                     tempDate.setFullYear(startDate.getFullYear() + years);
                   }
-                  
+
                   if (years > 0) {
                     const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
                     let text = `${years} Year${years > 1 ? 's' : ''}`;
@@ -778,12 +819,14 @@ export default function AdminInvestorsPage() {
                     return `${totalDays} Days (${displayMonths} Month${displayMonths === 1 ? '' : 's'})`;
                   }
                 };
-                
+                console.log(maturityDateObj);
                 const periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
 
-                // Calculate interest based on standard daily formula
-                const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
+                // Calculate interest based on calendar months and remaining days
+                // totalInterest already calculated above
                 const maturityAmount = principal + totalInterest;
+
+
 
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800/40">
@@ -1312,14 +1355,26 @@ export default function AdminInvestorsPage() {
                   const principal = Number(editForm.investmentAmount) || 0;
                   const rate = Number(editForm.monthlyGrowthPercentage) || 0;
 
+                  let totalInterest = 0;
                   let days = 0;
                   let matDateStr = "—";
 
                   if (editForm.investmentDate && editForm.bondMaturityDate) {
                     const invDate = new Date(editForm.investmentDate);
                     const matDate = new Date(editForm.bondMaturityDate);
-                    
+
+                    let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
+                    let tempDate = new Date(invDate);
+                    tempDate.setMonth(tempDate.getMonth() + months);
+                    if (tempDate.getTime() > matDate.getTime()) {
+                      months--;
+                      tempDate = new Date(invDate);
+                      tempDate.setMonth(tempDate.getMonth() + months);
+                    }
                     days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+                    totalInterest = (principal * rate * days / (100 * 30));
+
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   } else if (editForm.investmentDate) {
                     const invDate = new Date(editForm.investmentDate);
@@ -1327,10 +1382,13 @@ export default function AdminInvestorsPage() {
                     const matDate = new Date(invDate);
                     matDate.setMonth(matDate.getMonth() + months);
                     days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+                    const monthlyInterest = principal * (rate / 100);
+                    totalInterest = monthlyInterest * 1;
+
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   }
 
-                  const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
                   const totalMaturityAmount = principal + totalInterest;
 
                   return (

@@ -41,6 +41,14 @@ export async function GET(req: Request) {
     // If Admin / KeyAdmin / SuperAdmin / Manager / Employee: Return all investors list with search
     if (userRole !== "INVESTOR") {
       const { searchParams } = new URL(req.url);
+      
+      const specificId = searchParams.get("id");
+      if (specificId) {
+        const inv = await Investor.findById(specificId).lean();
+        if (!inv) return NextResponse.json({ error: "Investor not found" }, { status: 404 });
+        return NextResponse.json({ success: true, data: inv });
+      }
+
       const search = searchParams.get("search") || "";
       const status = searchParams.get("status") || "";
 
@@ -99,15 +107,22 @@ export async function GET(req: Request) {
 
       let investors;
       let total = 0;
+      // Define exclusion for heavy document fields
+      const excludeFields = "-kycDocs.passportPhotoUrl -kycDocs.signatureUrl -kycDocs.panDocUrl -kycDocs.aadharDocUrl -kycDocs.nomineeDocUrl -debentureForm.passportPhotoUrl -debentureForm.signatureUrl -debentureForm.panDocUrl -debentureForm.aadharDocUrl -debentureForm.nomineeDocUrl";
+
       if (page > 0 && limit > 0) {
         total = await Investor.countDocuments(query);
         investors = await Investor.find(query)
+          .select(excludeFields)
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
           .limit(limit)
           .lean();
       } else {
-        investors = await Investor.find(query).sort({ createdAt: -1 }).lean();
+        investors = await Investor.find(query)
+          .select(excludeFields)
+          .sort({ createdAt: -1 })
+          .lean();
       }
 
       return NextResponse.json({ 

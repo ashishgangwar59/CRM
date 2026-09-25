@@ -121,7 +121,7 @@ export async function GET(req: Request) {
 
     // Set filename headers for easy downloading
     const dateStr = new Date().toISOString().split("T")[0];
-    return new NextResponse(JSON.stringify(backupData, null, 2), {
+    return new NextResponse(JSON.stringify(backupData), {
       headers: {
         "Content-Type": "application/json",
         "Content-Disposition": `attachment; filename=crm_backup_${dateStr}.json`
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
           if (data[name]) {
             await model.deleteMany({});
             if (Array.isArray(data[name]) && data[name].length > 0) {
-              await model.insertMany(data[name]);
+              await model.insertMany(data[name], { ordered: false });
             }
           }
         }
@@ -186,7 +186,7 @@ export async function POST(req: Request) {
                 upsert: true
               }
             }));
-            await model.bulkWrite(ops);
+            await model.bulkWrite(ops, { ordered: false });
           }
         }
       }
@@ -207,8 +207,15 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, message: "Database restored successfully" });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Backup Restore Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    
+    // Ignore bulk write errors if they are just duplicate key errors and we're merging/restoring
+    if (error.code === 11000 || (error.name === 'BulkWriteError' && error.code === 11000) || (error.message && error.message.includes('E11000'))) {
+      console.warn("Ignored some duplicate key errors during restore");
+      return NextResponse.json({ success: true, message: "Database restored with some duplicate keys skipped" });
+    }
+
+    return NextResponse.json({ error: error.message || "Internal server error", stack: error.stack }, { status: 500 });
   }
 }

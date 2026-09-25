@@ -1576,18 +1576,41 @@ function DebentureFormContent() {
             const principal = form.totalApplicationAmount || 0;
             const rate = form.monthlyGrowthPercentage || 0;
 
+            let totalInterest = 0;
             let days = 0;
             let matDateStr = "—";
 
             if (form.investmentDate && form.bondMaturityDate) {
               const invDate = new Date(form.investmentDate);
               const matDate = new Date(form.bondMaturityDate);
-              days = Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-              matDateStr = matDate.toLocaleDateString("en-GB");
+
+              let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
+              let tempDate = new Date(invDate);
+              tempDate.setMonth(tempDate.getMonth() + months);
+              if (tempDate.getTime() > matDate.getTime()) {
+                months--;
+                tempDate = new Date(invDate);
+                tempDate.setMonth(tempDate.getMonth() + months);
+              }
+              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+              totalInterest = (principal * rate * days / (100 * 30));
+
+              matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+            } else if (form.investmentDate) {
+              const invDate = new Date(form.investmentDate);
+              const months = 1;
+              const matDate = new Date(invDate);
+              matDate.setMonth(matDate.getMonth() + months);
+              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+              const monthlyInterest = principal * (rate / 100);
+              totalInterest = monthlyInterest * 1;
+
+              matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
             }
 
             if (days > 0) {
-              const totalInterest = (principal * ((rate * 12) / 365 / 100) * days);
               const totalMaturityAmount = principal + totalInterest;
 
               return (
