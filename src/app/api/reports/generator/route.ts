@@ -45,7 +45,7 @@ export async function GET(req: Request) {
         const attendanceFilter: any = Object.keys(dateQuery).length ? { createdAt: dateQuery } : {};
         if (payload.role === "Employee") attendanceFilter.employeeId = payload.userId;
         const attRecords = await Attendance.find(attendanceFilter).populate("employeeId", "firstName lastName employeeCode").lean();
-        
+
         let statusCounts: any = { Present: 0, Absent: 0, Late: 0, HalfDay: 0 };
         attRecords.forEach(a => {
           if (a.status) {
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
             WorkingHours: a.metrics?.workingHours || 0
           });
         });
-        
+
         summary = Object.keys(statusCounts).map(k => ({ name: k, value: statusCounts[k] }));
         break;
 
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
         const leaveFilter: any = Object.keys(dateQuery).length ? { startDate: dateQuery } : {};
         if (payload.role === "Employee") leaveFilter.employeeId = payload.userId;
         const leaveRecords = await Leave.find(leaveFilter).populate("employeeId", "firstName lastName employeeCode").lean();
-        
+
         let leaveCounts: any = { Approved: 0, Pending: 0, Rejected: 0 };
         leaveRecords.forEach(l => {
           leaveCounts[l.status] = (leaveCounts[l.status] || 0) + 1;
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
             days = 0.5;
           } else {
             const diff = Math.abs(new Date(l.endDate).getTime() - new Date(l.startDate).getTime());
-            days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+            days = Math.ceil(diff / (1000 * 60 * 60 * 24) + 1) + 1;
           }
           rows.push({
             Employee: `${(l.employeeId as any)?.firstName || ""} ${(l.employeeId as any)?.lastName || ""}`,
@@ -95,7 +95,7 @@ export async function GET(req: Request) {
         const payrollFilter: any = Object.keys(dateQuery).length ? { createdAt: dateQuery } : {};
         if (payload.role === "Employee") payrollFilter.employeeId = payload.userId;
         const payrollRecords = await Payroll.find(payrollFilter).populate("employeeId", "firstName lastName employeeCode").lean();
-        
+
         let salaryCounts: any = { Paid: 0, Approved: 0, Locked: 0, Draft: 0 };
         payrollRecords.forEach(p => {
           salaryCounts[p.status] = (salaryCounts[p.status] || 0) + 1;
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
         if (payload.role === "Employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         const walletFilter = Object.keys(dateQuery).length ? { createdAt: dateQuery } : {};
         const walletRecords = await WalletTransaction.find(walletFilter).populate("createdBy", "firstName lastName").lean();
-        
+
         let txCounts: any = { Credit: 0, Debit: 0 };
         walletRecords.forEach(w => {
           txCounts[w.type] = (txCounts[w.type] || 0) + 1;
@@ -136,7 +136,7 @@ export async function GET(req: Request) {
         // Date range doesn't make as much sense here unless we filter by join date, 
         // but let's just return all active employees grouped by department.
         const employees = await Employee.find({ status: "Active" }).lean();
-        
+
         let deptCounts: any = {};
         employees.forEach(e => {
           const dept = e.department || "Unassigned";
@@ -157,7 +157,7 @@ export async function GET(req: Request) {
         const leadFilter: any = Object.keys(dateQuery).length ? { createdAt: dateQuery } : {};
         if (payload.role === "Employee") leadFilter.ownerId = payload.userId;
         const leadRecords = await Lead.find(leadFilter).populate("ownerId", "firstName lastName").lean();
-        
+
         let leadCounts: any = { Open: 0, "Closed Won": 0, "Closed Lost": 0 };
         leadRecords.forEach(l => {
           leadCounts[l.status] = (leadCounts[l.status] || 0) + 1;

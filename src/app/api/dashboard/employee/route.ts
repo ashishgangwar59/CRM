@@ -26,12 +26,12 @@ function getToken(req: Request): string | null {
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth Check
     const token = getToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const employeeId = payload.userId;
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
       .sort({ createdAt: -1 })
       .limit(6)
       .lean();
-    
+
     const latestSalary = salaries[0] || null;
     const salaryHistory = salaries.map(s => ({
       month: s.monthYear,
@@ -98,7 +98,7 @@ export async function GET(req: Request) {
       dob.setFullYear(today.getFullYear());
       if (dob < today) dob.setFullYear(today.getFullYear() + 1);
       const diffTime = Math.abs(dob.getTime() - today.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) + 1);
       return diffDays <= 30;
     }).map(emp => ({ name: `${emp.firstName} ${emp.lastName}`, date: new Date(emp.dateOfBirth!).toLocaleDateString() }));
 

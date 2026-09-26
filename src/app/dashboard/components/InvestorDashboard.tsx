@@ -227,7 +227,7 @@ export function InvestorDashboard() {
   let durationDays = 0;
   let durationMonths = investor.bondMaturityMonths || 1;
   if (investmentDate && maturityDate) {
-    durationDays = Math.ceil((maturityDate.getTime() - investmentDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    durationDays = Math.ceil((maturityDate.getTime() - investmentDate.getTime()) / (1000 * 60 * 60 * 24) + 1) + 1;
   } else {
     durationDays = durationMonths * 30; // fallback
   }

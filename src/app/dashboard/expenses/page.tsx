@@ -315,79 +315,81 @@ export default function CashMemoPage() {
           </Card>
         </div>
 
-        {(role === "ADMIN" || role === "KEY_ADMIN") && (
-          <div className="md:col-span-2">
-            <Card>
-              <CardHeader className="bg-zinc-50/50 border-b border-zinc-100">
-                <CardTitle className="text-lg">Cash Memo List</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
+
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader className="bg-zinc-50/50 border-b border-zinc-100">
+              <CardTitle className="text-lg">Cash Memo List</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Payment Info</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Added By</TableHead>
+                    <TableHead className="text-right">Amount (₹)</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
                     <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Payment Info</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Added By</TableHead>
-                      <TableHead className="text-right">Amount (₹)</TableHead>
-                      <TableHead></TableHead>
+                      <TableCell colSpan={7} className="text-center py-10 text-zinc-500">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
+                        Loading expenses...
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-zinc-500">
-                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
-                          Loading expenses...
+                  ) : expenses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-10 text-zinc-500">
+                        No expenses recorded yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    expenses.map((exp) => (
+                      <TableRow key={exp._id}>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          {new Date(exp.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                         </TableCell>
-                      </TableRow>
-                    ) : expenses.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-zinc-500">
-                          No expenses recorded yet.
+                        <TableCell className="font-semibold text-zinc-900">{exp.title}</TableCell>
+                        <TableCell>
+                          <div className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded inline-block mb-1">{exp.paymentMode || "Cash"}</div>
+                          {exp.paymentTransferredBy && <div className="text-xs text-zinc-500 flex items-center"><span className="text-zinc-400 mr-1">By:</span> {exp.paymentTransferredBy}</div>}
                         </TableCell>
-                      </TableRow>
-                    ) : (
-                      expenses.map((exp) => (
-                        <TableRow key={exp._id}>
-                          <TableCell className="font-medium whitespace-nowrap">
-                            {new Date(exp.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                          </TableCell>
-                          <TableCell className="font-semibold text-zinc-900">{exp.title}</TableCell>
-                          <TableCell>
-                            <div className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-1 rounded inline-block mb-1">{exp.paymentMode || "Cash"}</div>
-                            {exp.paymentTransferredBy && <div className="text-xs text-zinc-500 flex items-center"><span className="text-zinc-400 mr-1">By:</span> {exp.paymentTransferredBy}</div>}
-                          </TableCell>
-                          <TableCell className="text-sm text-zinc-500 max-w-[200px] truncate" title={exp.description}>
-                            {exp.description || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs text-zinc-500">
-                            {exp.createdBy ? `${exp.createdBy.firstName} ${exp.createdBy.lastName}`.trim() : "Admin"}
-                          </TableCell>
-                          <TableCell className="text-right font-bold text-rose-600">
-                            ₹{exp.amount?.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-8 w-8" onClick={() => startEdit(exp)}>
+                        <TableCell className="text-sm text-zinc-500 max-w-[200px] truncate" title={exp.description}>
+                          {exp.description || "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-zinc-500">
+                          {exp.createdBy ? `${exp.createdBy.firstName} ${exp.createdBy.lastName}`.trim() : "Admin"}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-rose-600">
+                          ₹{exp.amount?.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                              <Button variant="ghost" size="icon" className="cursor-pointer text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-8 w-8" onClick={() => startEdit(exp)}>
                                 <Pencil className="w-4 h-4" />
                               </Button>
-                              {(role === "ADMIN" || role === "KEY_ADMIN") && (
-                                <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 h-8 w-8" onClick={() => handleDelete(exp._id)}>
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>)}
+                            )}
+                            {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                              <Button variant="ghost" size="icon" className="cursor-pointer text-rose-500 hover:text-rose-700 hover:bg-rose-50 w-8 h-8 " onClick={() => handleDelete(exp._id)}>
+                                <Trash2 className=" text-rose-500" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

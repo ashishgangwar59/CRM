@@ -9,12 +9,12 @@ import { Employee } from "@/lib/models/Employee";
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const user = await User.findById(payload.userId);
@@ -34,12 +34,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const user = await User.findById(payload.userId);
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     // Basic calculation for requested days
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     if (end < start) {
       return NextResponse.json({ error: "End date cannot be before start date" }, { status: 400 });
     }
@@ -66,14 +66,14 @@ export async function POST(req: Request) {
     } else {
       // Calculate diff in days
       const diffTime = Math.abs(end.getTime() - start.getTime());
-      requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive
+      requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) + 1) + 1; // inclusive
     }
 
     // Check Balance if it's not Loss of Pay
     if (leaveType !== "Loss of Pay") {
       const balanceDoc = await LeaveBalance.findOne({ employeeId: employee._id });
       const currentBalance = balanceDoc ? (balanceDoc.balances as any)[leaveType] : 0;
-      
+
       if (currentBalance < requestedDays) {
         return NextResponse.json({ error: `Insufficient balance for ${leaveType}. You only have ${currentBalance} days left.` }, { status: 400 });
       }
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
 
     // Apply Sandwich Policy Logic here if needed. 
     // For MVP, we'll assume `requestedDays` is accurate to what the user inputted or we'd automatically add +2 if a weekend is detected.
-    
+
     const leave = await Leave.create({
       employeeId: employee._id,
       leaveType,

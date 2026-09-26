@@ -164,7 +164,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
     }
 
     if (years > 0) {
-      const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
+      const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
       let text = `${years} Year${years > 1 ? 's' : ''}`;
       if (remainingDays > 0) {
         text += ` ${remainingDays} Day${remainingDays > 1 ? 's' : ''}`;
@@ -189,7 +189,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
       tempDate.setMonth(tempDate.getMonth() + months);
     }
 
-    days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+    days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
 
@@ -198,7 +198,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   } else {
     maturityDateObj = new Date(issueDateObj);
     maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
-    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+    days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
     const monthlyInterest = principalAmount * (growthRate / 100);
     interestAmount = monthlyInterest * maturityPeriodMonths;
@@ -388,7 +388,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                   <p>This is to certify that the bearer is the registered holder of a Secured Non-Convertible Debenture issued by</p>
                   <strong>{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</strong>
                   <p>hereinafter referred to as the “Company” for the principal sum of</p>
-                  <div className="principal">₹ {principalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/- <small>(Rupees {numberToWords(principalAmount)} Only)</small></div>
+                  <div className="principal">₹ {principalAmount.toLocaleString()}/- <small>(Rupees {numberToWords(principalAmount)} Only)</small></div>
                   <p>on the terms and conditions set out herein and in the Debenture Trust Deed / Offer Document.</p>
                 </section>
 
@@ -419,13 +419,13 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                         <p>{nomineeRelation}{nomineeAge ? ` (${nomineeAge})` : ""}</p>
                       </div>
                       <div><b>Principal Amount</b><span>:</span>
-                        <p>₹ {principalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/- (Rupees {numberToWords(principalAmount)} Only)</p>
+                        <p>₹ {principalAmount.toLocaleString()}/- (Rupees {numberToWords(principalAmount)} Only)</p>
                       </div>
                       <div><b>Maturity Period</b><span>:</span>
                         <p>{periodText}</p>
                       </div>
                       <div><b>Amount Payable on Maturity</b><span>:</span>
-                        <p>₹ {maturityAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/- (Rupees {numberToWords(maturityAmount)} Only)</p>
+                        <p>₹ {maturityAmount.toLocaleString()}/- (Rupees {numberToWords(maturityAmount)} Only)</p>
                       </div>
                     </div>
 

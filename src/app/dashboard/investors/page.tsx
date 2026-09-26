@@ -779,14 +779,14 @@ export default function AdminInvestorsPage() {
                     tempDate = new Date(issueDateObj);
                     tempDate.setMonth(tempDate.getMonth() + months);
                   }
-                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
 
                   totalInterest = (principal * rate * days / (100 * 30));
                 } else {
                   maturityDateObj = new Date(issueDateObj);
                   maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
-                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
                   const monthlyInterest = principal * (rate / 100);
                   totalInterest = monthlyInterest * months;
@@ -808,7 +808,7 @@ export default function AdminInvestorsPage() {
                   }
 
                   if (years > 0) {
-                    const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
+                    const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
                     let text = `${years} Year${years > 1 ? 's' : ''}`;
                     if (remainingDays > 0) {
                       text += ` ${remainingDays} Day${remainingDays > 1 ? 's' : ''}`;
@@ -844,7 +844,7 @@ export default function AdminInvestorsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase">Amount Payable on Maturity</p>
-                      <p className="text-sm font-black text-rose-600 dark:text-rose-400">₹{maturityAmount.toFixed(2)}/-</p>
+                      <p className="text-sm font-black text-rose-600 dark:text-rose-400">₹{Math.round(maturityAmount)}/-</p>
                     </div>
                   </div>
                 );
@@ -971,12 +971,14 @@ export default function AdminInvestorsPage() {
                             </span>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-3">
                           {docItem.url ? (
                             <button
                               type="button"
-                              onClick={() => setPreviewDoc({ title: docItem.title, url: docItem.url })}
+                              onClick={() => setPreviewDoc({
+                                title: docItem.title + (docItem.sub && docItem.sub !== "Optional" ? " ( " + docItem.sub + " )" : ""),
+                                url: docItem.url
+                              })}
                               className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" /> View File
@@ -1254,7 +1256,7 @@ export default function AdminInvestorsPage() {
                 {addForm.investmentDate && addForm.bondMaturityDate && (
                   <div className="col-span-1 sm:col-span-2 text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)} Days</span>
+                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24) + 1))} Days</span>
                   </div>
                 )}
 
@@ -1332,7 +1334,7 @@ export default function AdminInvestorsPage() {
                 {editForm.investmentDate && editForm.bondMaturityDate && (
                   <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(editForm.bondMaturityDate).getTime() - new Date(editForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)} Days</span>
+                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(editForm.bondMaturityDate).getTime() - new Date(editForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24) + 1))} Days</span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
@@ -1371,7 +1373,7 @@ export default function AdminInvestorsPage() {
                       tempDate = new Date(invDate);
                       tempDate.setMonth(tempDate.getMonth() + months);
                     }
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
                     totalInterest = (principal * rate * days / (100 * 30));
 
@@ -1381,7 +1383,7 @@ export default function AdminInvestorsPage() {
                     const months = 1;
                     const matDate = new Date(invDate);
                     matDate.setMonth(matDate.getMonth() + months);
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
                     const monthlyInterest = principal * (rate / 100);
                     totalInterest = monthlyInterest * 1;
@@ -1396,11 +1398,11 @@ export default function AdminInvestorsPage() {
                       <p className="font-bold uppercase text-[10px] tracking-wider text-amber-600 dark:text-amber-400">✦ Bond Maturity Auto-Calculation Preview ✦</p>
                       <div className="flex justify-between">
                         <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{totalInterest.toFixed(2)}</span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{Math.round(totalInterest)}</span>
                       </div>
                       <div className="flex justify-between border-t border-amber-500/20 pt-1 font-bold">
                         <span>Auto Maturity Date: <span className="text-indigo-600 dark:text-indigo-400 font-mono">{matDateStr}</span></span>
-                        <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{totalMaturityAmount.toFixed(2)}/-</span></span>
+                        <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{Math.round(totalMaturityAmount)}/-</span></span>
                       </div>
                     </div>
                   );
@@ -1449,12 +1451,14 @@ export default function AdminInvestorsPage() {
             <div className="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-zinc-950 min-h-[400px]">
               {isPdf(previewDoc.url) ? (
                 <iframe
+                  key={previewDoc.url}
                   src={previewDoc.url}
                   className="w-full h-[76vh] rounded-lg border border-zinc-800 bg-white shadow-xl"
                   title={previewDoc.title}
                 />
               ) : (
                 <img
+                  key={previewDoc.url}
                   src={previewDoc.url}
                   alt={previewDoc.title}
                   className="max-h-[76vh] max-w-full object-contain rounded-lg shadow-2xl border border-zinc-800 bg-white p-2"

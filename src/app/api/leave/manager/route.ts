@@ -12,12 +12,12 @@ import { getOwnedEmployeeIds } from "@/lib/teamUtils";
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     let query: any = {};
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
       const ownedEmployeeIds = await getOwnedEmployeeIds(payload.userId);
       query.employeeId = { $in: ownedEmployeeIds };
     }
-    
+
     // Fetch pending leaves populated with employee details and department name
     const leaves = await Leave.find(query)
       .populate("employeeId", "firstName lastName employeeCode department")
@@ -47,12 +47,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const { leaveId, action, managerNotes } = await req.json(); // action = "Approve" | "Reject"
@@ -75,14 +75,14 @@ export async function POST(req: Request) {
 
     if (action === "Approve") {
       leave.status = "Approved";
-      
+
       // Deduct balance
       if (leave.leaveType !== "Loss of Pay") {
         let requestedDays = 0;
         if (leave.isHalfDay) requestedDays = 0.5;
         else if (!leave.hourlyDuration) {
           const diffTime = Math.abs(leave.endDate.getTime() - leave.startDate.getTime());
-          requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) + 1) + 1;
         }
 
         if (requestedDays > 0) {

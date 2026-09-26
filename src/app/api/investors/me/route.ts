@@ -240,7 +240,7 @@ export async function PUT(req: Request) {
 
     // If Admin/KeyAdmin/Manager/Staff verifying/editing an investor
     if (role !== "INVESTOR") {
-      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, investmentDate, bondMaturityMonths, bondMaturityDate } = body;
+      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, kycDocs, investmentDate, bondMaturityMonths, bondMaturityDate } = body;
       const targetId = investorId || _id || id;
 
       if (!targetId) return NextResponse.json({ error: "Investor ID required" }, { status: 400 });
@@ -305,6 +305,10 @@ export async function PUT(req: Request) {
 
       if (debentureForm) {
         updateFields.debentureForm = { ...(currentInv.debentureForm || {}), ...debentureForm };
+      }
+
+      if (kycDocs) {
+        updateFields.kycDocs = { ...(currentInv.kycDocs || {}), ...kycDocs };
       }
 
       const updatedInvestor = await Investor.findByIdAndUpdate(

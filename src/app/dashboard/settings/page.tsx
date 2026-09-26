@@ -329,15 +329,35 @@ export default function SettingsPage() {
               )}
 
               {activeTab === "Office Locations" && (
-                <div className="space-y-4">
-                  <p className="text-sm text-zinc-500 mb-4">Enter physical office locations separated by commas.</p>
-                  <div className="space-y-2">
-                    <Label>Locations List</Label>
-                    <textarea
-                      className="flex w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[150px]"
-                      value={settings.officeLocations.join(", ")}
-                      onChange={e => handleArrayChange("officeLocations", e.target.value)}
-                    />
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <p className="text-sm text-zinc-500 mb-4">Enter physical office locations separated by commas.</p>
+                    <div className="space-y-2">
+                      <Label>Locations List</Label>
+                      <textarea
+                        className="flex w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[150px]"
+                        value={settings.officeLocations.join(", ")}
+                        onChange={e => handleArrayChange("officeLocations", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Attendance Geofencing (Primary Office)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Office Latitude</Label>
+                        <Input type="number" step="any" value={settings.attendancePolicy?.latitude || 0} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, latitude: parseFloat(e.target.value) || 0 } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Office Longitude</Label>
+                        <Input type="number" step="any" value={settings.attendancePolicy?.longitude || 0} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, longitude: parseFloat(e.target.value) || 0 } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Allowed Radius (Meters)</Label>
+                        <Input type="number" value={settings.attendancePolicy?.radiusMeters || 100} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, radiusMeters: parseInt(e.target.value) || 0 } })} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -393,15 +413,23 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Office Start Time</Label>
-                        <Input type="time" value={settings.attendancePolicy.officeStartTime} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, officeStartTime: e.target.value } })} />
+                        <Input type="time" value={settings.attendancePolicy?.officeStartTime || "10:00"} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, officeStartTime: e.target.value } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Office End Time</Label>
+                        <Input type="time" value={settings.attendancePolicy?.officeEndTime || "18:00"} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, officeEndTime: e.target.value } })} />
                       </div>
                       <div className="space-y-2">
                         <Label>Late Threshold (Mins)</Label>
-                        <Input type="number" value={settings.attendancePolicy.lateThresholdMins} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, lateThresholdMins: parseInt(e.target.value) || 0 } })} />
+                        <Input type="number" value={settings.attendancePolicy?.lateThresholdMins || 15} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, lateThresholdMins: parseInt(e.target.value) || 0 } })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Early Leave Threshold (Mins)</Label>
+                        <Input type="number" value={settings.attendancePolicy?.earlyLeaveThresholdMins || 15} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, earlyLeaveThresholdMins: parseInt(e.target.value) || 0 } })} />
                       </div>
                       <div className="space-y-2">
                         <Label>Half Day Threshold (Mins)</Label>
-                        <Input type="number" value={settings.attendancePolicy.halfDayThresholdMins} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, halfDayThresholdMins: parseInt(e.target.value) || 0 } })} />
+                        <Input type="number" value={settings.attendancePolicy?.halfDayThresholdMins || 240} onChange={e => setSettings({ ...settings, attendancePolicy: { ...settings.attendancePolicy, halfDayThresholdMins: parseInt(e.target.value) || 0 } })} />
                       </div>
                     </div>
                   </div>

@@ -61,12 +61,12 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
     numDebenturesWords: form.numDebenturesWords || "Units",
     totalApplicationAmount: form.totalApplicationAmount || investor.investmentAmount || 0,
     totalApplicationAmountWords: form.totalApplicationAmountWords || "",
-    bankNamePayment: form.bankNamePayment || "",
+    drawnOnBank: form.drawnOnBank || form.bankNamePayment || "",
     branchNamePayment: form.branchNamePayment || "",
     amountPayment: form.amountPayment || "",
     modeOfPayment: form.modeOfPayment || "",
-    transactionId: form.transactionId || "",
-    paymentDate: form.paymentDate || "",
+    transactionUtrNo: form.transactionUtrNo || form.transactionId || "",
+    chequeDdNo: form.chequeDdNo || form.paymentDate || "",
     investmentDate: form.investmentDate || investor.investmentDate || "",
     bondMaturityDate: form.bondMaturityDate || investor.bondMaturityDate || "",
     monthlyGrowthPercentage: form.monthlyGrowthPercentage || investor.monthlyGrowthPercentage || 0,
@@ -763,94 +763,57 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                     tempDate = new Date(invDate);
                     tempDate.setMonth(tempDate.getMonth() + months);
                   }
-                  days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-                  totalInterest = (principal * rate * days / (100 * 30));
+                  const remainingDays = Math.max(0, Math.round((matDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                  const totalMonthsFraction = months + (remainingDays / 30);
 
+                  days = Math.max(0, Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                  totalInterest = principal * (rate / 100) * totalMonthsFraction;
                   matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+
                 } else if (editableForm.investmentDate) {
                   const invDate = new Date(editableForm.investmentDate);
                   const months = 1;
                   const matDate = new Date(invDate);
                   matDate.setMonth(matDate.getMonth() + months);
-                  days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+                  days = Math.max(0, Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
                   const monthlyInterest = principal * (rate / 100);
                   totalInterest = monthlyInterest * 1;
-
                   matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                 }
                 const totalMaturityAmount = principal + totalInterest;
 
                 return (
-                  <div className="field-row">
-                    <div className="field-label">Amount Payable on Maturity</div>
-                    <div className="field-colon">:</div>
-                    <div className="field-fill" style={{ fontSize: "14px", color: "#e11d48", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                      <span>₹</span>
-                      <input type="text" disabled value={totalMaturityAmount > 0 ? totalMaturityAmount.toFixed(2) : ""} placeholder="Auto-calculated" style={{ width: "120px", color: "#e11d48", fontWeight: "bold", backgroundColor: "transparent", border: "none" }} />
-                      <input type="text" disabled value={totalMaturityAmount > 0 && numberToIndianWords(totalMaturityAmount) ? `${numberToIndianWords(totalMaturityAmount)} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
+                  <>
+                    {/* Amount Payable on Maturity (Auto-Calculated, visible on print) */}
+                    <div className="field-row">
+                      <div className="field-label">Amount Payable on Maturity</div>
+                      <div className="field-colon">:</div>
+                      <div className="field-fill" style={{ fontSize: "14px", color: "#e11d48", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span>₹</span>
+                        <input type="text" disabled value={totalMaturityAmount > 0 ? Math.round(totalMaturityAmount) : ""} placeholder="Auto-calculated" style={{ width: "120px", color: "#e11d48", fontWeight: "bold", backgroundColor: "transparent", border: "none" }} />
+                        <input type="text" disabled value={totalMaturityAmount > 0 && numberToIndianWords(Math.round(totalMaturityAmount)) ? `${numberToIndianWords(Math.round(totalMaturityAmount))} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Payment Bond Auto-Calculation Preview (Hidden on print) */}
+                    <div className="print:hidden">
+                      <div style={{ padding: "8px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#78350f", marginBottom: "8px" }}>
+                        <div style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px", color: "#d97706", marginBottom: "4px" }}>✦ Bond Maturity Auto-Calculation Preview ✦</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                          <span>Total Interest ({days} days @ {rate}%/mo):</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{Math.round(totalInterest)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "4px", fontWeight: "bold" }}>
+                          <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
+                          <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{Math.round(totalMaturityAmount)}/-</span></span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 );
               })()}
-
-              {/* Payment Bond Auto-Calculation Preview (Hidden on print) */}
-              <div className="print:hidden">
-                {(() => {
-                  const principal = Number(editableForm.totalApplicationAmount) || 0;
-                  const rate = Number(editableForm.monthlyGrowthPercentage) || 0;
-
-                  let totalInterest = 0;
-                  let days = 0;
-                  let matDateStr = "—";
-
-                  if (editableForm.investmentDate && editableForm.bondMaturityDate) {
-                    const invDate = new Date(editableForm.investmentDate);
-                    const matDate = new Date(editableForm.bondMaturityDate);
-
-                    let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
-                    let tempDate = new Date(invDate);
-                    tempDate.setMonth(tempDate.getMonth() + months);
-                    if (tempDate.getTime() > matDate.getTime()) {
-                      months--;
-                      tempDate = new Date(invDate);
-                      tempDate.setMonth(tempDate.getMonth() + months);
-                    }
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-                    totalInterest = (principal * rate * days / (100 * 30));
-
-                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  } else if (editableForm.investmentDate) {
-                    const invDate = new Date(editableForm.investmentDate);
-                    const months = 1;
-                    const matDate = new Date(invDate);
-                    matDate.setMonth(matDate.getMonth() + months);
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-                    const monthlyInterest = principal * (rate / 100);
-                    totalInterest = monthlyInterest * 1;
-
-                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  }
-                  const totalMaturityAmount = principal + totalInterest;
-
-                  return (
-                    <div style={{ padding: "8px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#78350f", marginBottom: "8px" }}>
-                      <div style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px", color: "#d97706", marginBottom: "4px" }}>✦ Bond Maturity Auto-Calculation Preview ✦</div>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                        <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{totalInterest.toFixed(2)}</span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "4px", fontWeight: "bold" }}>
-                        <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
-                        <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{totalMaturityAmount.toFixed(2)}/-</span></span>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
               <div className="field-row">
                 <div className="field-label">Mode of Payment</div>
                 <div className="field-colon">:</div>
@@ -862,21 +825,21 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 <div className="field-label">Transaction / UTR No.</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill font-mono">
-                  <input type="text" value={editableForm.transactionId} onChange={e => setEditableForm({ ...editableForm, transactionId: e.target.value })} placeholder="—" />
+                  <input type="text" value={editableForm.transactionUtrNo} onChange={e => setEditableForm({ ...editableForm, transactionUtrNo: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Cheque / DD No.</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill font-mono">
-                  <input type="date" value={editableForm.paymentDate} onChange={e => setEditableForm({ ...editableForm, paymentDate: e.target.value })} placeholder="—" />
+                  <input type="text" value={editableForm.chequeDdNo} onChange={e => setEditableForm({ ...editableForm, chequeDdNo: e.target.value })} placeholder="—" />
                 </div>
               </div>
               <div className="field-row">
                 <div className="field-label">Bank Name (Payment)</div>
                 <div className="field-colon">:</div>
                 <div className="field-fill">
-                  <input type="text" value={editableForm.bankNamePayment} onChange={e => setEditableForm({ ...editableForm, bankNamePayment: e.target.value })} placeholder="—" />
+                  <input type="text" value={editableForm.drawnOnBank} onChange={e => setEditableForm({ ...editableForm, drawnOnBank: e.target.value })} placeholder="—" />
                 </div>
               </div>
             </div>
@@ -1184,12 +1147,14 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             <div className="p-4 overflow-y-auto flex-1 flex items-center justify-center bg-zinc-900/90 min-h-[400px]">
               {isPdf(previewDoc.url) ? (
                 <iframe
+                  key={previewDoc.url}
                   src={previewDoc.url}
                   className="w-full h-[76vh] rounded-lg border border-zinc-700 bg-white shadow-xl"
                   title={previewDoc.title}
                 />
               ) : (
                 <img
+                  key={previewDoc.url}
                   src={previewDoc.url}
                   alt={previewDoc.title}
                   className="max-h-[76vh] max-w-full object-contain rounded-lg shadow-2xl border border-zinc-700 bg-white p-2"

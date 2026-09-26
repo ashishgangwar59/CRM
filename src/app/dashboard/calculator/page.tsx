@@ -95,7 +95,7 @@ export default function CalculatorPage() {
   // Duration Helper
   const calculateDuration = (d1: Date, d2: Date) => {
     const totalMs = d2.getTime() - d1.getTime();
-    const totalDays = Math.round(totalMs / (1000 * 60 * 60 * 24));
+    const totalDays = Math.round(totalMs / (1000 * 60 * 60 * 24) + 1);
 
     let years = d2.getFullYear() - d1.getFullYear();
     let months = d2.getMonth() - d1.getMonth();
@@ -169,7 +169,7 @@ export default function CalculatorPage() {
     setInterestAmount(`₹${Math.round(intAmount).toLocaleString("en-IN")}`);
 
     const dailyInt = intAmount / totalDays;
-    setDailyInterest(`₹${dailyInt.toFixed(2)}`);
+    setDailyInterest(`₹${Math.round(dailyInt)}`);
 
     const yearlyInt = monthlyInt * 12;
     setYearlyInterest(`₹${Math.round(yearlyInt).toLocaleString("en-IN")}`);
@@ -198,10 +198,10 @@ export default function CalculatorPage() {
     if (isNaN(rate) || rate <= 0) return "Equivalent: -";
     if (interestType === "rupee") {
       const pa = rate * 12;
-      return `Equivalent: ${pa.toFixed(2)}% per annum`;
+      return `Equivalent: ${Math.round(pa)}% per annum`;
     } else {
       const pm = rate / 12;
-      return `Equivalent: ₹${pm.toFixed(2)} /100/month`;
+      return `Equivalent: ₹${Math.round(pm)} /100/month`;
     }
   };
 

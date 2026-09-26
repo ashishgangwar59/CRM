@@ -16,6 +16,15 @@ export default function EmployeeProfilePage() {
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setRole(data.role);
+      });
+  }, []);
 
   useEffect(() => {
     fetch(`/api/employees/${id}`)
@@ -96,16 +105,18 @@ export default function EmployeeProfilePage() {
             </div>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Link href={`/dashboard/employees/${id}/edit`}>
-            <Button variant="outline">
-              <Edit className="mr-2 h-4 w-4" /> Edit Employee
+        {(role === "ADMIN" || role === "KEY_ADMIN") && (
+          <div className="flex space-x-2">
+            <Link href={`/dashboard/employees/${id}/edit`}>
+              <Button variant="outline">
+                <Edit className="mr-2 h-4 w-4" /> Edit Employee
+              </Button>
+            </Link>
+            <Button variant="destructive" onClick={handleDelete}>
+              <Trash2 className="mr-2 h-4 w-4" /> Delete Employee
             </Button>
-          </Link>
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash2 className="mr-2 h-4 w-4" /> Delete Employee
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -184,7 +195,7 @@ export default function EmployeeProfilePage() {
         </Card>
 
         {/* Administrative Actions - Only show for regular users */}
-        {employee.role !== "SUPER_ADMIN" && employee.role !== "ADMIN" && (
+        {(role === "ADMIN" || role === "KEY_ADMIN") && employee.role !== "SUPER_ADMIN" && employee.role !== "ADMIN" && (
           <Card className="md:col-span-2 border-rose-200 bg-rose-50/10 dark:bg-rose-900/10 dark:border-rose-900">
             <CardHeader>
               <CardTitle className="text-rose-700 dark:text-rose-400">Administrative Actions</CardTitle>

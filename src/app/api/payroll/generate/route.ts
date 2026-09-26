@@ -10,7 +10,7 @@ import { notificationService } from "@/lib/notifications";
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
     const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       if (leave.isHalfDay) lopDays += 0.5;
       else {
         const diff = Math.abs(leave.endDate.getTime() - leave.startDate.getTime());
-        lopDays += Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+        lopDays += Math.ceil(diff / (1000 * 60 * 60 * 24) + 1) + 1;
       }
     });
 
@@ -49,33 +49,33 @@ export async function POST(req: Request) {
 
     const baseTravelAllowance = structure.travelAllowance || structure.metroAllowance || structure.specialAllowance || 0;
     const baseIncentive = structure.incentive || 0;
-    
+
     // Pro-rate earnings based on paid days
-    const basic = Number((structure.basic * ratio).toFixed(2));
-    const hra = Number((structure.hra * ratio).toFixed(2));
-    const specialAllowance = Number(((structure.specialAllowance || 0) * ratio).toFixed(2));
-    const metroAllowance = Number(((structure.metroAllowance || 0) * ratio).toFixed(2));
-    const travelAllowance = Number((baseTravelAllowance * ratio).toFixed(2));
-    const incentive = Number((baseIncentive * ratio).toFixed(2));
+    const basic = Math.round(structure.basic * ratio);
+    const hra = Math.round(structure.hra * ratio);
+    const specialAllowance = Math.round((structure.specialAllowance || 0) * ratio);
+    const metroAllowance = Math.round((structure.metroAllowance || 0) * ratio);
+    const travelAllowance = Math.round(baseTravelAllowance * ratio);
+    const incentive = Math.round(baseIncentive * ratio);
 
     const perDaySalary = (structure.basic + structure.hra + baseTravelAllowance + baseIncentive) / standardDaysInMonth;
-    const unpaidLeaveDeduction = customPaidDays ? 0 : Number((lopDays * perDaySalary).toFixed(2));
+    const unpaidLeaveDeduction = customPaidDays ? 0 : Math.round(lopDays * perDaySalary);
 
     const bonus = 0;
     const loan = 0;
     const advance = structure.advanceSalaryDrawn || 0;
 
     // Pro-rate statutory deductions
-    const pf = Number(((structure.pf || 0) * ratio).toFixed(2));
-    const esi = Number(((structure.esi || 0) * ratio).toFixed(2));
-    const professionalTax = Number(((structure.professionalTax || 0) * ratio).toFixed(2));
-    const incomeTax = Number(((structure.incomeTax || 0) * ratio).toFixed(2));
+    const pf = Math.round((structure.pf || 0) * ratio);
+    const esi = Math.round((structure.esi || 0) * ratio);
+    const professionalTax = Math.round((structure.professionalTax || 0) * ratio);
+    const incomeTax = Math.round((structure.incomeTax || 0) * ratio);
 
-    const earningsTotal = Number((basic + hra + travelAllowance + bonus + incentive).toFixed(2));
-    const deductionsTotal = Number((pf + esi + professionalTax + incomeTax + loan + advance + unpaidLeaveDeduction).toFixed(2));
-    
+    const earningsTotal = Math.round(basic + hra + travelAllowance + bonus + incentive);
+    const deductionsTotal = Math.round(pf + esi + professionalTax + incomeTax + loan + advance + unpaidLeaveDeduction);
+
     const grossSalary = earningsTotal;
-    const netSalary = Number((grossSalary - deductionsTotal).toFixed(2));
+    const netSalary = Math.round(grossSalary - deductionsTotal);
 
     // 5. Save Payroll Draft
     const payroll = await Payroll.findOneAndUpdate(

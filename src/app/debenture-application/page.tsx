@@ -1592,7 +1592,7 @@ function DebentureFormContent() {
                 tempDate = new Date(invDate);
                 tempDate.setMonth(tempDate.getMonth() + months);
               }
-              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
               totalInterest = (principal * rate * days / (100 * 30));
 
@@ -1602,7 +1602,7 @@ function DebentureFormContent() {
               const months = 1;
               const matDate = new Date(invDate);
               matDate.setMonth(matDate.getMonth() + months);
-              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24)));
+              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
               const monthlyInterest = principal * (rate / 100);
               totalInterest = monthlyInterest * 1;
@@ -1618,11 +1618,11 @@ function DebentureFormContent() {
                   <p style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "1px", color: "#d97706", margin: "0 0 5px 0" }}>✦ Bond Maturity Auto-Calculation Preview ✦</p>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                     <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                    <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{totalInterest.toFixed(2)}</span>
+                    <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{Math.round(totalInterest)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "5px", fontWeight: "bold" }}>
                     <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
-                    <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{totalMaturityAmount.toFixed(2)}/-</span></span>
+                    <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{Math.round(totalMaturityAmount)}/-</span></span>
                   </div>
                 </div>
               );

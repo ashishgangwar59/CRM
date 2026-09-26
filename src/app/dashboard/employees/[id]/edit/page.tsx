@@ -239,6 +239,13 @@ export default function EditEmployeePage() {
   };
 
   if (pageLoading) return <div className="p-8">Loading employee data...</div>;
+  if (currentUserRole !== "ADMIN" && currentUserRole !== "KEY_ADMIN") {
+    return (
+      <div className="p-8 text-center text-rose-600 font-bold">
+        Access Denied: You do not have permission to edit employees.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 w-full pb-10">

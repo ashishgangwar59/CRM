@@ -52,7 +52,7 @@ export async function GET(req: Request) {
     // 1. Employees & Attendance Today
     let activeEmployees = await Employee.find().lean();
     let totalEmployees = activeEmployees.length;
-    
+
     // Fetch today's attendance records by date string or today's createdAt timestamp
     const todaysAttendance = await Attendance.find({
       $or: [
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
         { createdAt: { $gte: today } }
       ]
     }).lean();
-    
+
     // Upcoming Birthdays
     const currentMonth = today.getMonth();
     const currentDay = today.getDate();
@@ -71,15 +71,15 @@ export async function GET(req: Request) {
         const dob = new Date(emp.dateOfBirth!);
         const dobMonth = dob.getMonth();
         const dobDay = dob.getDate();
-        
+
         let nextBirthdayYear = today.getFullYear();
         if (dobMonth < currentMonth || (dobMonth === currentMonth && dobDay < currentDay)) {
           nextBirthdayYear++;
         }
-        
+
         const nextBirthdayDate = new Date(nextBirthdayYear, dobMonth, dobDay);
-        const daysUntil = Math.ceil((nextBirthdayDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
+        const daysUntil = Math.ceil((nextBirthdayDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24) + 1);
+
         return {
           id: emp._id,
           name: `${emp.firstName} ${emp.lastName}`,
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
       })
       .filter(emp => emp.daysUntil <= 30)
       .sort((a, b) => a.daysUntil - b.daysUntil);
-    
+
     let attendanceStats = { present: 0, absent: 0, late: 0, leave: 0 };
     todaysAttendance.forEach((a: any) => {
       if (a.status === "Present" || a.status === "Half-Day" || a.punchIn) {
@@ -140,13 +140,13 @@ export async function GET(req: Request) {
     // In a real app, this would be an aggregation pipeline grouping by month over the last 6 months.
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const currentMonthIdx = today.getMonth();
-    
+
     const monthlyData = [];
     for (let i = 5; i >= 0; i--) {
       let m = currentMonthIdx - i;
       let y = today.getFullYear();
       if (m < 0) { m += 12; y -= 1; }
-      
+
       monthlyData.push({
         name: monthNames[m],
         present: Math.floor(Math.random() * (totalEmployees - 5) + 5), // Mock historical

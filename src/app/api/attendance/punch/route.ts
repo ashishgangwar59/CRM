@@ -1,7 +1,20 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Attendance } from "@/lib/models/Attendance";
-import { AttendanceSettings } from "@/lib/models/AttendanceSettings";
+import { SystemSettings } from "@/lib/models/SystemSettings";
+
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // metres
+  const p1 = lat1 * Math.PI / 180;
+  const p2 = lat2 * Math.PI / 180;
+  const dp = (lat2 - lat1) * Math.PI / 180;
+  const dl = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
+    Math.cos(p1) * Math.cos(p2) *
+    Math.sin(dl / 2) * Math.sin(dl / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // in metres
+}
 import { verifyAccessToken } from "@/lib/auth";
 import { User } from "@/lib/models/User";
 import { Employee } from "@/lib/models/Employee";
@@ -30,11 +43,11 @@ function getToken(req: Request): string | null {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Get user from cookie or Authorization header
     const token = getToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
+
     let payload;
     try {
       payload = verifyAccessToken(token);
@@ -50,7 +63,7 @@ export async function POST(req: Request) {
       const nameParts = (user.email || "Employee").split("@")[0].split(".");
       const firstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : "Employee";
       const lastName = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : "";
-      
+
       const roleUpper = (user.role || "").toUpperCase().replace("_", "");
       const isAdmin = roleUpper === "ADMIN" || roleUpper === "KEYADMIN" || roleUpper === "MANAGER";
       const prefix = isAdmin ? "Admin" : "EMP";
@@ -71,18 +84,30 @@ export async function POST(req: Request) {
 
     const { action, latitude, longitude } = await req.json(); // action = "IN" or "OUT"
     const ipAddress = req.headers.get("x-forwarded-for") || "unknown";
-    
+
     // Get today's date in YYYY-MM-DD
     const now = new Date();
     const dateStr = now.toISOString().split("T")[0];
 
     // Get settings
-    let settings = await AttendanceSettings.findOne();
+    let settings = await SystemSettings.findOne();
     if (!settings) {
-      settings = await AttendanceSettings.create({ standardStartTime: "10:00" }); // Use defaults
-    } else if (settings.standardStartTime === "09:00") {
-      settings.standardStartTime = "10:00";
-      await settings.save();
+      settings = await SystemSettings.create({});
+    }
+    const attPolicy = settings.attendancePolicy || {};
+    const officeStartTime = attPolicy.officeStartTime || "10:00";
+    const lateThresholdMinutes = attPolicy.lateThresholdMins || 15;
+
+    // Geofencing Check
+    if (attPolicy.latitude && attPolicy.longitude && attPolicy.latitude !== 0 && attPolicy.longitude !== 0) {
+      if (!latitude || !longitude) {
+        return NextResponse.json({ error: "Location coordinates are required to mark attendance." }, { status: 400 });
+      }
+      const dist = getDistance(latitude, longitude, attPolicy.latitude, attPolicy.longitude);
+      const maxRadius = attPolicy.radiusMeters || 100;
+      if (dist > maxRadius) {
+        return NextResponse.json({ error: `You are too far from the office. Distance: ${Math.round(dist)}m (Max allowed: ${maxRadius}m)` }, { status: 400 });
+      }
     }
 
     let attendance = await Attendance.findOne({ employeeId: employee._id, date: dateStr });
@@ -94,8 +119,8 @@ export async function POST(req: Request) {
 
       // Check Late Coming
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const standardStartMinutes = timeToMinutes(settings.standardStartTime);
-      const isLate = currentMinutes > (standardStartMinutes + settings.lateThresholdMinutes);
+      const standardStartMinutes = timeToMinutes(officeStartTime);
+      const isLate = currentMinutes > (standardStartMinutes + lateThresholdMinutes);
 
       if (!attendance) {
         attendance = new Attendance({
@@ -111,8 +136,8 @@ export async function POST(req: Request) {
       await attendance.save();
 
       return NextResponse.json({ success: true, message: "Punched in successfully", data: attendance });
-    } 
-    
+    }
+
     if (action === "OUT") {
       if (!attendance || !attendance.punchIn) {
         return NextResponse.json({ error: "Cannot punch out without punching in" }, { status: 400 });
@@ -125,15 +150,17 @@ export async function POST(req: Request) {
 
       // Check Early Leave
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const standardEndMinutes = timeToMinutes(settings.standardEndTime);
-      const isEarlyLeave = currentMinutes < (standardEndMinutes - settings.earlyLeaveThresholdMinutes);
+      const standardEndMinutes = timeToMinutes(attPolicy.officeEndTime || "18:00");
+      const earlyLeaveMins = attPolicy.earlyLeaveThresholdMins || 15;
+      const isEarlyLeave = currentMinutes < (standardEndMinutes - earlyLeaveMins);
 
       attendance.punchOut = { time: now, ipAddress, latitude, longitude };
       attendance.metrics.workingHours = Number(workingHours.toFixed(2));
       attendance.metrics.isEarlyLeave = isEarlyLeave;
-      
+
       // Calculate Overtime (e.g., if standard shift is 9 hours)
-      const standardShiftHours = (standardEndMinutes - timeToMinutes(settings.standardStartTime)) / 60;
+      const standardStartMins = timeToMinutes(officeStartTime);
+      const standardShiftHours = (standardEndMinutes - standardStartMins) / 60;
       if (workingHours > standardShiftHours) {
         attendance.metrics.overtimeHours = Number((workingHours - standardShiftHours).toFixed(2));
       }

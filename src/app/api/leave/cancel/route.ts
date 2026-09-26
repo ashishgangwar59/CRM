@@ -10,12 +10,12 @@ import { LeaveLedger } from "@/lib/models/LeaveLedger";
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const user = await User.findById(payload.userId);
@@ -39,9 +39,9 @@ export async function POST(req: Request) {
       if (leave.isHalfDay) requestedDays = 0.5;
       else if (!leave.hourlyDuration) {
         const diffTime = Math.abs(leave.endDate.getTime() - leave.startDate.getTime());
-        requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) + 1) + 1;
       }
-      
+
       if (requestedDays > 0) {
         // Credit back the balance
         await LeaveBalance.updateOne(

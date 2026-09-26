@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     const totalWon = await Lead.countDocuments({ status: "Closed Won" });
     const totalLost = await Lead.countDocuments({ status: "Closed Lost" });
     const totalOpen = await Lead.countDocuments({ status: "Open" });
-    const conversionRate = totalLeads > 0 ? ((totalWon / totalLeads) * 100).toFixed(1) : 0;
+    const conversionRate = totalLeads > 0 ? Math.round((totalWon / totalLeads) * 100) : 0;
 
     const todaysLeads = await Lead.countDocuments({ createdAt: { $gte: today } });
 

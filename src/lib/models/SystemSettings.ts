@@ -25,8 +25,13 @@ export interface ISystemSettings extends Document {
   };
   attendancePolicy: {
     officeStartTime: string;
+    officeEndTime?: string;
     lateThresholdMins: number;
+    earlyLeaveThresholdMins?: number;
     halfDayThresholdMins: number;
+    latitude?: number;
+    longitude?: number;
+    radiusMeters?: number;
   };
   roles: {
     name: string;
@@ -97,8 +102,13 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
     },
     attendancePolicy: {
       officeStartTime: { type: String, default: "10:00" },
+      officeEndTime: { type: String, default: "18:00" },
       lateThresholdMins: { type: Number, default: 15 },
-      halfDayThresholdMins: { type: Number, default: 240 }
+      earlyLeaveThresholdMins: { type: Number, default: 15 },
+      halfDayThresholdMins: { type: Number, default: 240 },
+      latitude: { type: Number, default: 0 },
+      longitude: { type: Number, default: 0 },
+      radiusMeters: { type: Number, default: 100 }
     },
     roles: [{
       name: { type: String },
