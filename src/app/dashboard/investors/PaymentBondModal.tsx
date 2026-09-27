@@ -135,7 +135,9 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   const principalAmount = investor.investmentAmount || investor.debentureForm?.totalApplicationAmount || 0;
   const growthRate = investor.monthlyGrowthPercentage || 2;
   let issueDateObj: Date;
-  if (investor.investmentDate) {
+  if (investor.verifiedAt) {
+    issueDateObj = new Date(investor.verifiedAt);
+  } else if (investor.investmentDate) {
     if (typeof investor.investmentDate === "string" && investor.investmentDate.includes("-") && investor.investmentDate.length === 10) {
       const [y, m, d] = investor.investmentDate.split("-").map(Number);
       issueDateObj = new Date(y, m - 1, d);
@@ -143,7 +145,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
       issueDateObj = new Date(investor.investmentDate);
     }
   } else {
-    issueDateObj = investor.verifiedAt ? new Date(investor.verifiedAt) : new Date(investor.createdAt);
+    issueDateObj = new Date(investor.createdAt);
   }
   const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 

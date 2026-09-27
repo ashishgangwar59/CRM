@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { Investor } from "@/lib/models/Investor";
 import { User } from "@/lib/models/User";
+import { Employee } from "@/lib/models/Employee";
 import { Counter } from "@/lib/models/Counter";
 import { verifyAccessToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
@@ -99,6 +100,17 @@ export async function GET(req: Request) {
         
         if (filterDays !== "yesterday") {
           query.createdAt = { $gte: startDate };
+        }
+      }
+
+      // Restrict visibility for employees
+      if (userRole !== "ADMIN" && userRole !== "KEYADMIN" && userRole !== "SUPERADMIN") {
+        const currentEmp = await Employee.findOne({ email: user?.email });
+        if (currentEmp) {
+          query.referralEmployeeId = currentEmp._id;
+        } else {
+          // If no employee profile exists, return nothing
+          query.referralEmployeeId = "000000000000000000000000";
         }
       }
 

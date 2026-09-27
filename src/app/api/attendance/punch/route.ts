@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const { action, latitude, longitude } = await req.json(); // action = "IN" or "OUT"
+    const { action, latitude, longitude, livePhotoUrl } = await req.json(); // action = "IN" or "OUT"
     const ipAddress = req.headers.get("x-forwarded-for") || "unknown";
 
     // Get today's date in YYYY-MM-DD
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     if (!settings) {
       settings = await SystemSettings.create({});
     }
-    const attPolicy = settings.attendancePolicy || {};
+    const attPolicy: any = settings.attendancePolicy || {};
     const officeStartTime = attPolicy.officeStartTime || "10:00";
     const lateThresholdMinutes = attPolicy.lateThresholdMins || 15;
 
@@ -108,6 +108,10 @@ export async function POST(req: Request) {
       if (dist > maxRadius) {
         return NextResponse.json({ error: `You are too far from the office. Distance: ${Math.round(dist)}m (Max allowed: ${maxRadius}m)` }, { status: 400 });
       }
+    }
+
+    if (employee.isFieldEmployee && !livePhotoUrl) {
+      return NextResponse.json({ error: "Live photo capture is required for field employees." }, { status: 400 });
     }
 
     let attendance = await Attendance.findOne({ employeeId: employee._id, date: dateStr });
@@ -131,7 +135,7 @@ export async function POST(req: Request) {
         });
       }
 
-      attendance.punchIn = { time: now, ipAddress, latitude, longitude };
+      attendance.punchIn = { time: now, ipAddress, latitude, longitude, livePhotoUrl };
       attendance.metrics.isLate = isLate;
       await attendance.save();
 
@@ -154,7 +158,7 @@ export async function POST(req: Request) {
       const earlyLeaveMins = attPolicy.earlyLeaveThresholdMins || 15;
       const isEarlyLeave = currentMinutes < (standardEndMinutes - earlyLeaveMins);
 
-      attendance.punchOut = { time: now, ipAddress, latitude, longitude };
+      attendance.punchOut = { time: now, ipAddress, latitude, longitude, livePhotoUrl };
       attendance.metrics.workingHours = Number(workingHours.toFixed(2));
       attendance.metrics.isEarlyLeave = isEarlyLeave;
 
@@ -178,6 +182,12 @@ export async function POST(req: Request) {
       }
 
       await attendance.save();
+
+      // Field Employee Checkout Notification
+      if (employee.isFieldEmployee) {
+        console.log(`[EMAIL ALERT TO ADMIN]: Field Employee ${employee.firstName} ${employee.lastName} has checked out at ${now.toISOString()} from location ${latitude}, ${longitude}`);
+        // In a real app, integrate an email service here.
+      }
 
       return NextResponse.json({ success: true, message: "Punched out successfully", data: attendance });
     }

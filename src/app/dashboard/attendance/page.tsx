@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, CheckCircle, AlertTriangle } from "lucide-react";
@@ -11,6 +11,8 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [punching, setPunching] = useState(false);
   const [monthlyRecords, setMonthlyRecords] = useState<any[]>([]);
+  const [isFieldEmployee, setIsFieldEmployee] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -43,6 +45,35 @@ export default function AttendancePage() {
   useEffect(() => {
     fetchStatus();
     fetchMonthly();
+
+    // Check if field employee
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.employee?.isFieldEmployee) {
+          setIsFieldEmployee(true);
+          // Start Camera
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+              .then(stream => {
+                if (videoRef.current) {
+                  videoRef.current.srcObject = stream;
+                  videoRef.current.play();
+                }
+              })
+              .catch(err => console.error("Camera error:", err));
+          }
+        }
+      })
+      .catch(console.error);
+
+    // Stop camera on unmount
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(t => t.stop());
+      }
+    };
   }, []);
 
   const handlePunch = async (action: "IN" | "OUT") => {
@@ -58,13 +89,42 @@ export default function AttendancePage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
+          let livePhotoUrl = undefined;
+          
+          if (isFieldEmployee && videoRef.current) {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = videoRef.current.videoWidth || 640;
+              canvas.height = videoRef.current.videoHeight || 480;
+              canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
+              const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+              
+              const req = await fetch(dataUrl);
+              const blob = await req.blob();
+              const formData = new FormData();
+              formData.append("file", blob, "live_photo.jpg");
+              
+              const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
+              const uploadJson = await uploadRes.json();
+              if (uploadJson.success) {
+                livePhotoUrl = uploadJson.url;
+              }
+            } catch (err) {
+              console.error("Live photo error:", err);
+              alert("Failed to capture live photo.");
+              setPunching(false);
+              return;
+            }
+          }
+
           const res = await fetch("/api/attendance/punch", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               action,
               latitude: position.coords.latitude,
-              longitude: position.coords.longitude
+              longitude: position.coords.longitude,
+              livePhotoUrl
             })
           });
           const data = await res.json();
@@ -111,6 +171,13 @@ export default function AttendancePage() {
                 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
               <p className="text-sm text-zinc-500 mb-6">{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+              {isFieldEmployee && !hasPunchedOut && (
+                <div className="w-full mb-6 flex flex-col items-center">
+                  <span className="text-xs font-bold text-red-500 uppercase mb-2">Live Camera Active (Required)</span>
+                  <video ref={videoRef} className="w-full h-48 object-cover rounded-lg border-2 border-zinc-200 dark:border-zinc-700 bg-black" playsInline muted />
+                </div>
+              )}
 
               {!hasPunchedIn && (
                 <Button 

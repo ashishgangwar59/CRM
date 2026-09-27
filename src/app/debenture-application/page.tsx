@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload } from "lucide-react";
+import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload, RotateCcw, RotateCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/cropImage";
@@ -130,6 +130,8 @@ function DebentureFormContent() {
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [cropTargetField, setCropTargetField] = useState<"signatureUrl" | "passportPhotoUrl">("signatureUrl");
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const startQrSignature = async () => {
     try {
@@ -208,45 +210,10 @@ function DebentureFormContent() {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
     stopCamera();
-
-    try {
-      // 1. Try pure JavaScript Blob conversion (works cross-platform on phone/tablet)
-      let blob: Blob | null = null;
-      try {
-        blob = dataURItoBlob(dataUrl);
-      } catch (err) {
-        console.error("dataURItoBlob failed:", err);
-      }
-
-      if (blob) {
-        const file = new File([blob], `passport_photo_${Date.now()}.jpg`, { type: "image/jpeg" });
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
-        const json = await res.json();
-        if (json.success) {
-          setForm((prev) => ({ ...prev, passportPhotoUrl: json.url }));
-          return;
-        }
-      }
-
-      // 2. Base64 JSON fallback for WebViews or browsers where Blob fails
-      const res = await fetch("/api/employees/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base64: dataUrl, fileName: `live_photo_${Date.now()}.jpg` })
-      });
-      const json = await res.json();
-      if (json.success) {
-        setForm((prev) => ({ ...prev, passportPhotoUrl: json.url }));
-      } else {
-        alert(json.error || "Failed to upload live photo.");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Error saving live photo. Please try again.");
-    }
+    
+    setCropTargetField("passportPhotoUrl");
+    setCropImageSrc(dataUrl);
+    setCropModalOpen(true);
   };
 
   useEffect(() => {
@@ -440,7 +407,7 @@ function DebentureFormContent() {
     }
   };
 
-  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCropUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "signatureUrl" | "passportPhotoUrl") => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
@@ -449,8 +416,14 @@ function DebentureFormContent() {
       return;
     }
 
+    if (!file.type.includes("image/")) {
+      alert("Only image files are supported.");
+      return;
+    }
+
     const reader = new FileReader();
     reader.addEventListener("load", () => {
+      setCropTargetField(field);
       setCropImageSrc(reader.result?.toString() || "");
       setCropModalOpen(true);
     });
@@ -462,7 +435,7 @@ function DebentureFormContent() {
     if (!cropImageSrc || !croppedAreaPixels) return;
 
     try {
-      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels, rotation);
       if (!croppedBlob) {
         alert("Crop failed. Please try again.");
         return;
@@ -476,24 +449,27 @@ function DebentureFormContent() {
       const json = await res.json();
 
       if (json.success) {
-        setForm((prev) => ({ ...prev, signatureUrl: json.url }));
+        setForm((prev) => ({ ...prev, [cropTargetField]: json.url }));
 
-        // Draw onto canvas
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => {
-            ctx?.clearRect(0, 0, canvas.width, canvas.height);
-            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          };
-          img.src = json.url;
+        // Draw onto canvas if signature
+        if (cropTargetField === "signatureUrl") {
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              ctx?.clearRect(0, 0, canvas.width, canvas.height);
+              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = json.url;
+          }
         }
 
         // Close modal
         setCropModalOpen(false);
         setCropImageSrc(null);
+        setRotation(0);
       } else {
         alert(json.error || "Signature upload failed.");
       }
@@ -1167,7 +1143,7 @@ function DebentureFormContent() {
             {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
           </div>
           <div className="contact-row">
-            <span>&#128222; {settings?.companyProfile?.phone || "118008900818"}</span>
+            <span>&#128222; {settings?.companyProfile?.phone || "18008900818"}</span>
             <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
             <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
           </div>
@@ -1820,7 +1796,7 @@ function DebentureFormContent() {
                   accept="image/*"
                   id="photoInput"
                   className="hidden"
-                  onChange={(e) => handleFileUpload(e, "passportPhotoUrl")}
+                  onChange={(e) => handleCropUpload(e, "passportPhotoUrl")}
                 />
 
                 <button
@@ -1888,7 +1864,7 @@ function DebentureFormContent() {
                   id="sigUploadInput"
                   accept="image/png, image/jpeg"
                   className="hidden"
-                  onChange={handleSignatureUpload}
+                  onChange={(e) => handleCropUpload(e, "signatureUrl")}
                 />
               </div>
             </div>
@@ -2217,12 +2193,15 @@ function DebentureFormContent() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-lg flex flex-col overflow-hidden">
             <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="font-bold text-lg text-zinc-900">Crop Signature</h3>
+              <h3 className="font-bold text-lg text-zinc-900">
+                {cropTargetField === "passportPhotoUrl" ? "Crop Photo" : "Crop Signature"}
+              </h3>
               <button
                 type="button"
                 onClick={() => {
                   setCropModalOpen(false);
                   setCropImageSrc(null);
+                  setRotation(0);
                 }}
                 className="text-zinc-500 hover:text-black rounded"
               >
@@ -2234,15 +2213,20 @@ function DebentureFormContent() {
                 image={cropImageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={3 / 1}
+                rotation={rotation}
+                aspect={cropTargetField === "passportPhotoUrl" ? 3.5 / 4.5 : 3 / 1}
                 onCropChange={setCrop}
+                onRotationChange={setRotation}
                 onZoomChange={setZoom}
                 onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
               />
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="text-xs font-bold text-zinc-600">Zoom</label>
+                <label className="text-xs font-bold text-zinc-600 flex justify-between">
+                  <span>Zoom</span>
+                  <span>{zoom.toFixed(1)}x</span>
+                </label>
                 <input
                   type="range"
                   value={zoom}
@@ -2254,12 +2238,32 @@ function DebentureFormContent() {
                   className="w-full"
                 />
               </div>
+              <div>
+                <label className="text-xs font-bold text-zinc-600 mb-2 block">Rotation: {rotation}°</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRotation((prev) => (prev - 90) % 360)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold rounded-lg transition-colors border border-zinc-200"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Left 90°
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold rounded-lg transition-colors border border-zinc-200"
+                  >
+                    <RotateCw className="w-4 h-4" /> Right 90°
+                  </button>
+                </div>
+              </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     setCropModalOpen(false);
                     setCropImageSrc(null);
+                    setRotation(0);
                   }}
                   className="px-4 py-2 text-sm font-bold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg"
                 >

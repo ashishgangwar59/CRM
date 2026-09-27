@@ -9,6 +9,7 @@ export interface IAttendance extends Document {
     ipAddress: string;
     latitude?: number;
     longitude?: number;
+    livePhotoUrl?: string;
   };
   
   punchOut?: {
@@ -16,6 +17,7 @@ export interface IAttendance extends Document {
     ipAddress: string;
     latitude?: number;
     longitude?: number;
+    livePhotoUrl?: string;
   };
   
   breaks: Array<{
@@ -57,6 +59,7 @@ const AttendanceSchema: Schema<IAttendance> = new Schema(
       ipAddress: String,
       latitude: Number,
       longitude: Number,
+      livePhotoUrl: String,
     },
     
     punchOut: {
@@ -64,6 +67,7 @@ const AttendanceSchema: Schema<IAttendance> = new Schema(
       ipAddress: String,
       latitude: Number,
       longitude: Number,
+      livePhotoUrl: String,
     },
     
     breaks: [{

@@ -20,6 +20,8 @@ export default function EditEmployeePage() {
   const [designations, setDesignations] = useState<string[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState("");
+  const [showOtherDepartment, setShowOtherDepartment] = useState(false);
+  const [showOtherDesignation, setShowOtherDesignation] = useState(false);
 
   const [formData, setFormData] = useState({
     employeeCode: "",
@@ -431,31 +433,69 @@ export default function EditEmployeePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="official-department">Department</Label>
-                    <select
-                      id="official-department"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.department}
-                      onChange={(e) => handleChange("department", e.target.value)}
-                    >
-                      {departments.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                      {departments.length === 0 && <option value="">No departments configured</option>}
-                    </select>
+                    <div className="space-y-2">
+                      <select
+                        id="official-department"
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                        value={showOtherDepartment ? "Other" : formData.department}
+                        onChange={(e) => {
+                          if (e.target.value === "Other") {
+                            setShowOtherDepartment(true);
+                            handleChange("department", "");
+                          } else {
+                            setShowOtherDepartment(false);
+                            handleChange("department", e.target.value);
+                          }
+                        }}
+                      >
+                        {departments.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                        {departments.length === 0 && <option value="" disabled>No departments configured</option>}
+                        <option value="Other">Other (Enter manually)</option>
+                      </select>
+                      {showOtherDepartment && (
+                        <Input 
+                          placeholder="Enter custom department name" 
+                          value={formData.department} 
+                          onChange={(e) => handleChange("department", e.target.value)} 
+                          autoFocus
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="official-designation">Designation</Label>
-                    <select
-                      id="official-designation"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.designation}
-                      onChange={(e) => handleChange("designation", e.target.value)}
-                    >
-                      {designations.map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                      {designations.length === 0 && <option value="">No designations configured</option>}
-                    </select>
+                    <div className="space-y-2">
+                      <select
+                        id="official-designation"
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                        value={showOtherDesignation ? "Other" : formData.designation}
+                        onChange={(e) => {
+                          if (e.target.value === "Other") {
+                            setShowOtherDesignation(true);
+                            handleChange("designation", "");
+                          } else {
+                            setShowOtherDesignation(false);
+                            handleChange("designation", e.target.value);
+                          }
+                        }}
+                      >
+                        {designations.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                        {designations.length === 0 && <option value="" disabled>No designations configured</option>}
+                        <option value="Other">Other (Enter manually)</option>
+                      </select>
+                      {showOtherDesignation && (
+                        <Input 
+                          placeholder="Enter custom designation name" 
+                          value={formData.designation} 
+                          onChange={(e) => handleChange("designation", e.target.value)} 
+                          autoFocus
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reportingManager">Reporting Manager</Label>
@@ -652,7 +692,7 @@ export default function EditEmployeePage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register"
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
                   ].map(module => (
                     <div key={module} className="flex items-center space-x-2 p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900 border">
                       <input

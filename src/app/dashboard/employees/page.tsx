@@ -214,24 +214,28 @@ export default function EmployeesPage() {
           <p className="text-zinc-500 dark:text-zinc-400">Manage your workforce, departments, and records.</p>
         </div>
         <div className="flex space-x-2">
-          <input 
-            type="file" 
-            accept=".xlsx, .xls" 
-            className="hidden" 
-            ref={fileInputRef} 
-            onChange={handleImport}
-          />
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" /> Import Excel
-          </Button>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" /> Export Excel
-          </Button>
-          <Link href="/dashboard/employees/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Employee
-            </Button>
-          </Link>
+          {(role === "ADMIN" || role === "KEY_ADMIN") && (
+            <>
+              <input 
+                type="file" 
+                accept=".xlsx, .xls" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleImport}
+              />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-4 w-4" /> Import Excel
+              </Button>
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" /> Export Excel
+              </Button>
+              <Link href="/dashboard/employees/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Add Employee
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

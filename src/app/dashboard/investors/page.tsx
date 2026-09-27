@@ -28,7 +28,7 @@ export default function AdminInvestorsPage() {
 
   // Modal / Detail state
   const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
-  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ key?: string; title: string; url: string; sub?: string; currentStatus?: string; investorId?: string } | null>(null);
 
   const isPdf = (url: string) => {
     if (!url) return false;
@@ -86,6 +86,30 @@ export default function AdminInvestorsPage() {
       console.error(e);
       alert("Error fetching complete investor data");
       return null;
+    }
+  };
+
+  const handleDocVerifyGlobal = async (investorId: string, key: string, docStatus: "Approved" | "Rejected") => {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/investors/me", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          investorId,
+          docVerifications: { [key]: docStatus },
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setSelectedInvestor(json.data);
+        fetchInvestors();
+        setPreviewDoc(prev => prev && prev.key === key ? { ...prev, currentStatus: docStatus } : prev);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -309,6 +333,8 @@ export default function AdminInvestorsPage() {
         "Monthly Growth (%)",
         "Investment Date",
         "Bond Maturity Date",
+        "Bond Maturity Amount",
+        "Referred By",
         "Created At"
       ];
 
@@ -323,7 +349,9 @@ export default function AdminInvestorsPage() {
         const amount = inv.investmentAmount || 0;
         const rate = inv.monthlyGrowthPercentage || 0;
         let issueDateObj: Date;
-        if (inv.investmentDate) {
+        if (inv.verifiedAt) {
+          issueDateObj = new Date(inv.verifiedAt);
+        } else if (inv.investmentDate) {
           if (typeof inv.investmentDate === "string" && inv.investmentDate.includes("-") && inv.investmentDate.length === 10) {
             const [y, m, d] = inv.investmentDate.split("-").map(Number);
             issueDateObj = new Date(y, m - 1, d);
@@ -331,24 +359,29 @@ export default function AdminInvestorsPage() {
             issueDateObj = new Date(inv.investmentDate);
           }
         } else {
-          issueDateObj = inv.verifiedAt ? new Date(inv.verifiedAt) : (inv.createdAt ? new Date(inv.createdAt) : new Date());
+          issueDateObj = inv.createdAt ? new Date(inv.createdAt) : new Date();
         }
 
         const invDate = issueDateObj.toLocaleDateString("en-GB");
 
-        let matDate = "";
+        let matDateObj: Date;
         if (inv.bondMaturityDate) {
-          matDate = new Date(inv.bondMaturityDate).toLocaleDateString("en-GB");
+          matDateObj = new Date(inv.bondMaturityDate);
         } else {
           const maturityPeriodMonths = Number(inv.bondMaturityMonths) || 1;
-          const calculatedMatDate = new Date(issueDateObj);
-          calculatedMatDate.setMonth(calculatedMatDate.getMonth() + maturityPeriodMonths);
-          matDate = calculatedMatDate.toLocaleDateString("en-GB");
+          matDateObj = new Date(issueDateObj);
+          matDateObj.setMonth(matDateObj.getMonth() + maturityPeriodMonths);
         }
+        const matDate = matDateObj.toLocaleDateString("en-GB");
 
+        const days = Math.max(0, Math.round((matDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+        const totalInterest = (amount * rate * days) / (100 * 30);
+        const maturityAmount = Math.round(amount + totalInterest);
+
+        const referredBy = `"${(inv.referralEmployeeName || inv.debentureForm?.referralCode || "").replace(/"/g, '""')}"`;
         const created = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-GB") : "";
 
-        csvRows.push([code, name, email, phone, status, amount, rate, invDate, matDate, created].join(","));
+        csvRows.push([code, name, email, phone, status, amount, rate, invDate, matDate, maturityAmount, referredBy, created].join(","));
       });
 
       const csvString = csvRows.join("\n");
@@ -703,7 +736,7 @@ export default function AdminInvestorsPage() {
       {/* --- View & Verify KYC Modal --- */}
       {selectedInvestor && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden text-zinc-900 dark:text-zinc-100 shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden text-zinc-900 dark:text-zinc-100 shadow-2xl">
             <div className="flex justify-between items-start border-b pb-4 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <div>
                 <h2 className="text-2xl font-bold">{selectedInvestor.fullName}</h2>
@@ -751,7 +784,9 @@ export default function AdminInvestorsPage() {
                 // const months = Number(selectedInvestor.bondMaturityMonths);
 
                 let issueDateObj: Date;
-                if (selectedInvestor.investmentDate) {
+                if (selectedInvestor.verifiedAt) {
+                  issueDateObj = new Date(selectedInvestor.verifiedAt);
+                } else if (selectedInvestor.investmentDate) {
                   if (typeof selectedInvestor.investmentDate === "string" && selectedInvestor.investmentDate.includes("-") && selectedInvestor.investmentDate.length === 10) {
                     const [y, m, d] = selectedInvestor.investmentDate.split("-").map(Number);
                     issueDateObj = new Date(y, m - 1, d);
@@ -759,7 +794,7 @@ export default function AdminInvestorsPage() {
                     issueDateObj = new Date(selectedInvestor.investmentDate);
                   }
                 } else {
-                  issueDateObj = selectedInvestor.verifiedAt ? new Date(selectedInvestor.verifiedAt) : new Date(selectedInvestor.createdAt);
+                  issueDateObj = new Date(selectedInvestor.createdAt);
                 }
 
                 let maturityDateObj: Date;
@@ -919,38 +954,17 @@ export default function AdminInvestorsPage() {
 
                 <div className="grid grid-cols-1 gap-3 text-sm">
                   {[
-                    { key: "aadhar", title: "Aadhar Card", sub: selectedInvestor.kycDocs?.aadharNumber, url: selectedInvestor.kycDocs?.aadharDocUrl, req: true },
-                    { key: "pan", title: "PAN Card", sub: selectedInvestor.kycDocs?.panNumber, url: selectedInvestor.kycDocs?.panDocUrl, req: true },
-                    { key: "marksheet10th", title: "10th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet10thUrl, req: false },
-                    { key: "marksheet12th", title: "12th Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.marksheet12thUrl, req: false },
-                    { key: "graduation", title: "Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.graduationUrl, req: false },
-                    { key: "postGraduation", title: "Post Graduation Marksheet", sub: "Optional", url: selectedInvestor.kycDocs?.postGraduationUrl, req: false },
-                    { key: "bankPassbook", title: "Bank Passbook / Cheque", sub: `Bank: ${selectedInvestor.kycDocs?.bankName || "N/A"} | Ac: ${selectedInvestor.kycDocs?.accountNumber || "N/A"} | IFSC: ${selectedInvestor.kycDocs?.ifscCode || "N/A"}`, url: selectedInvestor.kycDocs?.bankPassbookUrl, req: true },
+                    { key: "aadhar", title: "Aadhar Card", sub: `Name: ${selectedInvestor.fullName} | DOB: ${selectedInvestor.debentureForm?.dob || selectedInvestor.dateOfBirth || "N/A"} | Aadhar No: ${selectedInvestor.kycDocs?.aadharNumber || "N/A"}`, url: selectedInvestor.kycDocs?.aadharDocUrl, req: true },
+                    { key: "pan", title: "PAN Card", sub: `Name: ${selectedInvestor.fullName} | Father/Spouse: ${selectedInvestor.debentureForm?.fatherSpouseName || "N/A"} | DOB: ${selectedInvestor.debentureForm?.dob || selectedInvestor.dateOfBirth || "N/A"} | PAN No: ${selectedInvestor.kycDocs?.panNumber || "N/A"}`, url: selectedInvestor.kycDocs?.panDocUrl, req: true },
+                    { key: "marksheet10th", title: "10th Marksheet", sub: `Name: ${selectedInvestor.fullName} | DOB: ${selectedInvestor.debentureForm?.dob || selectedInvestor.dateOfBirth || "N/A"}`, url: selectedInvestor.kycDocs?.marksheet10thUrl, req: false },
+                    { key: "marksheet12th", title: "12th Marksheet", sub: `Name: ${selectedInvestor.fullName} | DOB: ${selectedInvestor.debentureForm?.dob || selectedInvestor.dateOfBirth || "N/A"}`, url: selectedInvestor.kycDocs?.marksheet12thUrl, req: false },
+                    { key: "graduation", title: "Graduation Marksheet", sub: `Name: ${selectedInvestor.fullName}`, url: selectedInvestor.kycDocs?.graduationUrl, req: false },
+                    { key: "postGraduation", title: "Post Graduation Marksheet", sub: `Name: ${selectedInvestor.fullName}`, url: selectedInvestor.kycDocs?.postGraduationUrl, req: false },
+                    { key: "bankPassbook", title: "Bank Passbook / Cheque", sub: `Name: ${selectedInvestor.fullName} | Bank: ${selectedInvestor.kycDocs?.bankName || "N/A"} | Ac: ${selectedInvestor.kycDocs?.accountNumber || "N/A"} | IFSC: ${selectedInvestor.kycDocs?.ifscCode || "N/A"}`, url: selectedInvestor.kycDocs?.bankPassbookUrl, req: true },
                   ].map((docItem) => {
                     const currentStatus = selectedInvestor.docVerifications?.[docItem.key as keyof typeof selectedInvestor.docVerifications] || "Pending";
 
-                    const handleDocVerify = async (key: string, docStatus: "Approved" | "Rejected") => {
-                      setSubmitting(true);
-                      try {
-                        const res = await fetch("/api/investors/me", {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            investorId: selectedInvestor._id,
-                            docVerifications: { [key]: docStatus },
-                          }),
-                        });
-                        const json = await res.json();
-                        if (json.success) {
-                          setSelectedInvestor(json.data);
-                          fetchInvestors();
-                        }
-                      } catch (e) {
-                        console.error(e);
-                      } finally {
-                        setSubmitting(false);
-                      }
-                    };
+                    const handleDocVerifyLocal = (status: "Approved" | "Rejected") => handleDocVerifyGlobal(selectedInvestor._id, docItem.key, status);
 
                     return (
                       <div key={docItem.key} className="p-3.5 border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40">
@@ -958,7 +972,7 @@ export default function AdminInvestorsPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-bold">{docItem.title}</p>
                             {docItem.sub && <span className="text-xs text-zinc-500 font-mono">({docItem.sub})</span>}
-                            {docItem.req && <span className="text-[10px] bg-[#134086] text-indigo-300 font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
+                            {docItem.req && <span className="text-[10px] bg-[#134086] text-white font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
@@ -976,15 +990,19 @@ export default function AdminInvestorsPage() {
                             <button
                               type="button"
                               onClick={() => setPreviewDoc({
-                                title: docItem.title + (docItem.sub && docItem.sub !== "Optional" ? " ( " + docItem.sub + " )" : ""),
-                                url: docItem.url
+                                key: docItem.key,
+                                title: docItem.title,
+                                url: docItem.url,
+                                sub: docItem.sub,
+                                currentStatus,
+                                investorId: selectedInvestor._id
                               })}
                               className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" /> View File
                             </button>
                           ) : (
-                            <span className="text-xs text-white font-semibold bg-[#134086] px-2.5 py-1 rounded border border-rose-800">
+                            <span className="text-xs text-white font-semibold bg-rose-400 px-2.5 py-1 rounded border border-rose-800">
                               Missing / Not Uploaded
                             </span>
                           )}
@@ -993,7 +1011,7 @@ export default function AdminInvestorsPage() {
                             <Button
                               size="sm"
                               disabled={submitting || !docItem.url}
-                              onClick={() => handleDocVerify(docItem.key, "Approved")}
+                              onClick={() => handleDocVerifyLocal("Approved")}
                               className={`font-bold h-8 px-3 text-xs ${!docItem.url
                                 ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                                 : currentStatus === "Approved"
@@ -1007,7 +1025,7 @@ export default function AdminInvestorsPage() {
                               size="sm"
                               variant="outline"
                               disabled={submitting || !docItem.url}
-                              onClick={() => handleDocVerify(docItem.key, "Rejected")}
+                              onClick={() => handleDocVerifyLocal("Rejected")}
                               className={`h-8 px-3 text-xs font-bold ${!docItem.url
                                 ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
                                 : currentStatus === "Rejected"
@@ -1096,14 +1114,15 @@ export default function AdminInvestorsPage() {
                       >
                         Reject Investor Docs
                       </Button>
-                      <Button
-                        className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
-                        onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
-                        disabled={submitting || !hasAllMandatoryUploaded}
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
-                      </Button>
+                      {(role === "ADMIN" || role === "KEY_ADMIN") ? (
+                        <Button
+                          className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
+                          disabled={submitting || !hasAllMandatoryUploaded}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
+                        </Button>) : ""}
                       {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (role === "ADMIN" || role === "KEY_ADMIN") && (
                         <Button
                           className="bg-amber-500 hover:bg-amber-600 text-white font-black shadow-md"
@@ -1215,7 +1234,7 @@ export default function AdminInvestorsPage() {
       {/* --- Add Investor Modal --- */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Add New Investor</h2>
               <Button variant="ghost" onClick={() => setShowAddModal(false)}>✕</Button>
@@ -1290,7 +1309,7 @@ export default function AdminInvestorsPage() {
       {/* --- Edit Investor Modal --- */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
               <h2 className="text-xl font-bold">Edit Investor Profile</h2>
               <Button variant="ghost" onClick={() => setShowEditModal(false)}>✕</Button>
@@ -1423,24 +1442,50 @@ export default function AdminInvestorsPage() {
       {/* In-App Document Viewer Modal for Admin & KeyAdmin */}
       {previewDoc && (
         <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 print:hidden animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="bg-white dark:bg-zinc-900 rounded-md max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-zinc-200 dark:border-zinc-800">
             {/* Header */}
             <div className="bg-zinc-950 text-white px-5 py-3.5 flex justify-between items-center border-b border-zinc-800">
-              <span className="font-extrabold text-sm text-indigo-400 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-400" /> {previewDoc.title}
-              </span>
+              <div className="flex flex-col">
+                <span className="font-extrabold text-sm text-indigo-400 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-400" /> {previewDoc.title}
+                </span>
+                {previewDoc.sub && previewDoc.sub !== "Optional" && (
+                  <span className="text-xs text-zinc-300 mt-1 flex items-center gap-2">
+                    <span className="text-indigo-300 font-bold">Filled Details:</span>
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded font-mono border border-zinc-700">{previewDoc.sub}</span>
+                  </span>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
+                {previewDoc.investorId && previewDoc.key && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => handleDocVerifyGlobal(previewDoc.investorId!, previewDoc.key!, "Approved")}
+                      className={`font-bold text-xs ${previewDoc.currentStatus === "Approved" ? "bg-emerald-600 text-white border-none" : "bg-zinc-800 text-zinc-300 hover:bg-emerald-600 hover:text-white border-zinc-700"}`}
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 mr-1" /> {previewDoc.currentStatus === "Approved" ? "Approved" : "Approve"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleDocVerifyGlobal(previewDoc.investorId!, previewDoc.key!, "Rejected")}
+                      className={`font-bold text-xs ${previewDoc.currentStatus === "Rejected" ? "bg-rose-600 text-white border-none" : "bg-zinc-800 text-zinc-300 hover:bg-rose-600 hover:text-white border-zinc-700"}`}
+                    >
+                      <XCircle className="w-3.5 h-3.5 mr-1" /> {previewDoc.currentStatus === "Rejected" ? "Rejected" : "Reject"}
+                    </Button>
+                  </>
+                )}
                 <Button
                   size="sm"
                   onClick={() => openInNewWindow(previewDoc.url)}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs ml-2"
                 >
                   <Download className="w-3.5 h-3.5 mr-1" /> Open / Download
                 </Button>
                 <button
                   type="button"
                   onClick={() => setPreviewDoc(null)}
-                  className="text-zinc-400 hover:text-white font-bold text-xl px-2 leading-none"
+                  className="text-zinc-400 hover:text-white font-bold text-xl px-2 leading-none ml-2"
                 >
                   ✕
                 </button>

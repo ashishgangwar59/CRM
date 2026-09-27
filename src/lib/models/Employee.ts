@@ -30,6 +30,7 @@ export interface IEmployee extends Document {
   // 3. Status & Type
   status: "Active" | "Inactive" | "Notice Period" | "Resigned" | "Absconding";
   employeeType: "Full-Time" | "Part-Time" | "Contract" | "Intern";
+  isFieldEmployee?: boolean;
 
   // 4. KYC
   kyc: {
@@ -147,6 +148,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
       enum: ["Full-Time", "Part-Time", "Contract", "Intern"], 
       default: "Full-Time" 
     },
+    isFieldEmployee: { type: Boolean, default: false },
 
     kyc: {
       aadharNumber: { type: String },
