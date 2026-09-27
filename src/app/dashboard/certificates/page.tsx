@@ -17,6 +17,7 @@ export default function CertificatesPage() {
   );
   const [authName, setAuthName] = useState<string>("Ram Mohan");
   const [issueDate, setIssueDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const printRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,12 @@ export default function CertificatesPage() {
         const data = await res.json();
         if (data.success) {
           setEmployees(data.data.filter((e: any) => e.status === "Active"));
+        }
+
+        const settingsRes = await fetch("/api/settings");
+        const settingsData = await settingsRes.json();
+        if (settingsData.success) {
+          setSettings(settingsData.data);
         }
       } catch (e) {
         console.error(e);
@@ -174,8 +181,8 @@ export default function CertificatesPage() {
             <div className="absolute inset-[19px] border border-dashed border-[#c9972f]/60 pointer-events-none z-10"></div>
 
             {/* Watermark Logo */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none z-0">
-              <Trophy className="w-[500px] h-[500px]" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none z-0">
+              <img src="/logo.png" alt="Company Logo Watermark" className="w-[500px] h-[500px] object-contain grayscale" />
             </div>
 
             {/* Corner Ornaments (CSS pseudo elements representation) */}
@@ -184,35 +191,40 @@ export default function CertificatesPage() {
             <div className="absolute bottom-[25px] left-[25px] w-12 h-12 border-b-4 border-l-4 border-[#c9972f] pointer-events-none z-20"></div>
             <div className="absolute bottom-[25px] right-[25px] w-12 h-12 border-b-4 border-r-4 border-[#c9972f] pointer-events-none z-20"></div>
 
-            {/* Top Ribbon */}
-            <div className="absolute top-[10px] left-1/2 -translate-x-1/2 bg-[#134086] px-16 py-3 rounded-b-3xl shadow-xl z-20 flex flex-col items-center border-b-4 border-x-4 border-[#c9972f]">
-              <Star className="w-8 h-8 text-[#c9972f] fill-[#c9972f] mb-1" />
-              <div className="text-white font-bold tracking-widest text-sm uppercase">Excellence Award</div>
-            </div>
+
 
             {/* Content Container */}
             <div className="relative z-10 h-full flex flex-col items-center justify-center px-24 text-center">
 
+              {settings?.companyProfile?.name && (
+                <div
+                  className="text-2xl font-bold tracking-[0.2em] text-[#c9972f] uppercase mb-4 mt-5"
+                  style={{ fontFamily: "'Cinzel', serif" }}
+                >
+                  {settings.companyProfile.name}
+                </div>
+              )}
+
               <h1
-                className="text-[4rem] text-[#134086] font-black uppercase tracking-[0.2em] mb-4 mt-20"
+                className="text-[3rem] text-[#134086] font-black uppercase tracking-[0.2em] mb-4 mt-2"
                 style={{ fontFamily: "'Cinzel', serif" }}
               >
                 Certificate
               </h1>
               <h2
-                className="text-3xl text-[#c9972f] font-semibold italic tracking-wider mb-10"
+                className="text-3xl text-[#c9972f] font-semibold italic tracking-wider mb-8"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 Of {certType.replace("Employee of the ", "").replace("Certificate of ", "")}
               </h2>
 
-              <p className="text-zinc-600 text-lg uppercase tracking-[0.3em] mb-8 font-semibold">
+              <p className="text-zinc-600 text-lg uppercase tracking-[0.3em] mb-5 font-semibold">
                 This is proudly presented to
               </p>
 
               <div
-                className="text-[5rem] text-[#134086] leading-none mb-6 border-b-2 border-zinc-300 pb-2 px-12 inline-block"
-                style={{ fontFamily: "'Great Vibes', cursive" }}
+                className="text-[2rem] font-bold text-[#134086] leading-none mb-8 mt-4 border-b-[3px] border-zinc-300 pb-4 px-20 inline-block tracking-wide capitalize"
+                style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 {selectedEmployee.firstName} {selectedEmployee.lastName}
               </div>
@@ -226,31 +238,46 @@ export default function CertificatesPage() {
               </div>
 
               {/* Signatures */}
-              <div className="w-full flex justify-between items-end px-16 mt-auto mb-16">
+              <div className="w-full flex justify-between items-end px-16 mt-2 mb-10">
                 <div className="flex flex-col items-center">
                   <div className="w-48 border-b-2 border-zinc-400 mb-2 h-12 flex items-end justify-center pb-2">
                     <span className="text-xl font-bold tracking-widest text-[#134086]">{new Date(issueDate).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                   </div>
-                  <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Date Issued</span>
+                  <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest">Date Issued</span>
                 </div>
 
-                <div className="relative">
-                  {/* Seal */}
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-32 h-32 bg-gradient-to-br from-[#e8b84b] to-[#b08328] rounded-full border-4 border-white shadow-2xl flex items-center justify-center">
-                    <div className="w-28 h-28 border-[1px] border-dashed border-white/50 rounded-full flex flex-col items-center justify-center text-white">
-                      <Medal className="w-8 h-8 mb-1" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-center leading-tight">Official<br />Seal</span>
-                    </div>
-                  </div>
-                </div>
 
                 <div className="flex flex-col items-center">
                   <div className="w-48 border-b-2 border-zinc-400 mb-2 h-12 flex items-end justify-center pb-2">
-                    <span className="text-4xl pr-4" style={{ fontFamily: "'Great Vibes', cursive", color: "#134086" }}>{authName}</span>
+                    <span className="text-xl pr-4" style={{ fontFamily: "'Great Vibes', cursive", color: "#134086" }}>{authName}</span>
                   </div>
-                  <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Authorized Signature</span>
+                  <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest">Authorized Signature</span>
                 </div>
               </div>
+
+              {/* Company Footer */}
+              {settings && (
+                <div className="absolute bottom-[32px] left-0 w-full flex justify-center items-center gap-6 text-[#134086]/70 text-xs font-semibold tracking-wider">
+                  {settings?.companyProfile && (
+                    <>
+                      <span>{settings?.companyProfile?.website}</span>
+                      {/* <span>{settings?.companyProfile?.phone}</span> */}
+                    </>
+                  )}
+                  {settings?.companyProfile?.email && (
+                    <>
+                      {/* <span>•</span> */}
+                      <span>{settings?.companyProfile?.email}</span>
+                    </>
+                  )}
+                  {settings?.companyProfile?.phone && (
+                    <>
+                      {/* <span>•</span> */}
+                      <span>{settings?.companyProfile?.phone}</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
