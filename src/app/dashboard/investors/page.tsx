@@ -19,6 +19,8 @@ export default function AdminInvestorsPage() {
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
   const [filterDays, setFilterDays] = useState("");
+  const [filterFromDate, setFilterFromDate] = useState("");
+  const [filterToDate, setFilterToDate] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
   const [page, setPage] = useState(1);
@@ -156,7 +158,7 @@ export default function AdminInvestorsPage() {
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&page=${page}&limit=${limit}`;
+      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -184,11 +186,11 @@ export default function AdminInvestorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, limit]);
+  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
 
   useEffect(() => {
     fetchInvestors();
-  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, page, limit]);
+  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -526,8 +528,31 @@ export default function AdminInvestorsPage() {
             />
           </div>
 
-          {(filterDays || filterMonth || filterDate) && (
-            <Button variant="ghost" size="sm" onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); }} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 ml-auto">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Range From:</Label>
+            <Input
+              type="date"
+              className="h-9 w-36 text-sm"
+              value={filterFromDate}
+              onChange={(e) => {
+                setFilterFromDate(e.target.value);
+                setFilterDays(""); setFilterMonth(""); setFilterDate("");
+              }}
+            />
+            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">To:</Label>
+            <Input
+              type="date"
+              className="h-9 w-36 text-sm"
+              value={filterToDate}
+              onChange={(e) => {
+                setFilterToDate(e.target.value);
+                setFilterDays(""); setFilterMonth(""); setFilterDate("");
+              }}
+            />
+          </div>
+
+          {(filterDays || filterMonth || filterDate || filterFromDate || filterToDate) && (
+            <Button variant="ghost" size="sm" onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); setFilterFromDate(""); setFilterToDate(""); }} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 ml-auto">
               Clear Filters
             </Button>
           )}

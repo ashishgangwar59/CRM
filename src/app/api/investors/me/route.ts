@@ -74,6 +74,8 @@ export async function GET(req: Request) {
       const filterDate = searchParams.get("date") || "";
       const filterMonth = searchParams.get("month") || "";
       const filterDays = searchParams.get("days") || "";
+      const fromDate = searchParams.get("fromDate") || "";
+      const toDate = searchParams.get("toDate") || "";
 
       if (filterDate) {
         query.investmentDate = filterDate;
@@ -101,6 +103,10 @@ export async function GET(req: Request) {
         if (filterDays !== "yesterday") {
           query.createdAt = { $gte: startDate };
         }
+      } else if (fromDate || toDate) {
+        query.createdAt = {};
+        if (fromDate) query.createdAt.$gte = new Date(`${fromDate}T00:00:00.000Z`);
+        if (toDate) query.createdAt.$lte = new Date(`${toDate}T23:59:59.999Z`);
       }
 
       // Restrict visibility for employees
