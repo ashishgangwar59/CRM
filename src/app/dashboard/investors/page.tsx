@@ -416,7 +416,7 @@ export default function AdminInvestorsPage() {
       </div>
 
       {/* Search & Filter Controls */}
-      <div className="flex flex-col gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className={`flex flex-col gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 transition-opacity ${loading ? "opacity-50 pointer-events-none" : ""}`}>
         <div className="flex flex-col xl:flex-row items-center gap-4 w-full">
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
