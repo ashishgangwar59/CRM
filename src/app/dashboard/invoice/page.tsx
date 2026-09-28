@@ -1650,12 +1650,13 @@ export default function InvoicePage() {
                     </div>
                     <div>
                       <span className="k">IFSC Code</span>
-                      <span className="v font-mono">IOBA0000840</span>
+                      <span className="v font-mono">
+                        IOBA0000840</span>
                     </div>
                     <div>
                       <span className="k">Branch</span>
                       <span className="v">
-                        Golf Market Narela North Delhi 110001
+                        No 98, Block No 90, Gole Market, Baird Road New Delhi - 110001
                       </span>
                     </div>
                   </div>

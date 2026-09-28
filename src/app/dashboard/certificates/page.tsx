@@ -13,7 +13,7 @@ export default function CertificatesPage() {
     new Date().toLocaleString("default", { month: "long", year: "numeric" })
   );
   const [customMessage, setCustomMessage] = useState<string>(
-    "In recognition of your outstanding dedication, hard work, and excellent performance. Your contributions have been invaluable to our team's success."
+    "In recognition and appreciation of your dedication, commitment, discipline\\nand valuable contribution towards the organization.\\n\\nYour consistent efforts, positive attitude and professional approach have\\ncontributed meaningfully to the growth and success of the team.\\n\\nWe sincerely appreciate your contribution and encourage you to continue\\nachieving excellence in your professional journey."
   );
   const [authName, setAuthName] = useState<string>("Ram Mohan");
   const [issueDate, setIssueDate] = useState<string>(new Date().toISOString().split("T")[0]);
@@ -169,115 +169,165 @@ export default function CertificatesPage() {
 
           <div
             ref={printRef}
-            className="relative text-black w-[1123px] h-[794px] shrink-0 overflow-hidden print:w-[297mm] print:h-[210mm] shadow-2xl print:shadow-none"
-            style={{
-              background: "radial-gradient(ellipse at 20% 20%, rgba(207, 178, 101, .15), transparent 38%), radial-gradient(ellipse at 80% 75%, rgba(207, 178, 101, .12), transparent 35%), repeating-linear-gradient(0deg, rgba(132, 98, 30, .03) 0 1px, transparent 1px 4px), #fffdf2",
-              border: "12px solid #134086",
-              boxShadow: "inset 0 0 0 2px #c9972f, inset 0 0 0 6px #f7e9b9, inset 0 0 0 8px #c9972f"
-            }}
+            className="relative bg-[#fcfaf5] text-black w-[1123px] h-[794px] shrink-0 overflow-hidden print:w-[297mm] print:h-[210mm] shadow-2xl print:shadow-none font-sans"
+            style={{ boxSizing: 'border-box' }}
           >
-            {/* Inner Gold Borders */}
-            <div className="absolute inset-[15px] border border-[#c9972f] pointer-events-none z-10"></div>
-            <div className="absolute inset-[19px] border border-dashed border-[#c9972f]/60 pointer-events-none z-10"></div>
-
-            {/* Watermark Logo */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none z-0">
-              <img src="/logo.png" alt="Company Logo Watermark" className="w-[500px] h-[500px] object-contain grayscale" />
+            {/* Outer and Inner Borders */}
+            <div className="absolute inset-4 border-[1px] border-[#134086] pointer-events-none z-10">
+              <div className="absolute inset-1 border-[1px] border-[#c9972f] pointer-events-none"></div>
             </div>
 
-            {/* Corner Ornaments (CSS pseudo elements representation) */}
-            <div className="absolute top-[25px] left-[25px] w-12 h-12 border-t-4 border-l-4 border-[#c9972f] pointer-events-none z-20"></div>
-            <div className="absolute top-[25px] right-[25px] w-12 h-12 border-t-4 border-r-4 border-[#c9972f] pointer-events-none z-20"></div>
-            <div className="absolute bottom-[25px] left-[25px] w-12 h-12 border-b-4 border-l-4 border-[#c9972f] pointer-events-none z-20"></div>
-            <div className="absolute bottom-[25px] right-[25px] w-12 h-12 border-b-4 border-r-4 border-[#c9972f] pointer-events-none z-20"></div>
+            {/* Top Left Corner SVG */}
+            <svg className="absolute top-0 left-0 w-64 h-64 pointer-events-none z-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polygon points="0,0 100,0 0,100" fill="#0f2e60" />
+              <polygon points="0,0 90,0 0,90" fill="#c9972f" />
+              <polygon points="0,0 86,0 0,86" fill="#134086" />
+            </svg>
 
-
+            {/* Bottom Right Corner SVG */}
+            <svg className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none z-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polygon points="100,100 0,100 100,0" fill="#0f2e60" />
+              <polygon points="100,100 10,100 100,10" fill="#c9972f" />
+              <polygon points="100,100 14,100 100,14" fill="#134086" />
+            </svg>
 
             {/* Content Container */}
-            <div className="relative z-10 h-full flex flex-col items-center justify-center px-24 text-center">
+            <div className="relative z-10 h-full flex flex-col items-center justify-between px-24 py-16 text-center">
 
-              {settings?.companyProfile?.name && (
+              {/* Header: Logo and Tagline */}
+              <div className="w-full flex justify-between items-start pt-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 flex items-center justify-center font-serif text-[#c9972f] text-4xl font-black bg-white border border-gray-200 shadow-sm relative overflow-hidden">
+                    <span className="absolute left-[-15px] top-1/2 -translate-y-1/2 w-4 h-[70px] bg-gradient-to-r from-transparent to-white skew-x-[-20deg]"></span>
+                    N
+                  </div>
+                  <div className="text-left flex flex-col justify-center">
+                    <h2 className="text-[28px] font-black text-[#134086] tracking-widest m-0 leading-none">
+                      NIVENTRA<sup className="text-sm font-normal">®</sup>
+                    </h2>
+                    <p className="text-[14px] text-[#134086] tracking-[0.4em] mt-1 mb-0 font-medium">CAPITAL ADVISORY</p>
+                    <div className="flex items-center justify-center w-full gap-2 mt-1">
+                      <div className="h-[1px] flex-1 bg-[#c9972f]"></div>
+                      <p className="text-[10px] text-zinc-500 tracking-[0.2em] font-bold m-0">INDIA PVT LTD</p>
+                      <div className="h-[1px] flex-1 bg-[#c9972f]"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right text-[#134086] font-medium italic mt-2 text-lg leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  <p>Building Wealth</p>
+                  <p>Creating a Brighter Future</p>
+                </div>
+              </div>
+
+              {/* Title Section */}
+              <div className="mt-8 flex flex-col items-center w-full">
+                <h1 className="text-3xl font-black text-[#134086] tracking-[0.3em] mb-2" style={{ fontFamily: "'Cinzel', serif" }}>
+                  CERTIFICATE OF
+                </h1>
+                <h2 className="text-[5rem] font-bold text-[#c9972f] uppercase tracking-wider leading-none mb-4" style={{ fontFamily: "'Cinzel', serif", textShadow: "1px 1px 1px rgba(0,0,0,0.05)" }}>
+                  APPRECIATION
+                </h2>
+                
+                {/* Decorative Divider */}
+                <div className="flex items-center justify-center w-full mb-8">
+                  <svg width="300" height="20" viewBox="0 0 300 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 10H120" stroke="#c9972f" strokeWidth="1"/>
+                    <path d="M180 10H300" stroke="#c9972f" strokeWidth="1"/>
+                    <path d="M150 2 C155 2, 155 10, 160 10 C155 10, 155 18, 150 18 C145 18, 145 10, 140 10 C145 10, 145 2, 150 2 Z" fill="none" stroke="#c9972f" strokeWidth="1"/>
+                    <circle cx="150" cy="10" r="2" fill="#c9972f"/>
+                    <circle cx="135" cy="10" r="1.5" fill="#c9972f"/>
+                    <circle cx="165" cy="10" r="1.5" fill="#c9972f"/>
+                  </svg>
+                </div>
+                
+                <p className="text-[#134086] font-black uppercase tracking-[0.2em] mb-6 text-sm">
+                  THIS CERTIFICATE IS PROUDLY PRESENTED TO
+                </p>
+
                 <div
-                  className="text-2xl font-bold tracking-[0.2em] text-[#c9972f] uppercase mb-4 mt-5"
-                  style={{ fontFamily: "'Cinzel', serif" }}
+                  className="text-[5rem] text-[#134086] leading-none mb-8"
+                  style={{ fontFamily: "'Great Vibes', cursive" }}
                 >
-                  {settings.companyProfile.name}
+                  {selectedEmployee.firstName} {selectedEmployee.lastName}
                 </div>
-              )}
 
-              <h1
-                className="text-[3rem] text-[#134086] font-black uppercase tracking-[0.2em] mb-4 mt-2"
-                style={{ fontFamily: "'Cinzel', serif" }}
-              >
-                Certificate
-              </h1>
-              <h2
-                className="text-3xl text-[#c9972f] font-semibold italic tracking-wider mb-8"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                Of {certType.replace("Employee of the ", "").replace("Certificate of ", "")}
-              </h2>
+                <div className="text-[#1a2b4c] text-[15px] max-w-4xl mx-auto leading-loose mb-10 font-bold px-12 whitespace-pre-wrap">
+                  {customMessage}
+                </div>
 
-              <p className="text-zinc-600 text-lg uppercase tracking-[0.3em] mb-5 font-semibold">
-                This is proudly presented to
-              </p>
+                <div className="flex items-center justify-center gap-4 w-full mb-3">
+                  <div className="h-[1px] w-24 bg-[#c9972f]"></div>
+                  <p className="text-3xl text-[#c9972f] italic" style={{ fontFamily: "'Great Vibes', cursive" }}>
+                    With Best Wishes for Continued Success
+                  </p>
+                  <div className="h-[1px] w-24 bg-[#c9972f]"></div>
+                </div>
 
-              <div
-                className="text-[2rem] font-bold text-[#134086] leading-none mb-8 mt-4 border-b-[3px] border-zinc-300 pb-4 px-20 inline-block tracking-wide capitalize"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                {selectedEmployee.firstName} {selectedEmployee.lastName}
+                <p className="text-[12px] font-black text-[#134086] tracking-widest uppercase">
+                  NIVENTRA CAPITAL ADVISORY INDIA PVT LTD
+                </p>
               </div>
 
-              <p className="text-zinc-600 text-lg max-w-3xl mx-auto leading-relaxed mb-6 font-medium italic" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {customMessage}
-              </p>
-
-              <div className="bg-[#c9972f] text-white px-8 py-2 rounded-full text-xl font-bold tracking-wider shadow-lg mb-12">
-                {certPeriod}
-              </div>
-
-              {/* Signatures */}
-              <div className="w-full flex justify-between items-end px-16 mt-2 mb-10">
-                <div className="flex flex-col items-center">
-                  <div className="w-48 border-b-2 border-zinc-400 mb-2 h-12 flex items-end justify-center pb-2">
-                    <span className="text-xl font-bold tracking-widest text-[#134086]">{new Date(issueDate).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+              {/* Footer Section (Signatures & Seal) */}
+              <div className="w-full flex justify-between items-end mt-auto relative px-8">
+                
+                {/* Left: Date & Cert No */}
+                <div className="flex flex-col items-start gap-4 text-[13px] font-bold text-zinc-700 z-10 pb-4">
+                  <div className="flex items-end gap-2">
+                    <span className="w-24">Date:</span>
+                    <div className="w-32 border-b border-zinc-400 text-center pb-1">{new Date(issueDate).toLocaleDateString("en-GB")}</div>
                   </div>
-                  <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest">Date Issued</span>
+                  <div className="flex items-end gap-2">
+                    <span className="w-24">Certificate No.:</span>
+                    <div className="w-32 border-b border-zinc-400 text-center pb-1">CERT-{new Date().getFullYear()}-{Math.floor(Math.random() * 1000).toString().padStart(3, '0')}</div>
+                  </div>
                 </div>
 
+                {/* Center Seal */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 flex flex-col items-center">
+                  <div className="relative w-32 h-32 flex items-center justify-center z-10">
+                    
+                    {/* Ribbon Tails (SVG) */}
+                    <svg className="absolute -bottom-6 w-20 h-24 z-[-1]" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 0 L0 120 L25 100 L50 120 L30 0 Z" fill="#aa771c" />
+                      <path d="M80 0 L100 120 L75 100 L50 120 L70 0 Z" fill="#d4af37" />
+                    </svg>
 
-                <div className="flex flex-col items-center">
-                  <div className="w-48 border-b-2 border-zinc-400 mb-2 h-12 flex items-end justify-center pb-2">
-                    <span className="text-xl pr-4" style={{ fontFamily: "'Great Vibes', cursive", color: "#134086" }}>{authName}</span>
+                    {/* Gold Outer Ring */}
+                    <div className="absolute top-2 w-[6.5rem] h-[6.5rem] bg-gradient-to-br from-[#f3db7a] via-[#c9972f] to-[#aa771c] rounded-full flex items-center justify-center shadow-2xl border-[1px] border-[#aa771c]">
+                      
+                      {/* Inner Jagged Edge (Approximated with CSS dashed border) */}
+                      <div className="w-[5.8rem] h-[5.8rem] rounded-full flex items-center justify-center border-2 border-dashed border-[#855711] bg-gradient-to-br from-[#2a3855] to-[#0f1b33]">
+                        
+                        {/* Inner Laurel and N */}
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <span className="text-[2.5rem] font-bold text-[#f3db7a]" style={{ fontFamily: "'Cinzel', serif" }}>
+                            N
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest">Authorized Signature</span>
+                </div>
+
+                {/* Right: Signature */}
+                <div className="flex flex-col items-center text-zinc-700 z-10 pb-4">
+                  <div className="w-48 border-b border-zinc-400 h-16 flex items-end justify-center pb-2 relative">
+                    <span className="text-4xl pr-4 transform -rotate-12 absolute bottom-2 text-[#2a3855]" style={{ fontFamily: "'Great Vibes', cursive" }}>{authName}</span>
+                  </div>
+                  <span className="text-[11px] font-bold mt-1 text-black">Authorized Signatory</span>
+                  <span className="text-[11px] text-zinc-600">Niventra Capital Advisory India Pvt Ltd</span>
                 </div>
               </div>
 
-              {/* Company Footer */}
-              {settings && (
-                <div className="absolute bottom-[32px] left-0 w-full flex justify-center items-center gap-6 text-[#134086]/70 text-xs font-semibold tracking-wider">
-                  {settings?.companyProfile && (
-                    <>
-                      <span>{settings?.companyProfile?.website}</span>
-                      {/* <span>{settings?.companyProfile?.phone}</span> */}
-                    </>
-                  )}
-                  {settings?.companyProfile?.email && (
-                    <>
-                      {/* <span>•</span> */}
-                      <span>{settings?.companyProfile?.email}</span>
-                    </>
-                  )}
-                  {settings?.companyProfile?.phone && (
-                    <>
-                      {/* <span>•</span> */}
-                      <span>{settings?.companyProfile?.phone}</span>
-                    </>
-                  )}
-                </div>
-              )}
+              {/* Bottom Edge Text */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 text-[9px] font-bold tracking-[0.2em] text-zinc-600 uppercase w-full justify-center">
+                <span>Recognizing Excellence</span>
+                <span className="text-[#c9972f] text-lg leading-none">•</span>
+                <span>Appreciating Commitment</span>
+                <span className="text-[#c9972f] text-lg leading-none">•</span>
+                <span>Celebrating Success</span>
+              </div>
             </div>
           </div>
         </div>

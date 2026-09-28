@@ -659,7 +659,7 @@ export async function GET(req: Request) {
             <div>
               <span class="k">Branch</span>
               <span class="v">
-               Golf Market Narela North Delhi 110001
+               No 98, Block No 90, Gole Market, Baird Road New Delhi - 110001
               </span>
             </div>
           </div>
