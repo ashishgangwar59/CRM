@@ -418,7 +418,7 @@ export function InvestorDashboard() {
                   <h3 className="text-3xl font-bold mt-2 text-amber-600 dark:text-amber-400 flex items-center">
                     {durationDays} <span className="text-lg text-zinc-500 font-normal ml-1">Days</span>
                   </h3>
-                  <p className="text-xs text-zinc-400 font-medium mt-1">({durationMonths} Month{durationMonths > 1 ? 's' : ''})</p>
+
                 </div>
                 <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl">
                   <CalendarDays className="w-6 h-6" />

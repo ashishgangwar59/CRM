@@ -203,7 +203,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
     days = Math.max(0, Math.ceil((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
     const monthlyInterest = principalAmount * (growthRate / 100);
-    interestAmount = monthlyInterest * maturityPeriodMonths;
+    interestAmount = (principalAmount * growthRate * days / (100 * 30));
   }
   const maturityDateStr = maturityDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -427,7 +427,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                         <p>{periodText}</p>
                       </div>
                       <div><b>Amount Payable on Maturity</b><span>:</span>
-                        <p>₹ {maturityAmount.toLocaleString()}/- (Rupees {numberToWords(maturityAmount)} Only)</p>
+                        <p>₹ {Math.round(maturityAmount)}/- (Rupees {numberToWords(Math.round(maturityAmount))} Only)</p>
                       </div>
                     </div>
 

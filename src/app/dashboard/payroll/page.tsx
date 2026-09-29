@@ -178,9 +178,24 @@ export default function PayrollDashboardPage() {
       .reduce((sum, p) => sum + p.netSalary, 0);
   };
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [payrolls, employees, monthYear]);
+
   if (loading || role === null) return <div className="p-8">Loading...</div>;
 
   const isEmployee = role === "Employee";
+  const isEmployeeView = isEmployee || !monthYear;
+  const currentDataList = isEmployeeView ? payrolls : employees;
+  const totalPages = Math.max(1, Math.ceil(currentDataList.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  
+  const paginatedPayrolls = isEmployeeView ? payrolls.slice(startIndex, startIndex + itemsPerPage) : payrolls;
+  const paginatedEmployees = !isEmployeeView ? employees.slice(startIndex, startIndex + itemsPerPage) : [];
 
   return (
     <div className="space-y-6 w-full pb-24 relative">
@@ -268,8 +283,23 @@ export default function PayrollDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isEmployee || !monthYear ? (
-                payrolls.map((payroll) => {
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-12">
+                    <div className="flex items-center justify-center gap-3 text-zinc-500">
+                      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      Loading Payrolls...
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : payrolls.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-zinc-500">
+                    No payrolls found.
+                  </TableCell>
+                </TableRow>
+              ) : isEmployee || !monthYear ? (
+                paginatedPayrolls.map((payroll) => {
                   const monthName = payroll.monthYear ? new Date(`${payroll.monthYear}-01`).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "";
                   return (
                     <TableRow key={payroll._id}>
@@ -324,7 +354,7 @@ export default function PayrollDashboardPage() {
                   );
                 })
               ) : (
-                employees.map((emp) => {
+                paginatedEmployees.map((emp) => {
                   const payroll = payrolls.find(p => p.employeeId?._id === emp._id || p.employeeId === emp._id);
                   const selectedDays = selectedDaysMap[emp._id] ?? 30;
                   
@@ -436,6 +466,44 @@ export default function PayrollDashboardPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between py-4">
+          <div className="text-sm text-zinc-500">
+            Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, currentDataList.length)}</span> of <span className="font-medium">{currentDataList.length}</span> results
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center space-x-1 px-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`w-8 h-8 rounded-full text-sm font-medium ${currentPage === pageNum ? 'bg-indigo-600 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Bulk Action Bar */}
       {!isEmployee && selectedPayrolls.length > 0 && (

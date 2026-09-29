@@ -221,7 +221,14 @@ export default function IncentiveManagementPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-10">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12">
+                      <div className="flex items-center justify-center gap-3 text-zinc-500">
+                        <div className="w-6 h-6 border-2 border-[#092b49] border-t-transparent rounded-full animate-spin"></div>
+                        Loading Incentives...
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : incentives.length === 0 ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-10 text-zinc-500">No incentive rules configured yet.</TableCell></TableRow>
                 ) : (

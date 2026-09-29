@@ -121,7 +121,7 @@ export async function GET(req: Request) {
         return `${totalDays} Days (${text})`;
       } else {
         const displayMonths = Math.max(1, Math.round(totalDays / 30));
-        return `${totalDays} Days (${displayMonths} Month${displayMonths === 1 ? '' : 's'})`;
+        return `${totalDays} Days`;
       }
     };
 
