@@ -27,6 +27,7 @@ export default function PayrollDashboardPage() {
   const [selectedPayrolls, setSelectedPayrolls] = useState<string[]>([]);
   const [processingBulk, setProcessingBulk] = useState(false);
   const [selectedDaysMap, setSelectedDaysMap] = useState<Record<string, number>>({});
+  const [manualIncentivesMap, setManualIncentivesMap] = useState<Record<string, number>>({});
 
   const fetchPayrolls = async () => {
     try {
@@ -83,11 +84,12 @@ export default function PayrollDashboardPage() {
   const handleGenerate = async (employeeId: string) => {
     setGenerating(true);
     const paidDays = selectedDaysMap[employeeId] || 30;
+    const manualIncentive = manualIncentivesMap[employeeId] || 0;
     try {
       const res = await fetch("/api/payroll/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId, monthYear, paidDays })
+        body: JSON.stringify({ employeeId, monthYear, paidDays, manualIncentive })
       });
       const data = await res.json();
       if (data.success) {
@@ -99,6 +101,30 @@ export default function PayrollDashboardPage() {
       alert("Error generating payroll.");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const handleGenerateAll = async () => {
+    if (!confirm(`Are you sure you want to recalculate payroll for ALL active employees for ${monthYear}?`)) return;
+    setGeneratingAll(true);
+    try {
+      const res = await fetch("/api/payroll/generate-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monthYear })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        fetchPayrolls();
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("Error running bulk payroll.");
+    } finally {
+      setGeneratingAll(false);
     }
   };
 
@@ -173,6 +199,14 @@ export default function PayrollDashboardPage() {
               <Link href="/dashboard/payroll/ledger">
                 <Button variant="outline">Salary Ledger</Button>
               </Link>
+              <Button 
+                variant="default" 
+                onClick={handleGenerateAll} 
+                disabled={generatingAll}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                {generatingAll ? "Running..." : "Run All Payrolls"}
+              </Button>
               <Link href="/dashboard/payroll/structure">
                 <Button variant="outline"><Settings className="mr-2 h-4 w-4"/> Structures</Button>
               </Link>
@@ -332,7 +366,21 @@ export default function PayrollDashboardPage() {
                               {payroll.status}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="flex items-center space-x-2">
+                            {payroll.status === "Draft" && !isEmployee && (
+                               <div className="flex space-x-1 items-center bg-zinc-50 p-1 rounded border">
+                                 <Input 
+                                    type="number" 
+                                    placeholder="Add Incentive ₹" 
+                                    className="w-28 h-7 text-[10px]"
+                                    value={manualIncentivesMap[emp._id] || ""}
+                                    onChange={(e) => setManualIncentivesMap({ ...manualIncentivesMap, [emp._id]: Number(e.target.value) })}
+                                 />
+                                 <Button size="sm" variant="secondary" className="h-7 px-2 text-[10px]" onClick={() => handleGenerate(emp._id)} title="Recalculate Salary">
+                                    ↺ 
+                                 </Button>
+                               </div>
+                            )}
                             <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/payroll/${payroll._id}`)}>
                               View Slip
                             </Button>
@@ -353,8 +401,17 @@ export default function PayrollDashboardPage() {
                               <option value={5}>5 Days Salary</option>
                             </select>
                           </TableCell>
-                          <TableCell colSpan={3} className="text-center text-zinc-500 text-xs">
-                            Generate {selectedDays} Days Salary
+                          <TableCell colSpan={3} className="text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <span className="text-xs text-zinc-500">Days: {selectedDays}</span>
+                              <Input 
+                                type="number" 
+                                placeholder="Achieved Incentive (₹)" 
+                                className="w-36 h-8 text-xs border-zinc-300"
+                                value={manualIncentivesMap[emp._id] || ""}
+                                onChange={(e) => setManualIncentivesMap({ ...manualIncentivesMap, [emp._id]: Number(e.target.value) })}
+                              />
+                            </div>
                           </TableCell>
                           <TableCell></TableCell>
                           <TableCell>

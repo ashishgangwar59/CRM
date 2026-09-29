@@ -14,7 +14,9 @@ export interface IPayroll extends Document {
     metroAllowance: number;
     travelAllowance: number;
     bonus: number;
-    incentive: number;
+    personalIncentive: number;
+    teamBusinessIncentive: number;
+    otherEarnings: number;
     overtimeAmount: number;
   };
   
@@ -28,6 +30,7 @@ export interface IPayroll extends Document {
     advance: number;
     advanceSalaryDrawn: number;
     unpaidLeaveDeduction: number; // LOP
+    otherDeductions: number;
   };
   
   // Totals
@@ -57,7 +60,9 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
       metroAllowance: { type: Number, default: 0 },
       travelAllowance: { type: Number, default: 0 },
       bonus: { type: Number, default: 0 },
-      incentive: { type: Number, default: 0 },
+      personalIncentive: { type: Number, default: 0 },
+      teamBusinessIncentive: { type: Number, default: 0 },
+      otherEarnings: { type: Number, default: 0 },
       overtimeAmount: { type: Number, default: 0 },
     },
     
@@ -70,6 +75,7 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
       advance: { type: Number, default: 0 },
       advanceSalaryDrawn: { type: Number, default: 0 },
       unpaidLeaveDeduction: { type: Number, default: 0 },
+      otherDeductions: { type: Number, default: 0 },
     },
     
     grossSalary: { type: Number, default: 0 },
