@@ -1,0 +1,19 @@
+# version: "3"
+
+services:
+  website-dev:
+    image: website-image
+    stdin_open: true
+    command: npm run start
+    env_file:
+      - ".env.production"
+    ports:
+      - "11000:3001"
+    networks:
+      - website-dev
+    restart: "unless-stopped"
+
+
+networks:
+  website-dev:
+    driver: bridge
