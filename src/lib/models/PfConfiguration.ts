@@ -42,4 +42,4 @@ if (mongoose.models.PfConfiguration) {
   delete mongoose.models.PfConfiguration;
 }
 
-export const PfConfiguration: Model<IPfConfiguration> = mongoose.model("PfConfiguration", PfConfigurationSchema);
+export const PfConfiguration: Model<IPfConfiguration> = mongoose.model<IPfConfiguration>("PfConfiguration", PfConfigurationSchema);

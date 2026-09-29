@@ -5,6 +5,3 @@ node_modules
 Dockerfile.production
 .dockerignore
 README.md
-eslint.config.mjs
-postcss.config.mjs
-scripts

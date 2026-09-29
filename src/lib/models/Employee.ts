@@ -227,4 +227,4 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
 if (mongoose.models.Employee) {
   delete mongoose.models.Employee;
 }
-export const Employee: Model<IEmployee> = mongoose.model("Employee", EmployeeSchema);
+export const Employee: Model<IEmployee> = mongoose.model<IEmployee>("Employee", EmployeeSchema);

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
 import fs from "fs";
@@ -61,3 +61,4 @@ main()
     await mongoose.disconnect();
     process.exit(1);
   });
+

@@ -43,4 +43,4 @@ if (mongoose.models.DeductionConfiguration) {
   delete mongoose.models.DeductionConfiguration;
 }
 
-export const DeductionConfiguration: Model<IDeductionConfiguration> = mongoose.model("DeductionConfiguration", DeductionConfigurationSchema);
+export const DeductionConfiguration: Model<IDeductionConfiguration> = mongoose.model<IDeductionConfiguration>("DeductionConfiguration", DeductionConfigurationSchema);

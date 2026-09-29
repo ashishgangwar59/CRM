@@ -3,6 +3,9 @@ version: "3"
 services:
   website-dev:
     image: website-image
+    build:
+      context: .
+      dockerfile: Dockerfile.production
     env_file:
       - ".env.production"
     ports:

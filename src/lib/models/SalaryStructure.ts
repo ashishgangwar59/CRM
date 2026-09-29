@@ -49,4 +49,4 @@ const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
 if (mongoose.models.SalaryStructure) {
   delete mongoose.models.SalaryStructure;
 }
-export const SalaryStructure: Model<ISalaryStructure> = mongoose.model("SalaryStructure", SalaryStructureSchema);
+export const SalaryStructure: Model<ISalaryStructure> = mongoose.model<ISalaryStructure>("SalaryStructure", SalaryStructureSchema);

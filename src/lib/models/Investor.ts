@@ -222,4 +222,4 @@ if (mongoose.models.Investor) {
   delete mongoose.models.Investor;
 }
 
-export const Investor: Model<IInvestor> = mongoose.model("Investor", InvestorSchema);
+export const Investor: Model<IInvestor> = mongoose.model<IInvestor>("Investor", InvestorSchema);

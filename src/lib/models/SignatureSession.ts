@@ -25,4 +25,4 @@ if (mongoose.models.SignatureSession) {
   delete mongoose.models.SignatureSession;
 }
 
-export const SignatureSession: Model<ISignatureSession> = mongoose.model("SignatureSession", SignatureSessionSchema);
+export const SignatureSession: Model<ISignatureSession> = mongoose.model<ISignatureSession>("SignatureSession", SignatureSessionSchema);

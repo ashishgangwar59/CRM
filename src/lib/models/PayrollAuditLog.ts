@@ -44,4 +44,4 @@ if (mongoose.models.PayrollAuditLog) {
   delete mongoose.models.PayrollAuditLog;
 }
 
-export const PayrollAuditLog: Model<IPayrollAuditLog> = mongoose.model("PayrollAuditLog", PayrollAuditLogSchema);
+export const PayrollAuditLog: Model<IPayrollAuditLog> = mongoose.model<IPayrollAuditLog>("PayrollAuditLog", PayrollAuditLogSchema);

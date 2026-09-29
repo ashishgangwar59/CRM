@@ -47,4 +47,4 @@ if (mongoose.models.TaxConfiguration) {
   delete mongoose.models.TaxConfiguration;
 }
 
-export const TaxConfiguration: Model<ITaxConfiguration> = mongoose.model("TaxConfiguration", TaxConfigurationSchema);
+export const TaxConfiguration: Model<ITaxConfiguration> = mongoose.model<ITaxConfiguration>("TaxConfiguration", TaxConfigurationSchema);

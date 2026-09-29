@@ -99,4 +99,4 @@ PayrollSchema.index({ employeeId: 1, monthYear: 1 }, { unique: true });
 if (mongoose.models.Payroll) {
   delete mongoose.models.Payroll;
 }
-export const Payroll: Model<IPayroll> = mongoose.model("Payroll", PayrollSchema);
+export const Payroll: Model<IPayroll> = mongoose.model<IPayroll>("Payroll", PayrollSchema);

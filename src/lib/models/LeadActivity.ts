@@ -22,4 +22,4 @@ const LeadActivitySchema: Schema<ILeadActivity> = new Schema(
 if (mongoose.models.LeadActivity) {
   delete mongoose.models.LeadActivity;
 }
-export const LeadActivity: Model<ILeadActivity> = mongoose.model("LeadActivity", LeadActivitySchema);
+export const LeadActivity: Model<ILeadActivity> = mongoose.model<ILeadActivity>("LeadActivity", LeadActivitySchema);

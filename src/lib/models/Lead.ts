@@ -71,4 +71,4 @@ const LeadSchema: Schema<ILead> = new Schema(
 if (mongoose.models.Lead) {
   delete mongoose.models.Lead;
 }
-export const Lead: Model<ILead> = mongoose.model("Lead", LeadSchema);
+export const Lead: Model<ILead> = mongoose.model<ILead>("Lead", LeadSchema);

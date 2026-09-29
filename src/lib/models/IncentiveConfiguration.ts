@@ -50,4 +50,4 @@ if (mongoose.models.IncentiveConfiguration) {
   delete mongoose.models.IncentiveConfiguration;
 }
 
-export const IncentiveConfiguration: Model<IIncentiveConfiguration> = mongoose.model("IncentiveConfiguration", IncentiveConfigurationSchema);
+export const IncentiveConfiguration: Model<IIncentiveConfiguration> = mongoose.model<IIncentiveConfiguration>("IncentiveConfiguration", IncentiveConfigurationSchema);
