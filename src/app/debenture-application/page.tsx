@@ -210,7 +210,7 @@ function DebentureFormContent() {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
     stopCamera();
-    
+
     setCropTargetField("passportPhotoUrl");
     setCropImageSrc(dataUrl);
     setCropModalOpen(true);
@@ -1580,7 +1580,7 @@ function DebentureFormContent() {
               matDate.setMonth(matDate.getMonth() + months);
               days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
-              const monthlyInterest = principal * (rate / 100);
+              const monthlyInterest = (principal * rate * days / (100 * 30));
               totalInterest = monthlyInterest * 1;
 
               matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });

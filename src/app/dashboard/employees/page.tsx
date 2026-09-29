@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, User, Upload, Download, Loader2, List, Layers, Trash2 } from "lucide-react";
+import { Search, Plus, User, Upload, Download, Loader2, List, Layers, Trash2, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -302,8 +302,8 @@ export default function EmployeesPage() {
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Debenture Form Link</TableHead>
-                  {(role === "ADMIN" || role === "KEY_ADMIN") && <TableHead>Actions</TableHead>}
+                  <TableHead className="text-center">Form Link</TableHead>
+                  {(role === "ADMIN" || role === "KEY_ADMIN") && <TableHead className="text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -356,29 +356,36 @@ export default function EmployeesPage() {
                         {emp.status}
                       </span>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const refLink = `${window.location.origin}/debenture-application?ref=${emp.employeeCode || emp.email}`;
-                          navigator.clipboard.writeText(refLink);
-                          alert(`Copied Debenture Referral link for ${emp.firstName} (${emp.employeeCode}):\n${refLink}`);
-                        }}
-                        className="bg-[#eee] text-[#134086] border-[#eee] hover:bg-blue-100 font-bold text-xs"
-                      >
-                        Copy Form Link 📋
-                      </Button>
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative group flex items-center justify-center">
+                        <button
+                          onClick={() => {
+                            const refLink = `${window.location.origin}/debenture-application?ref=${emp.employeeCode || emp.email}`;
+                            navigator.clipboard.writeText(refLink);
+                            alert(`Copied Debenture Referral link for ${emp.firstName} (${emp.employeeCode}):\n${refLink}`);
+                          }}
+                          className="cursor-pointer p-1.5 text-zinc-400 hover:text-[#134086] hover:bg-[#134086]/10 dark:hover:bg-[#134086]/20 rounded-full transition-colors"
+                        >
+                          <Link2 className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                          Copy Form Link
+                        </div>
+                      </div>
                     </TableCell>
                     {(role === "ADMIN" || role === "KEY_ADMIN") && (
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(emp._id, `${emp.firstName} ${emp.lastName}`)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative group flex items-center justify-center">
+                          <button
+                            onClick={() => handleDelete(emp._id, `${emp.firstName} ${emp.lastName}`)}
+                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-full transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
+                            Delete Employee
+                          </div>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

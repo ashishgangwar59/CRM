@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Users, Clock, Wallet, IndianRupee, Target, UserCheck, UserX, AlertCircle, CalendarDays, TrendingUp, Gift, MapPin } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
 import Link from "next/link";
@@ -13,6 +14,8 @@ const PIE_COLORS = ['#10b981', '#f43f5e', '#3b82f6'];
 export function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [attendancePage, setAttendancePage] = useState(1);
+  const ATTENDANCE_LIMIT = 5;
 
   useEffect(() => {
     const fetchAdminDashboard = async () => {
@@ -36,6 +39,10 @@ export function AdminDashboard() {
 
   const k = data.kpis;
   const c = data.charts;
+
+  const attendanceList = data.todaysAttendanceList || [];
+  const totalAttendancePages = Math.max(1, Math.ceil(attendanceList.length / ATTENDANCE_LIMIT));
+  const paginatedAttendance = attendanceList.slice((attendancePage - 1) * ATTENDANCE_LIMIT, attendancePage * ATTENDANCE_LIMIT);
 
   return (
     <div className="space-y-6 w-full pb-24">
@@ -202,75 +209,7 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Row 2.5: Today's All Employees Attendance List */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-500 flex items-center">
-            <Clock className="w-4 h-4 mr-2 text-indigo-500" /> Today's All Employee Attendance List ({new Date().toISOString().split('T')[0]})
-          </CardTitle>
-          <Link href="/dashboard/attendance/manager" className="text-xs font-semibold text-indigo-600 hover:underline">
-            View Full Team View &rarr;
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Punch In</TableHead>
-                <TableHead>Punch Out</TableHead>
-                <TableHead>Location / IP</TableHead>
-                <TableHead className="text-right">Hours</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(!data.todaysAttendanceList || data.todaysAttendanceList.length === 0) ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-zinc-500">
-                    No employee attendance records found for today.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                data.todaysAttendanceList.map((emp: any) => (
-                  <TableRow key={emp.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{emp.name}</p>
-                        <p className="text-xs text-zinc-500">{emp.employeeCode}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">{emp.department}</TableCell>
-                    <TableCell>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" :
-                          emp.status === "Half-Day" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" :
-                            "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
-                        }`}>
-                        {emp.status}
-                      </span>
-                      {emp.isLate && <span className="ml-2 text-xs font-semibold text-amber-600">Late</span>}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">{emp.punchIn}</TableCell>
-                    <TableCell className="text-sm font-medium">{emp.punchOut}</TableCell>
-                    <TableCell className="text-xs font-mono">
-                      {emp.geoUrl ? (
-                        <a href={emp.geoUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline inline-flex items-center gap-1 font-semibold">
-                          <MapPin className="w-3.5 h-3.5 text-rose-500 inline" />
-                          {emp.location}
-                        </a>
-                      ) : (
-                        <span className="text-zinc-500">{emp.location}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm font-semibold text-right">{emp.workingHours}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+
 
       {/* Row 3: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -372,6 +311,125 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Row 2.5: Today's All Employees Attendance List */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-bold uppercase tracking-wider text-zinc-500 flex items-center">
+            <Clock className="w-4 h-4 mr-2 text-indigo-500" /> Today's All Employee Attendance List ({new Date().toISOString().split('T')[0]})
+          </CardTitle>
+          <Link href="/dashboard/attendance/manager" className="text-xs font-semibold text-indigo-600 hover:underline">
+            View Full Team View &rarr;
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Punch In</TableHead>
+                <TableHead>Punch Out</TableHead>
+                <TableHead>Location / IP</TableHead>
+                <TableHead className="text-right">Hours</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedAttendance.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-zinc-500">
+                    No employee attendance records found for today.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedAttendance.map((emp: any) => (
+                  <TableRow key={emp.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        {emp.isFieldEmployee && emp.livePhotoUrl ? (
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden border border-emerald-500 shadow-sm relative group cursor-pointer">
+                            <img src={emp.livePhotoUrl} alt="Live Capture" className="h-full w-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center">
+                              <span className="text-[8px] font-bold text-white uppercase text-center leading-tight">Live<br/>Photo</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                            <Users className="h-4 w-4 text-zinc-400" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+                            {emp.name}
+                            {emp.isFieldEmployee && <span className="ml-1 text-[10px] uppercase font-bold text-emerald-600 tracking-wider bg-emerald-50 dark:bg-emerald-950/40 px-1 rounded">Field</span>}
+                          </p>
+                          <p className="text-xs text-zinc-500">{emp.employeeCode}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">{emp.department}</TableCell>
+                    <TableCell>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" :
+                        emp.status === "Half-Day" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" :
+                          "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                        }`}>
+                        {emp.status}
+                      </span>
+                      {emp.isLate && <span className="ml-2 text-xs font-semibold text-amber-600">Late</span>}
+                    </TableCell>
+                    <TableCell className="text-sm font-medium">{emp.punchIn}</TableCell>
+                    <TableCell className="text-sm font-medium">{emp.punchOut}</TableCell>
+                    <TableCell className="text-xs font-mono">
+                      {emp.geoUrl ? (
+                        <a href={emp.geoUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline inline-flex items-center gap-1 font-semibold">
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 inline" />
+                          {emp.location}
+                        </a>
+                      ) : (
+                        <span className="text-zinc-500">{emp.location}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm font-semibold text-right">{emp.workingHours}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Pagination Controls */}
+          {attendanceList.length > 0 && (
+            <div className="flex items-center justify-between mt-4 px-2 py-2 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="text-xs font-medium text-zinc-500">
+                Showing {(attendancePage - 1) * ATTENDANCE_LIMIT + 1} to {Math.min(attendancePage * ATTENDANCE_LIMIT, attendanceList.length)} of {attendanceList.length} records
+              </span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={attendancePage <= 1}
+                  onClick={() => setAttendancePage(p => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Page {attendancePage} of {totalAttendancePages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  disabled={attendancePage >= totalAttendancePages}
+                  onClick={() => setAttendancePage(p => Math.min(totalAttendancePages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
     </div>
   );

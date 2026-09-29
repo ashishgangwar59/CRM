@@ -764,11 +764,11 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                     tempDate.setMonth(tempDate.getMonth() + months);
                   }
 
-                  const remainingDays = Math.max(0, Math.round((matDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
-                  const totalMonthsFraction = months + (remainingDays / 30);
+                  // const remainingDays = Math.max(0, Math.round((matDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                  // const totalMonthsFraction = months + (remainingDays / 30);
 
                   days = Math.max(0, Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
-                  totalInterest = principal * (rate / 100) * totalMonthsFraction;
+                  totalInterest = (principal * rate * days / (100 * 30));
                   matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
                 } else if (editableForm.investmentDate) {
@@ -778,8 +778,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                   matDate.setMonth(matDate.getMonth() + months);
                   days = Math.max(0, Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
-                  const monthlyInterest = principal * (rate / 100);
-                  totalInterest = monthlyInterest * 1;
+                  const monthlyInterest = (principal * rate * days / (100 * 30));
+                  totalInterest = monthlyInterest;
                   matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                 }
                 const totalMaturityAmount = principal + totalInterest;

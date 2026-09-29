@@ -3,7 +3,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Calculator, AlertCircle, X, UserCircle, Briefcase, Landmark, Receipt, Mail, Award } from "lucide-react";
+import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, ChevronDown, Calculator, AlertCircle, X, UserCircle, Briefcase, Landmark, Receipt, Mail, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
@@ -20,7 +20,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [hoveredTooltip, setHoveredTooltip] = useState<{ name: string, top: number, left: number } | null>(null);
   const { theme, toggleTheme } = useTheme();
-
+  
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "Main": true,
+    "HR & Team": true,
+    "Finance & Payroll": false,
+    "Business & Operations": false,
+  });
 
   const [toastMsg, setToastMsg] = useState<{ title: string, desc: string } | null>(null);
 
@@ -79,41 +85,73 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const debentureHref = empCode ? `/debenture-application?ref=${encodeURIComponent(empCode)}` : "/debenture-application";
 
-  const navItems = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Investor Details", href: "/dashboard", icon: UserCircle, roles: ["INVESTOR"] },
-    { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "KEY_ADMIN"] },
-    { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Incentive Management", href: "/dashboard/incentives", icon: Award, roles: ["ADMIN", "KEY_ADMIN"] },
-    { name: "Payroll Rules", href: "/dashboard/payroll/config", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN"] },
-    { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Attendance List", href: "/dashboard/attendance-list", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Investors", href: "/dashboard/investors", icon: Landmark, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Teams", href: "/dashboard/teams", icon: Users, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Employees", href: "/dashboard/employees", icon: Briefcase, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Certificates", href: "/dashboard/certificates", icon: Award, roles: ["ADMIN", "KEY_ADMIN"] },
-    { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Invoice Form", href: "/dashboard/invoice", icon: Receipt, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Calculator", href: "/dashboard/calculator", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN", "Employee", "INVESTOR"] },
-    { name: "Cash Memo", href: "/dashboard/expenses", icon: DollarSign, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Letter Register", href: "/dashboard/letters", icon: Mail, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
-    { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee", "INVESTOR"] },
+  const navGroups = [
+    {
+      title: "Main",
+      items: [
+        { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Investor Details", href: "/dashboard", icon: UserCircle, roles: ["INVESTOR"] },
+        { name: "Profile", href: "/dashboard/profile", icon: UserIcon, roles: ["Employee", "INVESTOR"] },
+      ]
+    },
+    {
+      title: "HR & Team",
+      items: [
+        { name: "Teams", href: "/dashboard/teams", icon: Users, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Employees", href: "/dashboard/employees", icon: Briefcase, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Attendance List", href: "/dashboard/attendance-list", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Holidays", href: "/dashboard/holidays", icon: CalendarRange, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+      ]
+    },
+    {
+      title: "Finance & Payroll",
+      items: [
+        { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "KEY_ADMIN"] },
+        { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Incentive Management", href: "/dashboard/incentives", icon: Award, roles: ["ADMIN", "KEY_ADMIN"] },
+        { name: "Payroll Rules", href: "/dashboard/payroll/config", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN"] },
+        { name: "Invoice Form", href: "/dashboard/invoice", icon: Receipt, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Cash Memo", href: "/dashboard/expenses", icon: DollarSign, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Calculator", href: "/dashboard/calculator", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN", "Employee", "INVESTOR"] },
+      ]
+    },
+    {
+      title: "Business & Operations",
+      items: [
+        { name: "Investors", href: "/dashboard/investors", icon: Landmark, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Leads", href: "/dashboard/leads", icon: Target, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Reports", href: "/dashboard/reports", icon: LineChart, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Certificates", href: "/dashboard/certificates", icon: Award, roles: ["ADMIN", "KEY_ADMIN"] },
+        { name: "Letter Register", href: "/dashboard/letters", icon: Mail, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
+      ]
+    }
   ];
 
-  const visibleNavItems = navItems.filter(item => {
-    if (!role) return false;
-    if (role === "INVESTOR") return item.roles.includes("INVESTOR");
-    if (role === "Employee") {
-      if (item.name === "Debenture Form" || item.name === "Calculator") return true;
-      return modules.includes(item.name);
+  const visibleGroups = navGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      if (!role) return false;
+      if (role === "INVESTOR") return item.roles.includes("INVESTOR");
+      if (role === "Employee") {
+        if (item.name === "Debenture Form" || item.name === "Calculator") return true;
+        return modules.includes(item.name);
+      }
+      return item.roles.includes(role);
+    })
+  })).filter(group => group.items.length > 0);
+
+  const toggleGroup = (title: string) => {
+    if (isCollapsed) {
+      setIsCollapsed(false);
+      setOpenGroups(prev => ({ ...prev, [title]: true }));
+    } else {
+      setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
     }
-    return item.roles.includes(role);
-  });
+  };
 
   return (
     <div className="flex h-screen bg-white dark:bg-gray-900 print:h-auto print:bg-white">
@@ -141,30 +179,74 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-          {visibleNavItems.map((item) => {
-            const isActive = pathname === item.href || (pathname.startsWith("/dashboard/employees") && item.href === "/dashboard/employees");
+        <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
+          {visibleGroups.map((group, groupIdx) => {
+            const isOpen = openGroups[group.title];
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onMouseEnter={(e) => {
-                  if (!isCollapsed) return;
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setHoveredTooltip({ name: item.name, top: rect.top + 4, left: rect.right + 8 });
-                }}
-                onMouseLeave={() => setHoveredTooltip(null)}
-                className={cn(
-                  "flex items-center rounded-md text-sm font-medium transition-all duration-200",
-                  isCollapsed ? "justify-center p-2.5" : "space-x-3 px-3 py-2.5",
-                  isActive
-                    ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-                    : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+              <div key={group.title} className={cn(
+                "transition-all duration-200",
+                isCollapsed ? "bg-zinc-50 dark:bg-zinc-900/40 p-1.5 rounded-2xl mb-3 border border-zinc-100 dark:border-zinc-800/60" : "space-y-1"
+              )}>
+                {/* Group Header (only visible when expanded) */}
+                {!isCollapsed && (
+                  <button
+                    onClick={() => toggleGroup(group.title)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 mb-1 rounded-lg transition-colors group",
+                      isOpen ? "bg-zinc-50/80 dark:bg-zinc-900/40" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    )}
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors">
+                      {group.title}
+                    </span>
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-zinc-400 transition-transform duration-200", isOpen ? "" : "-rotate-90")} />
+                  </button>
                 )}
-              >
-                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500 dark:text-zinc-400")} />
-                {!isCollapsed && <span className="truncate transition-opacity duration-300">{item.name}</span>}
-              </Link>
+
+                {/* Items */}
+                <div className={cn(
+                  !isCollapsed && !isOpen ? "hidden" : "block",
+                  !isCollapsed ? "pl-1 ml-4 border-l-[1.5px] border-zinc-200/80 dark:border-zinc-800 space-y-0.5 mt-1 relative pb-1 animate-in slide-in-from-top-1 fade-in duration-200" : "space-y-1"
+                )}>
+                  {group.items.map((item, itemIdx) => {
+                    const isActive = pathname === item.href || (pathname.startsWith("/dashboard/employees") && item.href === "/dashboard/employees");
+                    const isLast = itemIdx === group.items.length - 1;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onMouseEnter={(e) => {
+                          if (!isCollapsed) return;
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setHoveredTooltip({ name: item.name, top: rect.top + 4, left: rect.right + 8 });
+                        }}
+                        onMouseLeave={() => setHoveredTooltip(null)}
+                        className={cn(
+                          "relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
+                          isCollapsed ? "justify-center p-2.5 mb-1 last:mb-0" : "space-x-3 px-3 py-2 ml-2",
+                          isActive
+                            ? "bg-indigo-50/80 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 font-semibold shadow-sm border border-indigo-100/50 dark:border-indigo-500/20"
+                            : "text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
+                        )}
+                      >
+                        {!isCollapsed && (
+                          <div className={cn(
+                            "absolute -left-[14px] top-1/2 w-3 border-t-[1.5px] border-zinc-200/80 dark:border-zinc-800 pointer-events-none transition-colors",
+                            isActive ? "border-indigo-200 dark:border-indigo-500/40" : ""
+                          )} />
+                        )}
+                        {/* Cover the vertical line overflow for the last item to create an L shape */}
+                        {!isCollapsed && isLast && (
+                          <div className="absolute -left-[15.5px] top-1/2 h-full w-[3px] bg-white dark:bg-zinc-950 pointer-events-none" />
+                        )}
+
+                        <item.icon className={cn("h-[16px] w-[16px] shrink-0", isActive ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-400 dark:text-zinc-500")} />
+                        {!isCollapsed && <span className="truncate transition-opacity duration-300">{item.name}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </nav>
@@ -238,7 +320,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Scrollable Middle Part */}
-        <main className={cn("flex-1 overflow-y-auto p-4 md:p-6 print:overflow-visible print:p-0", role === "INVESTOR" ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/40")}>
+        <main className={cn("flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 print:overflow-visible print:p-0", role === "INVESTOR" ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900/40")}>
           {children}
         </main>
         {/* Global Toast Notification */}

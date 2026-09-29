@@ -128,7 +128,7 @@ export async function GET(req: Request) {
 
       let investors;
       // Define exclusion for heavy document fields
-      const excludeFields = "-kycDocs.passportPhotoUrl -kycDocs.signatureUrl -kycDocs.panDocUrl -kycDocs.aadharDocUrl -kycDocs.nomineeDocUrl -debentureForm.passportPhotoUrl -debentureForm.signatureUrl -debentureForm.panDocUrl -debentureForm.aadharDocUrl -debentureForm.nomineeDocUrl";
+      const excludeFields = "-kycDocs.aadharDocUrl -kycDocs.panDocUrl -kycDocs.marksheet10thUrl -kycDocs.marksheet12thUrl -kycDocs.graduationUrl -kycDocs.postGraduationUrl -kycDocs.bankPassbookUrl -debentureForm.passportPhotoUrl -debentureForm.nomineeDocUrl -nomineeDocUrl";
 
       // Get total count for pagination
       const total = await Investor.countDocuments(query);

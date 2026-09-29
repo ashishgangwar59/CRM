@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, Save, Trash2, User, Briefcase, IndianRupee, FileCheck, Landmark, Shield, FileText, FileSignature } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function EditEmployeePage() {
   const { id } = useParams();
@@ -22,6 +23,15 @@ export default function EditEmployeePage() {
   const [currentUserRole, setCurrentUserRole] = useState("");
   const [showOtherDepartment, setShowOtherDepartment] = useState(false);
   const [showOtherDesignation, setShowOtherDesignation] = useState(false);
+
+  const steps = [
+    { id: "personal", name: "Personal", icon: User, desc: "Basic Info" },
+    { id: "official", name: "Official", icon: Briefcase, desc: "Work Details" },
+    { id: "salary", name: "Salary", icon: IndianRupee, desc: "CTC & Breakdown" },
+    { id: "kyc", name: "KYC & Docs", icon: FileCheck, desc: "Verification" },
+    { id: "bank", name: "Bank", icon: Landmark, desc: "Account Info" },
+    { id: "permissions", name: "Permissions", icon: Shield, desc: "App Access" }
+  ];
 
   const [formData, setFormData] = useState({
     employeeCode: "",
@@ -193,11 +203,12 @@ export default function EditEmployeePage() {
       const json = await res.json();
       if (json.success) {
         handleChange(field, json.url);
+        toast.success("File uploaded successfully!");
       } else {
-        alert("Upload failed");
+        toast.error("Upload failed");
       }
     } catch (err) {
-      alert("Upload error");
+      toast.error("Upload error");
     }
   };
 
@@ -212,13 +223,13 @@ export default function EditEmployeePage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert("Employee details updated successfully!");
+        toast.success("Employee details updated successfully!");
         router.push(`/dashboard/employees/${id}`);
       } else {
-        alert(data.error || "Failed to update employee");
+        toast.error(data.error || "Failed to update employee");
       }
     } catch (err) {
-      alert("Failed to save employee");
+      toast.error("Failed to save employee");
     }
     setLoading(false);
   };
@@ -230,13 +241,14 @@ export default function EditEmployeePage() {
       const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
+        toast.success("Employee deleted successfully!");
         router.push('/dashboard/employees');
       } else {
-        alert(data.error || "Failed to delete employee");
+        toast.error(data.error || "Failed to delete employee");
         setLoading(false);
       }
     } catch (e) {
-      alert("Error deleting employee");
+      toast.error("Error deleting employee");
       setLoading(false);
     }
   };
@@ -251,7 +263,15 @@ export default function EditEmployeePage() {
   }
 
   return (
-    <div className="space-y-6 w-full pb-10">
+    <div className="space-y-6 w-full pb-10 relative">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-12 h-12 border-4 border-[#134086] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-zinc-900 dark:text-zinc-100 font-semibold text-lg animate-pulse">Processing...</p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center space-x-4">
         <Link href={`/dashboard/employees/${id}`}>
           <Button variant="outline" size="icon">
@@ -263,473 +283,518 @@ export default function EditEmployeePage() {
           <p className="text-zinc-500 dark:text-zinc-400">Update complete employee profile and system details.</p>
         </div>
         {(currentUserRole === "ADMIN" || currentUserRole === "KEY_ADMIN") && (
-          <div className="ml-auto flex space-x-2">
-            <Link href={`/dashboard/employees/${id}/letters/offer`} target="_blank">
-              <Button variant="outline">📄 Offer Letter</Button>
+          <div className="ml-auto flex items-center space-x-4">
+            <Link href={`/dashboard/employees/${id}/letters/offer`} target="_blank" className="group relative flex items-center justify-center">
+              <FileText className="h-6 w-6 text-zinc-500 group-hover:text-indigo-600 transition-colors cursor-pointer" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-zinc-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl dark:bg-zinc-100 dark:text-zinc-900">
+                Offer Letter
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-zinc-900 dark:border-b-zinc-100"></div>
+              </div>
             </Link>
-            <Link href={`/dashboard/employees/${id}/letters/joining`} target="_blank">
-              <Button variant="outline">📄 Joining Letter</Button>
+            
+            <Link href={`/dashboard/employees/${id}/letters/joining`} target="_blank" className="group relative flex items-center justify-center">
+              <FileSignature className="h-6 w-6 text-zinc-500 group-hover:text-emerald-600 transition-colors cursor-pointer" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-zinc-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl dark:bg-zinc-100 dark:text-zinc-900">
+                Joining Letter
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-zinc-900 dark:border-b-zinc-100"></div>
+              </div>
             </Link>
-            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-              <Trash2 className="h-4 w-4 mr-2" /> Delete Employee
-            </Button>
+
+            <div 
+              onClick={!loading ? handleDelete : undefined} 
+              className={`group relative flex items-center justify-center transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <Trash2 className="h-6 w-6 text-zinc-500 group-hover:text-rose-600 transition-colors" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                Delete Employee
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-rose-600"></div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="personal">Personal</TabsTrigger>
-            <TabsTrigger value="official">Official & Work</TabsTrigger>
-            <TabsTrigger value="kyc">KYC & Emergency</TabsTrigger>
-            <TabsTrigger value="bank">Bank Details</TabsTrigger>
-            <TabsTrigger value="salary">Salary Structure</TabsTrigger>
-            <TabsTrigger value="permissions">Permissions & Access</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="personal">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Details</CardTitle>
-                <CardDescription>Manage personal identification, contact, and demographic info.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employeeCode">Employee Code / ID *</Label>
-                    <Input id="employeeCode" required value={formData.employeeCode} onChange={(e) => handleChange("employeeCode", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input id="firstName" required value={formData.firstName} onChange={(e) => handleChange("firstName", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input id="lastName" required value={formData.lastName} onChange={(e) => handleChange("lastName", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fatherOrMotherName">Father/Mother Name</Label>
-                    <Input id="fatherOrMotherName" value={formData.fatherOrMotherName || ""} onChange={(e) => handleChange("fatherOrMotherName", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Personal Email *</Label>
-                    <Input id="email" type="email" required value={formData.email} onChange={(e) => handleChange("email", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="officeEmail">Work / Office Email</Label>
-                    <Input id="officeEmail" type="email" value={formData.officeEmail} onChange={(e) => handleChange("officeEmail", e.target.value)} placeholder="work@company.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Personal Phone *</Label>
-                    <Input id="phone" required value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="companyPhone">Company Phone No</Label>
-                    <Input id="companyPhone" placeholder="Work / Official Phone No" value={formData.companyPhone} onChange={(e) => handleChange("companyPhone", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleChange("dateOfBirth", e.target.value)} />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label htmlFor="permanentAddress">Permanent Address</Label>
-                    <Input id="permanentAddress" placeholder="Full Permanent Residential Address" value={formData.permanentAddress} onChange={(e) => handleChange("permanentAddress", e.target.value)} />
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="correspondenceAddress">Correspondence / Current Address</Label>
-                      <button
-                        type="button"
-                        onClick={() => handleChange("correspondenceAddress", formData.permanentAddress)}
-                        className="text-xs text-zinc-500 hover:text-zinc-900 underline"
-                      >
-                        Same as Permanent
-                      </button>
-                    </div>
-                    <Input id="correspondenceAddress" placeholder="Full Current / Present Address" value={formData.correspondenceAddress} onChange={(e) => handleChange("correspondenceAddress", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <select
-                      id="gender"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.gender}
-                      onChange={(e) => handleChange("gender", e.target.value)}
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bloodGroup">Blood Group</Label>
-                    <select
-                      id="bloodGroup"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.bloodGroup}
-                      onChange={(e) => handleChange("bloodGroup", e.target.value)}
-                    >
-                      <option value="">Select Blood Group</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="maritalStatus">Marital Status</Label>
-                    <select
-                      id="maritalStatus"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.maritalStatus}
-                      onChange={(e) => handleChange("maritalStatus", e.target.value)}
-                    >
-                      <option value="">Select Status</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Divorced">Divorced</option>
-                      <option value="Widowed">Widowed</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label>Profile Photo</Label>
-                    <div className="flex items-center space-x-4">
-                      {formData.profilePhotoUrl && (
-                        <img src={formData.profilePhotoUrl} alt="Photo" className="h-12 w-12 rounded-full object-cover border" />
-                      )}
-                      <Input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, "profilePhotoUrl")} />
-                      {formData.profilePhotoUrl && <span className="text-sm text-emerald-600 font-medium">Uploaded!</span>}
-                    </div>
-                  </div>
+      <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 mt-6">
+        <div className="w-full md:w-64 flex-shrink-0">
+          <nav className="flex flex-col space-y-2 sticky top-6">
+            {steps.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setActiveTab(s.id)}
+                className={`flex items-center text-left px-4 py-3 rounded-xl transition-all border ${activeTab === s.id
+                    ? 'bg-[#134086] text-white border-[#134086] shadow-md ring-4 ring-[#134086]/20'
+                    : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800 dark:hover:border-zinc-700 dark:hover:text-zinc-100'
+                  }`}
+              >
+                <div className={`mr-3 p-2.5 rounded-lg ${activeTab === s.id ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800'}`}>
+                  <s.icon className="w-4 h-4" />
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <div>
+                  <p className={`text-sm font-bold ${activeTab === s.id ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>{s.name}</p>
+                  <p className={`text-xs mt-0.5 ${activeTab === s.id ? 'text-blue-100/80' : 'text-zinc-400'}`}>{s.desc}</p>
+                </div>
+              </button>
+            ))}
+          </nav>
+        </div>
 
-          <TabsContent value="official">
-            <Card>
-              <CardHeader>
-                <CardTitle>Official & Work Details</CardTitle>
-                <CardDescription>Manage employment role, department, status, and joining information.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="systemRole">System Access Role</Label>
-                    <select
-                      id="systemRole"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.systemRole}
-                      onChange={(e) => handleChange("systemRole", e.target.value)}
-                    >
-                      <option value="Employee">Employee</option>
-                      <option value="Manager">Manager</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="official-department">Department</Label>
+        <div className="flex-1 space-y-6">
+          <Tabs value={activeTab} className="w-full" onValueChange={function (value: string): void {
+            throw new Error("Function not implemented.");
+          }}>
+            <TabsContent value="personal" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Details</CardTitle>
+                  <CardDescription>Manage personal identification, contact, and demographic info.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label htmlFor="employeeCode">Employee Code / ID *</Label>
+                      <Input id="employeeCode" required value={formData.employeeCode} onChange={(e) => handleChange("employeeCode", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input id="firstName" required value={formData.firstName} onChange={(e) => handleChange("firstName", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name *</Label>
+                      <Input id="lastName" required value={formData.lastName} onChange={(e) => handleChange("lastName", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fatherOrMotherName">Father/Mother Name</Label>
+                      <Input id="fatherOrMotherName" value={formData.fatherOrMotherName || ""} onChange={(e) => handleChange("fatherOrMotherName", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Personal Email *</Label>
+                      <Input id="email" type="email" required value={formData.email} onChange={(e) => handleChange("email", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="officeEmail">Work / Office Email</Label>
+                      <Input id="officeEmail" type="email" value={formData.officeEmail} onChange={(e) => handleChange("officeEmail", e.target.value)} placeholder="work@company.com" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Personal Phone *</Label>
+                      <Input id="phone" required value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="companyPhone">Company Phone No</Label>
+                      <Input id="companyPhone" placeholder="Work / Official Phone No" value={formData.companyPhone} onChange={(e) => handleChange("companyPhone", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                      <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={(e) => handleChange("dateOfBirth", e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="permanentAddress">Permanent Address</Label>
+                      <Input id="permanentAddress" placeholder="Full Permanent Residential Address" value={formData.permanentAddress} onChange={(e) => handleChange("permanentAddress", e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <div className="flex justify-between items-center">
+                        <Label htmlFor="correspondenceAddress">Correspondence / Current Address</Label>
+                        <button
+                          type="button"
+                          onClick={() => handleChange("correspondenceAddress", formData.permanentAddress)}
+                          className="text-xs text-zinc-500 hover:text-zinc-900 underline"
+                        >
+                          Same as Permanent
+                        </button>
+                      </div>
+                      <Input id="correspondenceAddress" placeholder="Full Current / Present Address" value={formData.correspondenceAddress} onChange={(e) => handleChange("correspondenceAddress", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Gender</Label>
                       <select
-                        id="official-department"
+                        id="gender"
                         className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                        value={showOtherDepartment ? "Other" : formData.department}
-                        onChange={(e) => {
-                          if (e.target.value === "Other") {
-                            setShowOtherDepartment(true);
-                            handleChange("department", "");
-                          } else {
-                            setShowOtherDepartment(false);
-                            handleChange("department", e.target.value);
-                          }
-                        }}
+                        value={formData.gender}
+                        onChange={(e) => handleChange("gender", e.target.value)}
                       >
-                        {departments.map(d => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                        {departments.length === 0 && <option value="" disabled>No departments configured</option>}
-                        <option value="Other">Other (Enter manually)</option>
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
                       </select>
-                      {showOtherDepartment && (
-                        <Input 
-                          placeholder="Enter custom department name" 
-                          value={formData.department} 
-                          onChange={(e) => handleChange("department", e.target.value)} 
-                          autoFocus
-                        />
-                      )}
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="official-designation">Designation</Label>
                     <div className="space-y-2">
+                      <Label htmlFor="bloodGroup">Blood Group</Label>
                       <select
-                        id="official-designation"
+                        id="bloodGroup"
                         className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                        value={showOtherDesignation ? "Other" : formData.designation}
-                        onChange={(e) => {
-                          if (e.target.value === "Other") {
-                            setShowOtherDesignation(true);
-                            handleChange("designation", "");
-                          } else {
-                            setShowOtherDesignation(false);
-                            handleChange("designation", e.target.value);
-                          }
-                        }}
+                        value={formData.bloodGroup}
+                        onChange={(e) => handleChange("bloodGroup", e.target.value)}
                       >
-                        {designations.map(d => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                        {designations.length === 0 && <option value="" disabled>No designations configured</option>}
-                        <option value="Other">Other (Enter manually)</option>
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
                       </select>
-                      {showOtherDesignation && (
-                        <Input 
-                          placeholder="Enter custom designation name" 
-                          value={formData.designation} 
-                          onChange={(e) => handleChange("designation", e.target.value)} 
-                          autoFocus
-                        />
-                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="maritalStatus">Marital Status</Label>
+                      <select
+                        id="maritalStatus"
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                        value={formData.maritalStatus}
+                        onChange={(e) => handleChange("maritalStatus", e.target.value)}
+                      >
+                        <option value="">Select Status</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Divorced">Divorced</option>
+                        <option value="Widowed">Widowed</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label>Profile Photo</Label>
+                      <div className="flex items-center space-x-4">
+                        {formData.profilePhotoUrl && (
+                          <img src={formData.profilePhotoUrl} alt="Photo" className="h-12 w-12 rounded-full object-cover border" />
+                        )}
+                        <Input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, "profilePhotoUrl")} />
+                        {formData.profilePhotoUrl && <span className="text-sm text-emerald-600 font-medium">Uploaded!</span>}
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reportingManager">Reporting Manager</Label>
-                    <Input id="reportingManager" placeholder="e.g. John Doe" value={formData.reportingManager} onChange={(e) => handleChange("reportingManager", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Employment Status</Label>
-                    <select
-                      id="status"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.status}
-                      onChange={(e) => handleChange("status", e.target.value)}
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                      <option value="Notice Period">Notice Period</option>
-                      <option value="Resigned">Resigned</option>
-                      <option value="Absconding">Absconding</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="employeeType">Employee Type</Label>
-                    <select
-                      id="employeeType"
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                      value={formData.employeeType}
-                      onChange={(e) => handleChange("employeeType", e.target.value)}
-                    >
-                      <option value="Full-Time">Full-Time</option>
-                      <option value="Part-Time">Part-Time</option>
-                      <option value="Contract">Contract</option>
-                      <option value="Intern">Intern</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dateOfJoining">Date of Joining</Label>
-                    <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} min={new Date().toISOString().split("T")[0]} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="workLocation">Work Location / Branch</Label>
-                    <Input id="workLocation" value={formData.workLocation} onChange={(e) => handleChange("workLocation", e.target.value)} placeholder="e.g. Delhi Head Office" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="salary">
-            <Card>
-              <CardHeader>
-                <CardTitle>Salary Structure</CardTitle>
-                <CardDescription>Configure the monthly breakdown and CTC.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2 mb-4 max-w-sm">
-                  <Label htmlFor="ctcPerAnnum">CTC per Annum</Label>
-                  <Input id="ctcPerAnnum" value={formData.salaryStructure.ctcPerAnnum} onChange={(e) => handleChange("salaryStructure.ctcPerAnnum", e.target.value)} placeholder="e.g. ₹ 6,00,000" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_basic">Basic</Label>
-                    <Input id="sal_basic" value={formData.salaryStructure.basic} onChange={(e) => handleChange("salaryStructure.basic", e.target.value)} />
+            <TabsContent value="official">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Official & Work Details</CardTitle>
+                  <CardDescription>Manage employment role, department, status, and joining information.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="systemRole">System Access Role</Label>
+                      <select
+                        id="systemRole"
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                        value={formData.systemRole}
+                        onChange={(e) => handleChange("systemRole", e.target.value)}
+                      >
+                        <option value="Employee">Employee</option>
+                        <option value="Manager">Manager</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="official-department">Department</Label>
+                      <div className="space-y-2">
+                        <select
+                          id="official-department"
+                          className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                          value={showOtherDepartment ? "Other" : formData.department}
+                          onChange={(e) => {
+                            if (e.target.value === "Other") {
+                              setShowOtherDepartment(true);
+                              handleChange("department", "");
+                            } else {
+                              setShowOtherDepartment(false);
+                              handleChange("department", e.target.value);
+                            }
+                          }}
+                        >
+                          {departments.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                          {departments.length === 0 && <option value="" disabled>No departments configured</option>}
+                          <option value="Other">Other (Enter manually)</option>
+                        </select>
+                        {showOtherDepartment && (
+                          <Input
+                            placeholder="Enter custom department name"
+                            value={formData.department}
+                            onChange={(e) => handleChange("department", e.target.value)}
+                            autoFocus
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="official-designation">Designation</Label>
+                      <div className="space-y-2">
+                        <select
+                          id="official-designation"
+                          className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                          value={showOtherDesignation ? "Other" : formData.designation}
+                          onChange={(e) => {
+                            if (e.target.value === "Other") {
+                              setShowOtherDesignation(true);
+                              handleChange("designation", "");
+                            } else {
+                              setShowOtherDesignation(false);
+                              handleChange("designation", e.target.value);
+                            }
+                          }}
+                        >
+                          {designations.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                          {designations.length === 0 && <option value="" disabled>No designations configured</option>}
+                          <option value="Other">Other (Enter manually)</option>
+                        </select>
+                        {showOtherDesignation && (
+                          <Input
+                            placeholder="Enter custom designation name"
+                            value={formData.designation}
+                            onChange={(e) => handleChange("designation", e.target.value)}
+                            autoFocus
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reportingManager">Reporting Manager</Label>
+                      <Input id="reportingManager" placeholder="e.g. John Doe" value={formData.reportingManager} onChange={(e) => handleChange("reportingManager", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Employment Status</Label>
+                      <select
+                        id="status"
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                        value={formData.status}
+                        onChange={(e) => handleChange("status", e.target.value)}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Notice Period">Notice Period</option>
+                        <option value="Resigned">Resigned</option>
+                        <option value="Absconding">Absconding</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="employeeType">Employee Type</Label>
+                      <select
+                        id="employeeType"
+                        className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
+                        value={formData.employeeType}
+                        onChange={(e) => handleChange("employeeType", e.target.value)}
+                      >
+                        <option value="Full-Time">Full-Time</option>
+                        <option value="Part-Time">Part-Time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Intern">Intern</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dateOfJoining">Date of Joining</Label>
+                      <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} min={new Date().toISOString().split("T")[0]} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="workLocation">Work Location / Branch</Label>
+                      <Input id="workLocation" value={formData.workLocation} onChange={(e) => handleChange("workLocation", e.target.value)} placeholder="e.g. Delhi Head Office" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_hra">HRA</Label>
-                    <Input id="sal_hra" value={formData.salaryStructure.hra} onChange={(e) => handleChange("salaryStructure.hra", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_conveyance">Conveyance</Label>
-                    <Input id="sal_conveyance" value={formData.salaryStructure.conveyance} onChange={(e) => handleChange("salaryStructure.conveyance", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_medical">Medical Allowance</Label>
-                    <Input id="sal_medical" value={formData.salaryStructure.medicalAllowance} onChange={(e) => handleChange("salaryStructure.medicalAllowance", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_special">Special Allowance</Label>
-                    <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_incentive">Incentive</Label>
-                    <Input id="sal_incentive" value={formData.salaryStructure.incentive || ""} onChange={(e) => handleChange("salaryStructure.incentive", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_pf">P.F. Deduction</Label>
-                    <Input id="sal_pf" value={formData.salaryStructure.pf} onChange={(e) => handleChange("salaryStructure.pf", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_esi">E.S.I. Deduction</Label>
-                    <Input id="sal_esi" value={formData.salaryStructure.esi} onChange={(e) => handleChange("salaryStructure.esi", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_insurance">Insurance</Label>
-                    <Input id="sal_insurance" value={formData.salaryStructure.insurance} onChange={(e) => handleChange("salaryStructure.insurance", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_leaves">Leaves (Liability)</Label>
-                    <Input id="sal_leaves" value={formData.salaryStructure.leaves} onChange={(e) => handleChange("salaryStructure.leaves", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_lta">L.T.A. (Liability)</Label>
-                    <Input id="sal_lta" value={formData.salaryStructure.lta} onChange={(e) => handleChange("salaryStructure.lta", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_pt">Professional Tax</Label>
-                    <Input id="sal_pt" value={formData.salaryStructure.professionalTax} onChange={(e) => handleChange("salaryStructure.professionalTax", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sal_tds">*Income Tax (TDS)</Label>
-                    <Input id="sal_tds" value={formData.salaryStructure.tds} onChange={(e) => handleChange("salaryStructure.tds", e.target.value)} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="kyc">
-            <Card>
-              <CardHeader>
-                <CardTitle>KYC & Emergency Contacts</CardTitle>
-                <CardDescription>Government identity numbers and emergency contact person details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm text-zinc-700 dark:text-zinc-300 border-b pb-2">Government IDs</h4>
-                  <div className="grid grid-cols-3 gap-4">
+            <TabsContent value="salary">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Salary Structure</CardTitle>
+                  <CardDescription>Configure the monthly breakdown and CTC.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2 mb-4 max-w-sm">
+                    <Label htmlFor="ctcPerAnnum">CTC per Annum</Label>
+                    <Input id="ctcPerAnnum" value={formData.salaryStructure.ctcPerAnnum} onChange={(e) => handleChange("salaryStructure.ctcPerAnnum", e.target.value)} placeholder="e.g. ₹ 6,00,000" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="aadharNumber">Aadhar Number</Label>
-                      <Input id="aadharNumber" value={formData.kyc.aadharNumber} onChange={(e) => handleChange("kyc.aadharNumber", e.target.value)} />
+                      <Label htmlFor="sal_basic">Basic</Label>
+                      <Input id="sal_basic" value={formData.salaryStructure.basic} onChange={(e) => handleChange("salaryStructure.basic", e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="panNumber">PAN Number</Label>
-                      <Input id="panNumber" value={formData.kyc.panNumber} onChange={(e) => handleChange("kyc.panNumber", e.target.value)} />
+                      <Label htmlFor="sal_hra">HRA</Label>
+                      <Input id="sal_hra" value={formData.salaryStructure.hra} onChange={(e) => handleChange("salaryStructure.hra", e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="passportNumber">Passport Number</Label>
-                      <Input id="passportNumber" value={formData.kyc.passportNumber} onChange={(e) => handleChange("kyc.passportNumber", e.target.value)} />
+                      <Label htmlFor="sal_conveyance">Conveyance</Label>
+                      <Input id="sal_conveyance" value={formData.salaryStructure.conveyance} onChange={(e) => handleChange("salaryStructure.conveyance", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_medical">Medical Allowance</Label>
+                      <Input id="sal_medical" value={formData.salaryStructure.medicalAllowance} onChange={(e) => handleChange("salaryStructure.medicalAllowance", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_special">Special Allowance</Label>
+                      <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_incentive">Incentive</Label>
+                      <Input id="sal_incentive" value={formData.salaryStructure.incentive || ""} onChange={(e) => handleChange("salaryStructure.incentive", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_pf">P.F. Deduction</Label>
+                      <Input id="sal_pf" value={formData.salaryStructure.pf} onChange={(e) => handleChange("salaryStructure.pf", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_esi">E.S.I. Deduction</Label>
+                      <Input id="sal_esi" value={formData.salaryStructure.esi} onChange={(e) => handleChange("salaryStructure.esi", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_insurance">Insurance</Label>
+                      <Input id="sal_insurance" value={formData.salaryStructure.insurance} onChange={(e) => handleChange("salaryStructure.insurance", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_leaves">Leaves (Liability)</Label>
+                      <Input id="sal_leaves" value={formData.salaryStructure.leaves} onChange={(e) => handleChange("salaryStructure.leaves", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_lta">L.T.A. (Liability)</Label>
+                      <Input id="sal_lta" value={formData.salaryStructure.lta} onChange={(e) => handleChange("salaryStructure.lta", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_pt">Professional Tax</Label>
+                      <Input id="sal_pt" value={formData.salaryStructure.professionalTax} onChange={(e) => handleChange("salaryStructure.professionalTax", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_tds">*Income Tax (TDS)</Label>
+                      <Input id="sal_tds" value={formData.salaryStructure.tds} onChange={(e) => handleChange("salaryStructure.tds", e.target.value)} />
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <div className="space-y-4 pt-2">
-                  <h4 className="font-semibold text-sm text-zinc-700 dark:text-zinc-300 border-b pb-2">Emergency Contact Person</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="emergencyName">Contact Name</Label>
-                      <Input id="emergencyName" value={formData.emergencyContact.name} onChange={(e) => handleChange("emergencyContact.name", e.target.value)} placeholder="Full Name" />
+            <TabsContent value="kyc">
+              <Card>
+                <CardHeader>
+                  <CardTitle>KYC & Emergency Contacts</CardTitle>
+                  <CardDescription>Government identity numbers and emergency contact person details.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm text-zinc-700 dark:text-zinc-300 border-b pb-2">Government IDs</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="aadharNumber">Aadhar Number</Label>
+                        <Input id="aadharNumber" value={formData.kyc.aadharNumber} onChange={(e) => handleChange("kyc.aadharNumber", e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="panNumber">PAN Number</Label>
+                        <Input id="panNumber" value={formData.kyc.panNumber} onChange={(e) => handleChange("kyc.panNumber", e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="passportNumber">Passport Number</Label>
+                        <Input id="passportNumber" value={formData.kyc.passportNumber} onChange={(e) => handleChange("kyc.passportNumber", e.target.value)} />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="emergencyRelation">Relation</Label>
-                      <Input id="emergencyRelation" value={formData.emergencyContact.relation} onChange={(e) => handleChange("emergencyContact.relation", e.target.value)} placeholder="e.g. Spouse / Father" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="emergencyPhone">Phone Number</Label>
-                      <Input id="emergencyPhone" value={formData.emergencyContact.phone} onChange={(e) => handleChange("emergencyContact.phone", e.target.value)} placeholder="10-digit mobile" />
-                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="bank">
-            <Card>
-              <CardHeader>
-                <CardTitle>Bank Account Details</CardTitle>
-                <CardDescription>Direct deposit salary account information.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank Name</Label>
-                    <Input id="bankName" value={formData.bankDetails.bankName} onChange={(e) => handleChange("bankDetails.bankName", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number</Label>
-                    <Input id="accountNumber" value={formData.bankDetails.accountNumber} onChange={(e) => handleChange("bankDetails.accountNumber", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ifscCode">IFSC Code</Label>
-                    <Input id="ifscCode" value={formData.bankDetails.ifscCode} onChange={(e) => handleChange("bankDetails.ifscCode", e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="branchName">Branch Name</Label>
-                    <Input id="branchName" value={formData.bankDetails.branchName} onChange={(e) => handleChange("bankDetails.branchName", e.target.value)} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="permissions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Module Access & Permissions</CardTitle>
-                <CardDescription>Configure sidebar navigation access for this employee's account.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
-                  ].map(module => (
-                    <div key={module} className="flex items-center space-x-2 p-2 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900 border">
-                      <input
-                        type="checkbox"
-                        id={`module-${module}`}
-                        checked={formData.accessibleModules.includes(module)}
-                        onChange={(e) => {
-                          const newModules = e.target.checked
-                            ? [...formData.accessibleModules, module]
-                            : formData.accessibleModules.filter(m => m !== module);
-                          handleChange("accessibleModules", newModules as unknown as string);
-                        }}
-                        className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:ring-offset-zinc-950"
-                      />
-                      <label htmlFor={`module-${module}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-                        {module}
+                  <div className="space-y-4 pt-2">
+                    <h4 className="font-semibold text-sm text-zinc-700 dark:text-zinc-300 border-b pb-2">Emergency Contact Person</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="emergencyName">Contact Name</Label>
+                        <Input id="emergencyName" value={formData.emergencyContact.name} onChange={(e) => handleChange("emergencyContact.name", e.target.value)} placeholder="Full Name" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="emergencyRelation">Relation</Label>
+                        <Input id="emergencyRelation" value={formData.emergencyContact.relation} onChange={(e) => handleChange("emergencyContact.relation", e.target.value)} placeholder="e.g. Spouse / Father" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="emergencyPhone">Phone Number</Label>
+                        <Input id="emergencyPhone" value={formData.emergencyContact.phone} onChange={(e) => handleChange("emergencyContact.phone", e.target.value)} placeholder="10-digit mobile" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="bank">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bank Account Details</CardTitle>
+                  <CardDescription>Direct deposit salary account information.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bankName">Bank Name</Label>
+                      <Input id="bankName" value={formData.bankDetails.bankName} onChange={(e) => handleChange("bankDetails.bankName", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="accountNumber">Account Number</Label>
+                      <Input id="accountNumber" value={formData.bankDetails.accountNumber} onChange={(e) => handleChange("bankDetails.accountNumber", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ifscCode">IFSC Code</Label>
+                      <Input id="ifscCode" value={formData.bankDetails.ifscCode} onChange={(e) => handleChange("bankDetails.ifscCode", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="branchName">Branch Name</Label>
+                      <Input id="branchName" value={formData.bankDetails.branchName} onChange={(e) => handleChange("bankDetails.branchName", e.target.value)} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="permissions">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Module Access & Permissions</CardTitle>
+                  <CardDescription>Configure sidebar navigation access for this employee's account.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {[
+                      "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
+                      "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
+                    ].map(module => (
+                      <label 
+                        key={module} 
+                        htmlFor={`module-${module}`} 
+                        className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${formData.accessibleModules.includes(module) ? 'bg-blue-50/50 border-[#134086]/30 shadow-sm dark:bg-[#134086]/10 dark:border-[#134086]/50' : 'bg-white border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-800 dark:hover:bg-zinc-900'}`}
+                      >
+                        <div className="relative flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            id={`module-${module}`}
+                            checked={formData.accessibleModules.includes(module)}
+                            onChange={(e) => {
+                              const newModules = e.target.checked
+                                ? [...formData.accessibleModules, module]
+                                : formData.accessibleModules.filter(m => m !== module);
+                              handleChange("accessibleModules", newModules as unknown as string);
+                            }}
+                            className="peer sr-only"
+                          />
+                          <div className={`w-5 h-5 rounded flex items-center justify-center transition-all ${formData.accessibleModules.includes(module) ? 'bg-[#134086] border-[#134086]' : 'border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 peer-hover:border-zinc-400'}`}>
+                            {formData.accessibleModules.includes(module) && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-bold ${formData.accessibleModules.includes(module) ? 'text-[#134086] dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                          {module}
+                        </span>
                       </label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
-        <div className="mt-8 flex justify-end space-x-3">
-          <Link href={`/dashboard/employees/${id}`}>
-            <Button variant="outline" type="button">Cancel</Button>
-          </Link>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Changes</>}
-          </Button>
+          <div className="mt-8 flex justify-end space-x-3 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <Link href={`/dashboard/employees/${id}`}>
+              <Button variant="outline" type="button" className="bg-white dark:bg-zinc-950">Cancel</Button>
+            </Link>
+            <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[150px]">
+              {loading ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Changes</>}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

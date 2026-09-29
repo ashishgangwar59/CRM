@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, User, Trash2, Edit, FileText, FileSignature } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function EmployeeProfilePage() {
   const { id } = useParams();
@@ -41,10 +42,11 @@ export default function EmployeeProfilePage() {
       const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
+        toast.success("Employee deleted successfully");
         router.push("/dashboard/employees");
       }
     } catch (e) {
-      alert("Error deleting employee");
+      toast.error("Error deleting employee");
     }
   };
 
@@ -64,13 +66,13 @@ export default function EmployeeProfilePage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(data.message);
+        toast.success(data.message);
         setNewPassword("");
       } else {
-        alert(data.error);
+        toast.error(data.error);
       }
     } catch (e) {
-      alert("Error resetting password");
+      toast.error("Error resetting password");
     }
     setResettingPassword(false);
   };
@@ -106,15 +108,38 @@ export default function EmployeeProfilePage() {
           </div>
         </div>
         {(role === "ADMIN" || role === "KEY_ADMIN") && (
-          <div className="flex space-x-2">
-            <Link href={`/dashboard/employees/${id}/edit`}>
-              <Button variant="outline">
-                <Edit className="mr-2 h-4 w-4" /> Edit Employee
-              </Button>
+          <div className="flex items-center space-x-4">
+            <Link href={`/dashboard/employees/${id}/letters/offer`} target="_blank" className="group relative flex items-center justify-center">
+              <FileText className="h-6 w-6 text-zinc-500 group-hover:text-indigo-600 transition-colors cursor-pointer" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-zinc-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl dark:bg-zinc-100 dark:text-zinc-900">
+                Offer Letter
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-zinc-900 dark:border-b-zinc-100"></div>
+              </div>
             </Link>
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="mr-2 h-4 w-4" /> Delete Employee
-            </Button>
+            
+            <Link href={`/dashboard/employees/${id}/letters/joining`} target="_blank" className="group relative flex items-center justify-center">
+              <FileSignature className="h-6 w-6 text-zinc-500 group-hover:text-emerald-600 transition-colors cursor-pointer" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-zinc-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl dark:bg-zinc-100 dark:text-zinc-900">
+                Joining Letter
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-zinc-900 dark:border-b-zinc-100"></div>
+              </div>
+            </Link>
+
+            <Link href={`/dashboard/employees/${id}/edit`} className="group relative flex items-center justify-center">
+              <Edit className="h-6 w-6 text-zinc-500 group-hover:text-blue-600 transition-colors cursor-pointer" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                Edit Employee
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-blue-600"></div>
+              </div>
+            </Link>
+
+            <div onClick={handleDelete} className="group relative flex items-center justify-center cursor-pointer">
+              <Trash2 className="h-6 w-6 text-zinc-500 group-hover:text-rose-600 transition-colors" />
+              <div className="absolute -bottom-10 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                Delete Employee
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-rose-600"></div>
+              </div>
+            </div>
           </div>
         )}
       </div>

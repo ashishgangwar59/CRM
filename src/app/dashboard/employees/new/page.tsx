@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save, ChevronRight, ChevronLeft } from "lucide-react";
+import { ArrowLeft, Save, ChevronRight, ChevronLeft, User, Briefcase, IndianRupee, FileCheck, Landmark, Shield } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function NewEmployeePage() {
   const router = useRouter();
@@ -56,11 +57,18 @@ export default function NewEmployeePage() {
     accessibleModules: ["Overview", "Attendance", "Leads", "Profile", "Leave", "Holidays"]
   });
 
-  const steps = ["Personal", "Official", "Salary", "KYC & Docs", "Bank", "Permissions"];
+  const steps = [
+    { name: "Personal", icon: User, desc: "Basic Info" },
+    { name: "Official", icon: Briefcase, desc: "Work Details" },
+    { name: "Salary", icon: IndianRupee, desc: "CTC & Breakdown" },
+    { name: "KYC & Docs", icon: FileCheck, desc: "Verification" },
+    { name: "Bank", icon: Landmark, desc: "Account Info" },
+    { name: "Permissions", icon: Shield, desc: "App Access" }
+  ];
 
   // Helper to get true index in original structure if needed
   const renderStep = () => {
-    const currentStepName = steps[step];
+    const currentStepName = steps[step].name;
     switch (currentStepName) {
       case "Personal": return 0;
       case "Official": return 1;
@@ -186,18 +194,29 @@ export default function NewEmployeePage() {
       });
       const data = await res.json();
       if (data.success) {
+        toast.success("Employee added successfully!");
         router.push("/dashboard/employees");
       } else {
+        toast.error(data.error || "Failed to save employee");
         setSubmitError(data.error || "Failed to save employee");
       }
     } catch (err) {
+      toast.error("Failed to save employee");
       setSubmitError("Failed to save employee");
     }
     setLoading(false);
   };
 
   return (
-    <div className="space-y-6 w-full pb-10">
+    <div className="space-y-6 w-full pb-10 relative">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-12 h-12 border-4 border-[#134086] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-zinc-900 dark:text-zinc-100 font-semibold text-lg animate-pulse">Processing...</p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center space-x-4">
         <Link href="/dashboard/employees">
           <Button variant="outline" size="icon">
@@ -210,27 +229,37 @@ export default function NewEmployeePage() {
         </div>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()}>
-        {/* Stepper Header */}
-        <div className="mb-8 overflow-x-auto pb-4">
-          <div className="flex items-center min-w-max">
+      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col md:flex-row gap-8">
+        
+        {/* Left Sidebar Stepper */}
+        <div className="w-full md:w-64 flex-shrink-0">
+          <nav className="flex flex-col space-y-2 sticky top-6">
             {steps.map((s, i) => (
-              <div
-                key={s}
-                className="flex items-center cursor-pointer"
+              <button
+                key={s.name}
+                type="button"
                 onClick={() => setStep(i)}
+                className={`flex items-center text-left px-4 py-3 rounded-xl transition-all border ${
+                  step === i 
+                    ? 'bg-[#134086] text-white border-[#134086] shadow-md ring-4 ring-[#134086]/20' 
+                    : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-900 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-800 dark:hover:border-zinc-700 dark:hover:text-zinc-100'
+                }`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step >= i ? 'bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900' : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'}`}>
-                  {i + 1}
+                <div className={`mr-3 p-2.5 rounded-lg ${step === i ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800'}`}>
+                   <s.icon className="w-4 h-4" />
                 </div>
-                <span className={`ml-2 text-sm font-medium ${step >= i ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500'}`}>{s}</span>
-                {i < steps.length - 1 && <div className={`w-12 h-1 mx-4 rounded-full ${step > i ? 'bg-zinc-900 dark:bg-zinc-50' : 'bg-zinc-200 dark:bg-zinc-800'}`} />}
-              </div>
+                <div>
+                  <p className={`text-sm font-bold ${step === i ? 'text-white' : 'text-zinc-700 dark:text-zinc-300'}`}>{s.name}</p>
+                  <p className={`text-xs mt-0.5 ${step === i ? 'text-blue-100/80' : 'text-zinc-400'}`}>{s.desc}</p>
+                </div>
+              </button>
             ))}
-          </div>
+          </nav>
         </div>
 
-        {renderStep() === 0 && (
+        {/* Form Content Area */}
+        <div className="flex-1 space-y-6">
+          {renderStep() === 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Personal Details</CardTitle>
@@ -337,34 +366,7 @@ export default function NewEmployeePage() {
                     <option value="Widowed">Widowed</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <select
-                    id="department"
-                    className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                    value={formData.department}
-                    onChange={(e) => handleChange("department", e.target.value)}
-                  >
-                    {departments.map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                    {departments.length === 0 && <option value="">No departments configured</option>}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="designation">Designation</Label>
-                  <select
-                    id="designation"
-                    className="flex h-10 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
-                    value={formData.designation}
-                    onChange={(e) => handleChange("designation", e.target.value)}
-                  >
-                    {designations.map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                    {designations.length === 0 && <option value="">No designations configured</option>}
-                  </select>
-                </div>
+
                 <div className="space-y-2">
                   <Label>Profile Photo</Label>
                   <div className="flex items-center space-x-2">
@@ -677,43 +679,53 @@ export default function NewEmployeePage() {
                   "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
                   "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
                 ].map(module => (
-                  <div key={module} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`module-${module}`}
-                      checked={formData.accessibleModules.includes(module)}
-                      onChange={(e) => {
-                        const newModules = e.target.checked
-                          ? [...formData.accessibleModules, module]
-                          : formData.accessibleModules.filter(m => m !== module);
-                        handleChange("accessibleModules", newModules as unknown as string);
-                      }}
-                      className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:ring-offset-zinc-950"
-                    />
-                    <label htmlFor={`module-${module}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <label 
+                    key={module} 
+                    htmlFor={`module-${module}`} 
+                    className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-all ${formData.accessibleModules.includes(module) ? 'bg-blue-50/50 border-[#134086]/30 shadow-sm dark:bg-[#134086]/10 dark:border-[#134086]/50' : 'bg-white border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-800 dark:hover:bg-zinc-900'}`}
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        id={`module-${module}`}
+                        checked={formData.accessibleModules.includes(module)}
+                        onChange={(e) => {
+                          const newModules = e.target.checked
+                            ? [...formData.accessibleModules, module]
+                            : formData.accessibleModules.filter(m => m !== module);
+                          handleChange("accessibleModules", newModules as unknown as string);
+                        }}
+                        className="peer sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded flex items-center justify-center transition-all ${formData.accessibleModules.includes(module) ? 'bg-[#134086] border-[#134086]' : 'border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 peer-hover:border-zinc-400'}`}>
+                        {formData.accessibleModules.includes(module) && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </div>
+                    </div>
+                    <span className={`text-sm font-bold ${formData.accessibleModules.includes(module) ? 'text-[#134086] dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
                       {module}
-                    </label>
-                  </div>
+                    </span>
+                  </label>
                 ))}
               </div>
             </CardContent>
           </Card>
         )}
 
-        <div className="mt-8 flex justify-between items-center border-t border-zinc-200 dark:border-zinc-800 pt-6">
-          <Button type="button" variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || loading}>
-            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-          </Button>
+          <div className="mt-8 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <Button type="button" variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || loading} className="bg-white dark:bg-zinc-950">
+              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+            </Button>
 
-          {step < steps.length - 1 ? (
-            <Button type="button" onClick={() => setStep(step + 1)}>
-              Next <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button type="button" onClick={handleSubmit} disabled={loading}>
-              {loading ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Employee</>}
-            </Button>
-          )}
+            {step < steps.length - 1 ? (
+              <Button type="button" onClick={() => setStep(step + 1)}>
+                Next Step <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="button" onClick={handleSubmit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {loading ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Employee</>}
+              </Button>
+            )}
+          </div>
         </div>
       </form>
     </div>

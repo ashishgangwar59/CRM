@@ -192,6 +192,8 @@ export async function GET(req: Request) {
           isLate: att.metrics?.isLate || false,
           location,
           geoUrl,
+          livePhotoUrl: att.punchIn?.livePhotoUrl || null,
+          isFieldEmployee: emp.isFieldEmployee || false,
         };
       }
       return {
@@ -206,6 +208,8 @@ export async function GET(req: Request) {
         isLate: false,
         location: '-',
         geoUrl: null,
+        livePhotoUrl: null,
+        isFieldEmployee: emp.isFieldEmployee || false,
       };
     });
 

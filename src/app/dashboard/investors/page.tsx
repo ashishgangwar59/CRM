@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download, Loader2 } from "lucide-react";
+import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download, Loader2, ListFilter, Calendar } from "lucide-react";
 import PaymentBondModal from "./PaymentBondModal";
 import DebentureFormModal from "./DebentureFormModal";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -76,8 +76,12 @@ export default function AdminInvestorsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showDateFilterModal, setShowDateFilterModal] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{message: string, type: "success" | "error"} | null>(null);
 
   const fetchFullInvestorData = async (invId: string) => {
+    setActionLoading(true);
     try {
       const res = await fetch(`/api/investors/me?id=${invId}`);
       const json = await res.json();
@@ -88,6 +92,8 @@ export default function AdminInvestorsPage() {
       console.error(e);
       alert("Error fetching complete investor data");
       return null;
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -218,6 +224,8 @@ export default function AdminInvestorsPage() {
           nomineeAge: ""
         });
         fetchInvestors();
+        setToastMsg({ message: "Successfully added investor!", type: "success" });
+        setTimeout(() => setToastMsg(null), 3000);
       } else {
         setMsg(json.error || "Failed to create investor.");
       }
@@ -429,133 +437,88 @@ export default function AdminInvestorsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-            <Button
-              variant={statusFilter === "" ? "default" : "outline"}
-              onClick={() => setStatusFilter("")}
-              size="sm"
-              className="cursor-pointer"
-            >
-              All Status
-            </Button>
-            <Button
-              variant={statusFilter === "Pending" ? "default" : "outline"}
-              onClick={() => setStatusFilter("Pending")}
-              size="sm"
-              className="text-amber-600 cursor-pointer"
-            >
-              Pending
-            </Button>
-            <Button
-              variant={statusFilter === "Verified" ? "default" : "outline"}
-              onClick={() => setStatusFilter("Verified")}
-              size="sm"
-              className="text-emerald-600 cursor-pointer"
-            >
-              Verified
-            </Button>
-            <Button
-              variant={statusFilter === "Rejected" ? "default" : "outline"}
-              onClick={() => setStatusFilter("Rejected")}
-              size="sm"
-              className="text-rose-600 cursor-pointer"
-            >
-              Rejected
-            </Button>
-            <Button
-              variant={statusFilter === "DebentureForms" ? "default" : "outline"}
-              onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
-              size="sm"
-              className="text-white bg-[#134086] cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5 mr-1" /> Debenture Forms
-            </Button>
-            <Button
-              onClick={exportToExcel}
-              size="sm"
-              className="text-white bg-[#00a65a] hover:bg-[#008f4d] cursor-pointer shadow-md"
-              title="Export filtered data to CSV/Excel"
-            >
-              <FileText className="w-3.5 h-3.5 mr-1" /> Export to Excel
-            </Button>
-          </div>
-        </div>
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setStatusFilter("")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${statusFilter === "" ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100" : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"}`}
+              >
+                <ListFilter className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                All Status
+              </div>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-4 w-full border-t dark:border-zinc-800 pt-4">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Filter by Days:</Label>
-            <select
-              className="text-sm border rounded-md px-3 py-1.5 bg-transparent dark:border-zinc-800 outline-none focus:ring-2 focus:ring-indigo-500"
-              value={filterDays}
-              onChange={(e) => {
-                setFilterDays(e.target.value);
-                setFilterDate("");
-                setFilterMonth("");
-              }}
-            >
-              <option value="">All Time</option>
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="last7">Last 7 Days</option>
-              <option value="last30">Last 30 Days</option>
-            </select>
-          </div>
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setStatusFilter("Pending")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${statusFilter === "Pending" ? "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400" : "text-zinc-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500"}`}
+              >
+                <Clock className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-amber-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-amber-700">
+                Pending
+              </div>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Or by Month:</Label>
-            <Input
-              type="month"
-              className="h-9 w-40 text-sm"
-              value={filterMonth}
-              onChange={(e) => {
-                setFilterMonth(e.target.value);
-                setFilterDate("");
-                setFilterDays("");
-              }}
-            />
-          </div>
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setStatusFilter("Verified")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${statusFilter === "Verified" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400" : "text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-500"}`}
+              >
+                <CheckCircle className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-emerald-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-emerald-700">
+                Verified
+              </div>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Or Exact Date:</Label>
-            <Input
-              type="date"
-              className="h-9 w-40 text-sm"
-              value={filterDate}
-              onChange={(e) => {
-                setFilterDate(e.target.value);
-                setFilterMonth("");
-                setFilterDays("");
-              }}
-            />
-          </div>
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setStatusFilter("Rejected")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${statusFilter === "Rejected" ? "bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400" : "text-zinc-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-500"}`}
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
+                Rejected
+              </div>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">Range From:</Label>
-            <Input
-              type="date"
-              className="h-9 w-36 text-sm"
-              value={filterFromDate}
-              onChange={(e) => {
-                setFilterFromDate(e.target.value);
-                setFilterDays(""); setFilterMonth(""); setFilterDate("");
-              }}
-            />
-            <Label className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">To:</Label>
-            <Input
-              type="date"
-              className="h-9 w-36 text-sm"
-              value={filterToDate}
-              onChange={(e) => {
-                setFilterToDate(e.target.value);
-                setFilterDays(""); setFilterMonth(""); setFilterDate("");
-              }}
-            />
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setStatusFilter(statusFilter === "DebentureForms" ? "" : "DebentureForms")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${statusFilter === "DebentureForms" ? "bg-indigo-100 text-[#134086] dark:bg-indigo-500/20 dark:text-indigo-400" : "text-zinc-400 hover:bg-indigo-50 hover:text-[#134086] dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"}`}
+              >
+                <FileText className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#134086] text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-[#0f326a]">
+                Debenture Forms
+              </div>
+            </div>
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setShowDateFilterModal(true)}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${(filterDays || filterMonth || filterDate || filterFromDate || filterToDate) ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400" : "text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"}`}
+              >
+                <Calendar className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-indigo-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-indigo-700">
+                Filter by Date
+              </div>
+            </div>
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={exportToExcel}
+                className="cursor-pointer p-2 rounded-full transition-colors text-zinc-400 hover:bg-[#00a65a]/10 hover:text-[#00a65a] dark:hover:bg-[#00a65a]/20"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#00a65a] text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-[#008f4d]">
+                Export to Excel
+              </div>
+            </div>
           </div>
-
-          {(filterDays || filterMonth || filterDate || filterFromDate || filterToDate) && (
-            <Button variant="ghost" size="sm" onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); setFilterFromDate(""); setFilterToDate(""); }} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 ml-auto">
-              Clear Filters
-            </Button>
-          )}
         </div>
       </div>
 
@@ -641,73 +604,86 @@ export default function AdminInvestorsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setQuickAddModal(inv)}
-                          className="text-white border-amber-500 bg-amber-500 hover:bg-amber-600 font-bold cursor-pointer"
-                          title="Add New Investment on behalf of investor"
-                        >
-                          <Plus className="w-3.5 h-3.5 mr-1" /> Invest
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            const fullData = await fetchFullInvestorData(inv._id);
-                            if (fullData) setDebentureModalInvestor(fullData);
-                          }}
-                          className="text-white border-[#0c1c3d]/30  font-bold cursor-pointer"
-                          title="View Official Sheet Debenture Form"
-                        >
-                          <FileText className="w-3.5 h-3.5 mr-1" /> Form
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="cursor-pointer"
-                          onClick={async () => {
-                            const fullData = await fetchFullInvestorData(inv._id);
-                            if (fullData) setSelectedInvestor(fullData);
-                          }}
-                        >
-                          <Eye className="w-3.5 h-3.5 mr-1" /> View & Verify
-                        </Button>
-                        <Button
-                          className="cursor-pointer"
-                          size="sm"
-                          variant="secondary"
-                          onClick={async () => {
-                            const fullData = await fetchFullInvestorData(inv._id);
-                            if (fullData) {
-                              setEditForm({
-                                investorId: fullData._id,
-                                fullName: fullData.fullName,
-                                email: fullData.email,
-                                phone: fullData.phone,
-                                investmentAmount: fullData.investmentAmount || 0,
-                                monthlyGrowthPercentage: fullData.monthlyGrowthPercentage || 1.33,
-                                investmentDate: fullData.investmentDate || (fullData.verifiedAt ? new Date(fullData.verifiedAt).toISOString().split("T")[0] : new Date(fullData.createdAt).toISOString().split("T")[0]),
-                                bondMaturityDate: fullData.bondMaturityDate || "",
-                                nomineeName: fullData.debentureForm?.nomineeName || fullData.nomineeName || "",
-                                nomineeRelation: fullData.debentureForm?.nomineeRelation || fullData.nomineeRelation || "",
-                                nomineeAge: fullData.debentureForm?.nomineeAge || fullData.nomineeAge || "",
-                              });
-                              setShowEditModal(true);
-                            }
-                          }}
-                        >
-                          <Edit3 className="w-3.5 h-3.5 " />
-                        </Button>
-                        {(role === "ADMIN" || role === "KEY_ADMIN") && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
-                            className="text-white border-[#134086] cursor-pointer"
+                        <div className="relative group flex items-center justify-center">
+                          <button
+                            onClick={() => setQuickAddModal(inv)}
+                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded transition-colors"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                            <Plus className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                            Add Investment
+                          </div>
+                        </div>
+                        <div className="relative group flex items-center justify-center">
+                          <button
+                            onClick={async () => {
+                              const fullData = await fetchFullInvestorData(inv._id);
+                              if (fullData) setDebentureModalInvestor(fullData);
+                            }}
+                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded transition-colors"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                            View Form
+                          </div>
+                        </div>
+                        <div className="relative group flex items-center justify-center">
+                          <button
+                            onClick={async () => {
+                              const fullData = await fetchFullInvestorData(inv._id);
+                              if (fullData) setSelectedInvestor(fullData);
+                            }}
+                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                            View & Verify
+                          </div>
+                        </div>
+                        <div className="relative group flex items-center justify-center">
+                          <button
+                            onClick={async () => {
+                              const fullData = await fetchFullInvestorData(inv._id);
+                              if (fullData) {
+                                setEditForm({
+                                  investorId: fullData._id,
+                                  fullName: fullData.fullName,
+                                  email: fullData.email,
+                                  phone: fullData.phone,
+                                  investmentAmount: fullData.investmentAmount || 0,
+                                  monthlyGrowthPercentage: fullData.monthlyGrowthPercentage || 1.33,
+                                  investmentDate: fullData.investmentDate || (fullData.verifiedAt ? new Date(fullData.verifiedAt).toISOString().split("T")[0] : new Date(fullData.createdAt).toISOString().split("T")[0]),
+                                  bondMaturityDate: fullData.bondMaturityDate || "",
+                                  nomineeName: fullData.debentureForm?.nomineeName || fullData.nomineeName || "",
+                                  nomineeRelation: fullData.debentureForm?.nomineeRelation || fullData.nomineeRelation || "",
+                                  nomineeAge: fullData.debentureForm?.nomineeAge || fullData.nomineeAge || "",
+                                });
+                                setShowEditModal(true);
+                              }
+                            }}
+                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                            Edit Profile
+                          </div>
+                        </div>
+                        {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                          <div className="relative group flex items-center justify-center">
+                            <button
+                              onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
+                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
+                              Delete
+                            </div>
+                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -830,16 +806,26 @@ export default function AdminInvestorsPage() {
                 if (selectedInvestor.bondMaturityDate) {
                   maturityDateObj = new Date(selectedInvestor.bondMaturityDate);
 
-                  // calculate months and remaining days
-                  months = (maturityDateObj.getFullYear() - issueDateObj.getFullYear()) * 12 + (maturityDateObj.getMonth() - issueDateObj.getMonth());
-                  let tempDate = new Date(issueDateObj);
-                  tempDate.setMonth(tempDate.getMonth() + months);
-                  if (tempDate.getTime() > maturityDateObj.getTime()) {
-                    months--;
-                    tempDate = new Date(issueDateObj);
-                    tempDate.setMonth(tempDate.getMonth() + months);
-                  }
-                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                  // Normalize both dates to avoid timezone/time-of-day issues
+                  const startDate = new Date(
+                    issueDateObj.getFullYear(),
+                    issueDateObj.getMonth(),
+                    issueDateObj.getDate()
+                  );
+
+                  const endDate = new Date(
+                    maturityDateObj.getFullYear(),
+                    maturityDateObj.getMonth(),
+                    maturityDateObj.getDate()
+                  );
+
+                  // Calculate total actual calendar days
+                  days =
+                    Math.round(
+                      (maturityDateObj.getTime() - startDate.getTime()) /
+                      (1000 * 60 * 60 * 24)
+                    ) - 2;
+
 
 
                   totalInterest = (principal * rate * days / (100 * 30));
@@ -848,8 +834,8 @@ export default function AdminInvestorsPage() {
                   maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
                   days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
-                  const monthlyInterest = principal * (rate / 100);
-                  totalInterest = monthlyInterest * months;
+
+                  totalInterest = (principal * rate * days / (100 * 30));
                 }
 
                 const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -1268,58 +1254,57 @@ export default function AdminInvestorsPage() {
 
               {msg && <p className="text-xs text-rose-500">{msg}</p>}
 
-              <form onSubmit={handleAddInvestor} className="space-y-3">
-                <div className="space-y-1">
-                  <Label>Full Name *</Label>
-                  <Input required value={addForm.fullName} onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })} />
+              <form onSubmit={handleAddInvestor} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Full Name <span className="text-rose-500">*</span></Label>
+                  <Input required className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.fullName} onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Email *</Label>
-                  <Input type="email" required value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Email <span className="text-rose-500">*</span></Label>
+                  <Input type="email" required className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Phone *</Label>
-                  <Input required value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Phone <span className="text-rose-500">*</span></Label>
+                  <Input required className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Invest RS Amount (₹)</Label>
-                  <Input type="number" value={addForm.investmentAmount} onChange={(e) => setAddForm({ ...addForm, investmentAmount: Number(e.target.value) })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Invest RS Amount (₹)</Label>
+                  <Input type="number" className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.investmentAmount} onChange={(e) => setAddForm({ ...addForm, investmentAmount: Number(e.target.value) })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Monthly Growth (%)</Label>
-                  <Input type="number" step="0.1" value={addForm.monthlyGrowthPercentage} onChange={(e) => setAddForm({ ...addForm, monthlyGrowthPercentage: Number(e.target.value) })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Monthly Growth (%)</Label>
+                  <Input type="number" step="0.1" className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.monthlyGrowthPercentage} onChange={(e) => setAddForm({ ...addForm, monthlyGrowthPercentage: Number(e.target.value) })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Issue / Investment Date</Label>
-                  <Input type="date" min={new Date().toISOString().split("T")[0]} value={addForm.investmentDate} onChange={(e) => setAddForm({ ...addForm, investmentDate: e.target.value })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Issue / Investment Date</Label>
+                  <Input type="date" className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.investmentDate} onChange={(e) => setAddForm({ ...addForm, investmentDate: e.target.value })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Bond Maturity Date (To Date)</Label>
-                  <Input type="date" min={addForm.investmentDate || new Date().toISOString().split("T")[0]} value={addForm.bondMaturityDate} onChange={(e) => setAddForm({ ...addForm, bondMaturityDate: e.target.value })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Bond Maturity Date (To Date)</Label>
+                  <Input type="date" className="h-11 bg-zinc-50 dark:bg-zinc-800/50" min={addForm.investmentDate || undefined} value={addForm.bondMaturityDate} onChange={(e) => setAddForm({ ...addForm, bondMaturityDate: e.target.value })} />
                 </div>
+
                 {addForm.investmentDate && addForm.bondMaturityDate && (
-                  <div className="col-span-1 sm:col-span-2 text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
+                  <div className="col-span-1 md:col-span-2 text-sm font-medium text-emerald-700 bg-emerald-50/80 dark:bg-emerald-500/10 dark:text-emerald-400 p-3 rounded-lg border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between shadow-sm">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24) + 1))} Days</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24) + 1))} Days</span>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Nominee Name</Label>
-                    <Input value={addForm.nomineeName} onChange={(e) => setAddForm({ ...addForm, nomineeName: e.target.value })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Nominee Relation</Label>
-                    <Input value={addForm.nomineeRelation} onChange={(e) => setAddForm({ ...addForm, nomineeRelation: e.target.value })} />
-                  </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nominee Name</Label>
+                  <Input className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.nomineeName} onChange={(e) => setAddForm({ ...addForm, nomineeName: e.target.value })} />
                 </div>
-                <div className="space-y-1">
-                  <Label>Nominee Age</Label>
-                  <Input type="number" value={addForm.nomineeAge} onChange={(e) => setAddForm({ ...addForm, nomineeAge: e.target.value })} />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nominee Relation</Label>
+                  <Input className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.nomineeRelation} onChange={(e) => setAddForm({ ...addForm, nomineeRelation: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nominee Age</Label>
+                  <Input type="number" className="h-11 bg-zinc-50 dark:bg-zinc-800/50" value={addForm.nomineeAge} onChange={(e) => setAddForm({ ...addForm, nomineeAge: e.target.value })} />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-3">
+                <div className="col-span-1 md:col-span-2 flex justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800 mt-2">
                   <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
                   <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
                     {submitting ? "Saving..." : "Create Investor"}
@@ -1368,11 +1353,11 @@ export default function AdminInvestorsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label>Investment Date</Label>
-                    <Input type="date" min={new Date().toISOString().split("T")[0]} value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
+                    <Input type="date" value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label>Bond Maturity Date</Label>
-                    <Input type="date" min={editForm.investmentDate || new Date().toISOString().split("T")[0]} value={editForm.bondMaturityDate} onChange={(e) => setEditForm({ ...editForm, bondMaturityDate: e.target.value })} />
+                    <Input type="date" min={editForm.investmentDate || undefined} value={editForm.bondMaturityDate} onChange={(e) => setEditForm({ ...editForm, bondMaturityDate: e.target.value })} />
                   </div>
                 </div>
                 {editForm.investmentDate && editForm.bondMaturityDate && (
@@ -1429,7 +1414,7 @@ export default function AdminInvestorsPage() {
                     matDate.setMonth(matDate.getMonth() + months);
                     days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
 
-                    const monthlyInterest = principal * (rate / 100);
+                    const monthlyInterest = (principal * rate * days / (100 * 30));
                     totalInterest = monthlyInterest * 1;
 
                     matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -1535,6 +1520,136 @@ export default function AdminInvestorsPage() {
                 />
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Loading Overlay */}
+      {actionLoading && (
+        <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 px-6 py-4 rounded-xl shadow-2xl flex flex-col items-center gap-3 border border-zinc-200 dark:border-zinc-800">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+            <span className="font-semibold text-sm text-zinc-700 dark:text-zinc-200">Loading complete data...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Date Filter Modal UI */}
+      {showDateFilterModal && (
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+            <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-500" /> Filter by Date
+              </h2>
+              <button onClick={() => setShowDateFilterModal(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Filter by Days */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Quick Select</Label>
+                <select
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                  value={filterDays}
+                  onChange={(e) => {
+                    setFilterDays(e.target.value);
+                    setFilterDate(""); setFilterMonth(""); setFilterFromDate(""); setFilterToDate("");
+                  }}
+                >
+                  <option value="">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="last7">Last 7 Days</option>
+                  <option value="last30">Last 30 Days</option>
+                </select>
+              </div>
+
+              {/* Filter by Month */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">By Month</Label>
+                <Input
+                  type="month"
+                  className="w-full h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                  value={filterMonth}
+                  onChange={(e) => {
+                    setFilterMonth(e.target.value);
+                    setFilterDays(""); setFilterDate(""); setFilterFromDate(""); setFilterToDate("");
+                  }}
+                />
+              </div>
+
+              {/* Exact Date */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Exact Date</Label>
+                <Input
+                  type="date"
+                  className="w-full h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                  value={filterDate}
+                  onChange={(e) => {
+                    setFilterDate(e.target.value);
+                    setFilterMonth(""); setFilterDays(""); setFilterFromDate(""); setFilterToDate("");
+                  }}
+                />
+              </div>
+
+              {/* Date Range */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Date Range</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="date"
+                    className="flex-1 h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                    value={filterFromDate}
+                    onChange={(e) => {
+                      setFilterFromDate(e.target.value);
+                      setFilterDays(""); setFilterMonth(""); setFilterDate("");
+                    }}
+                  />
+                  <span className="text-zinc-400 font-medium text-sm">to</span>
+                  <Input
+                    type="date"
+                    className="flex-1 h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                    value={filterToDate}
+                    onChange={(e) => {
+                      setFilterToDate(e.target.value);
+                      setFilterDays(""); setFilterMonth(""); setFilterDate("");
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-5 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/20">
+              {(filterDays || filterMonth || filterDate || filterFromDate || filterToDate) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); setFilterFromDate(""); setFilterToDate(""); }}
+                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 mr-auto font-semibold"
+                >
+                  Clear Filters
+                </Button>
+              )}
+              <Button onClick={() => setShowDateFilterModal(false)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6">
+                Apply & Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-4 right-4 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 border ${toastMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-300' : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-300'}`}>
+            {toastMsg.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+            <span className="font-medium text-sm">{toastMsg.message}</span>
+            <button onClick={() => setToastMsg(null)} className="ml-2 opacity-70 hover:opacity-100">
+              <XCircle className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

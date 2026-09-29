@@ -191,11 +191,11 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
       tempDate.setMonth(tempDate.getMonth() + months);
     }
 
-    days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+    days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) - 1));
 
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
 
-    console.log(days)
+    // console.log(days)
     interestAmount = (principalAmount * growthRate * days / (100 * 30));
   } else {
     maturityDateObj = new Date(issueDateObj);

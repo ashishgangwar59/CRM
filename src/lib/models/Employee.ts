@@ -29,7 +29,7 @@ export interface IEmployee extends Document {
 
   // 3. Status & Type
   status: "Active" | "Inactive" | "Notice Period" | "Resigned" | "Absconding";
-  employeeType: "Full-Time" | "Part-Time" | "Contract" | "Intern";
+  employeeType: "Full-Time" | "Part-Time" | "Contract" | "Intern" | "Outsource";
   isFieldEmployee?: boolean;
 
   // 4. KYC
@@ -145,7 +145,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
     },
     employeeType: { 
       type: String, 
-      enum: ["Full-Time", "Part-Time", "Contract", "Intern"], 
+      enum: ["Full-Time", "Part-Time", "Contract", "Intern", "Outsource"], 
       default: "Full-Time" 
     },
     isFieldEmployee: { type: Boolean, default: false },
