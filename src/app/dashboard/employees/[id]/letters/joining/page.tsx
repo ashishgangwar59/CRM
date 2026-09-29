@@ -20,8 +20,8 @@ export default function JoiningLetterPage() {
         if (empData.success) {
           setEmployee(empData.data);
         }
-        if (settingsData && settingsData.companyProfile) {
-          setSettings(settingsData);
+        if (settingsData && settingsData.data) {
+          setSettings(settingsData.data);
         }
         setLoading(false);
       })
@@ -118,23 +118,15 @@ export default function JoiningLetterPage() {
 
             <p className="mb-4">Dear <strong>{employee.firstName}</strong>,</p>
 
-            <p className="mb-4">
-              Further to your acceptance of our offer letter, we are pleased to confirm your appointment with us as <strong>{employee.designation || "[Designation]"}</strong> in the <strong>{employee.department || "[Department]"}</strong> department, effective from your date of joining on <strong>{joiningDate}</strong>.
-            </p>
-
-            <p className="mb-4">
-              Your employment will be governed by the standard policies, rules, and regulations of the company, which may be amended from time to time. You will be on a probation period of 3 months, during which your performance will be evaluated.
-            </p>
-
-            <p className="mb-4">
-              Please note that your employment is strictly governed by a confidentiality clause, meaning you shall not disclose any sensitive company information, trade secrets, or client data to any unauthorized third parties during or after your tenure with the company.
-            </p>
-
-            <p className="mb-8">
-              We are excited to have you on board and are confident that you will make a significant contribution to the company. Please sign the duplicate copy of this appointment letter to signify your acceptance of the terms of employment.
-            </p>
-
-            <p className="mb-12 font-medium">Welcome to the team!</p>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: (settings?.letterTemplates?.joiningLetter?.page1 || "")
+                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName}`)
+                  .replace(/\{\{designation\}\}/g, employee.designation || "[Designation]")
+                  .replace(/\{\{department\}\}/g, employee.department || "[Department]")
+                  .replace(/\{\{joiningDate\}\}/g, joiningDate)
+              }}
+            />
 
             <div className="flex justify-between mt-12">
               <div>
@@ -155,9 +147,9 @@ export default function JoiningLetterPage() {
             <div className="px-10 pt-4 pb-8 flex justify-between items-center text-[#134086] text-[11px] font-medium">
               <div className="flex-1 flex flex-col justify-center space-y-3">
                 <div className="flex items-center gap-6 text-[12px]">
-                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> +91 11-40515660</span>
-                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> info@niventracapitaladvisory.com</span>
-                  <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> www.niventracapitaladvisory.com</span>
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {settings?.companyProfile?.phone}</span>
+                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {settings?.companyProfile?.email}</span>
+                  <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> {settings?.companyProfile?.website}</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-zinc-600">
                   <MapPin className="w-4 h-4 shrink-0 text-[#134086]" />

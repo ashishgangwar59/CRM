@@ -84,6 +84,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { name: "Investor Details", href: "/dashboard", icon: UserCircle, roles: ["INVESTOR"] },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Payroll", href: "/dashboard/payroll", icon: IndianRupee, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+    { name: "Incentive Management", href: "/dashboard/incentives", icon: Award, roles: ["ADMIN", "KEY_ADMIN"] },
+    { name: "Payroll Rules", href: "/dashboard/payroll/config", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN"] },
     { name: "Attendance", href: "/dashboard/attendance", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Attendance List", href: "/dashboard/attendance-list", icon: Clock, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
     { name: "Leave", href: "/dashboard/leave", icon: Umbrella, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },

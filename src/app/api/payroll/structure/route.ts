@@ -6,7 +6,7 @@ import { verifyAccessToken } from "@/lib/auth";
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
-    
+
     // Auth
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
     const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
@@ -32,13 +32,14 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
     const cookieToken = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     const token = cookieToken || (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
 
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const payload = verifyAccessToken(token);
     const data = await req.json();
 
     const structure = await SalaryStructure.findOneAndUpdate(
@@ -47,13 +48,41 @@ export async function POST(req: Request) {
       { new: true, upsert: true } // Create if doesn't exist, update if it does
     );
 
-    // Invalidate/delete any existing "Draft" payroll slips for this employee 
-    // so they are forced to be regenerated with the new salary structure.
+    // Automatically regenerate the Draft payroll slip for the current month
+    // so it immediately reflects the new Salary Structure or Incentive configurations.
     try {
       const { Payroll } = await import("@/lib/models/Payroll");
-      await Payroll.deleteMany({ employeeId: data.employeeId, status: "Draft" });
+      const { calculatePayrollForEmployee } = await import("@/lib/payrollEngine");
+
+      const currentMonthYear = new Date().toISOString().slice(0, 7);
+
+      // We only update if the payroll is still in Draft state (not Locked/Approved/Paid)
+      const existingPayroll = await Payroll.findOne({ employeeId: data.employeeId, monthYear: currentMonthYear });
+      if (!existingPayroll || existingPayroll.status === "Draft") {
+        const result = await calculatePayrollForEmployee(
+          data.employeeId,
+          currentMonthYear,
+          0, 0, 30, 0, true,
+          payload.userId
+        );
+
+        await Payroll.findOneAndUpdate(
+          { employeeId: data.employeeId, monthYear: currentMonthYear },
+          {
+            paidDays: result.paidDays,
+            totalDays: result.totalDays,
+            earnings: result.earnings,
+            deductions: result.deductions,
+            grossSalary: result.grossSalary,
+            totalDeductions: result.totalDeductions,
+            netSalary: result.netSalary,
+            status: "Draft"
+          },
+          { new: true, upsert: true }
+        );
+      }
     } catch (e) {
-      console.error("Failed to delete draft payrolls on structure update", e);
+      console.error("Failed to auto-generate payroll on structure update", e);
     }
 
     return NextResponse.json({ success: true, data: structure });

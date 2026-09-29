@@ -29,15 +29,20 @@ const Header = () => (
   </div>
 );
 
-const Footer = ({ address = "The Nukleus Centre, Mezzanine Level, Shivaji Stadium Metro Station,\nAirport Metro Line, Connaught Place, New Delhi 110001" }: { address?: string }) => (
+const Footer = ({
+  address = "",
+  phone = "",
+  email = "",
+  website = ""
+}: { address?: string; phone?: string; email?: string; website?: string }) => (
   <div className="mt-auto z-10 relative shrink-0">
     <div className="absolute top-0 left-10 right-10 h-[2px] bg-gradient-to-r from-[#134086] via-[#D4AF37] to-[#134086]"></div>
     <div className="px-10 pt-4 pb-8 flex justify-between items-center text-[#134086] text-[11px] font-medium">
       <div className="flex-1 flex flex-col justify-center space-y-3">
         <div className="flex items-center gap-6 text-[12px]">
-          <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> +91 11-40515660</span>
-          <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> info@niventracapitaladvisory.com</span>
-          <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> www.niventracapitaladvisory.com</span>
+          <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {phone}</span>
+          <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {email}</span>
+          <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> {website}</span>
         </div>
         <div className="flex items-start gap-1.5 text-zinc-600">
           <MapPin className="w-4 h-4 shrink-0 text-[#134086]" />
@@ -72,8 +77,8 @@ export default function OfferLetterPage() {
         if (empData.success) {
           setEmployee(empData.data);
         }
-        if (settingsData && settingsData.companyProfile) {
-          setSettings(settingsData);
+        if (settingsData && settingsData.data) {
+          setSettings(settingsData.data);
         }
         setLoading(false);
       })
@@ -153,27 +158,20 @@ export default function OfferLetterPage() {
               </tbody>
             </table>
 
-            <h3 className="font-bold underline uppercase mb-1">REPORTING LOCATION</h3>
-            <p className="mb-3">The Nukleus Center, Mezzanine Level, Shivaji Stadium Metro Station, Airport Express Line, Connaught Place, New Delhi 110001</p>
-
-            <h3 className="font-bold underline uppercase mb-1">PROBATION & CONFIRMATION</h3>
-            <p className="mb-3">
-              The initial probation period shall be 3 months unless otherwise communicated in writing. During probation, the Company may review performance, attendance, conduct, documentation, communication and role suitability.<br />
-              Confirmation or extension will be communicated by the Company in accordance with applicable terms and law.
-            </p>
-
-            <h3 className="font-bold underline uppercase mb-1">ROLE & RESPONSIBILITIES</h3>
-            <p className="mb-5">
-              You shall perform assigned responsibilities diligently, maintain professional standards, follow approved business processes, submit required reports, protect Company information and comply with lawful instructions and applicable workplace policies.
-            </p>
-
-            <h3 className="font-bold underline uppercase mb-1">PERFORMANCE & INCENTIVES</h3>
-            <p className="mb-5">
-              Performance may be reviewed periodically on business/operational performance, quality of work, attendance, customer handling, reporting discipline, compliance and teamwork. Incentives, where applicable, are subject to the relevant policy, eligibility, verification and approval.
-            </p>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: (settings?.letterTemplates?.offerLetter?.page1 || "")
+                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
+              }}
+            />
 
           </div>
-          <Footer address={settings?.companyProfile?.address} />
+          <Footer
+            address={settings?.companyProfile?.address}
+            phone={settings?.companyProfile?.phone}
+            email={settings?.companyProfile?.email}
+            website={settings?.companyProfile?.website}
+          />
         </div>
 
         {/* PAGE BREAK 1 */}
@@ -185,45 +183,20 @@ export default function OfferLetterPage() {
           <Header />
 
           <div className="px-10 flex-1 z-10">
-            <h3 className="font-bold underline uppercase mb-1">ATTENDANCE & WORKING HOURS</h3>
-            <p className="mb-5">
-              You shall follow the working hours and attendance system communicated by HR. Repeated late attendance, unauthorised absence or failure to follow attendance procedures may result in action under applicable policy and law.
-            </p>
-
-            <h3 className="font-bold underline uppercase mb-1">LEAVE</h3>
-            <p className="mb-5">
-              Leave must be requested and approved through the prescribed process. Unauthorised absence may be treated in accordance with Company policy and applicable law.
-            </p>
-
-            <h3 className="font-bold underline uppercase mb-1">REVIEW & CAREER DEVELOPMENT</h3>
-            <p className="mb-5">
-              Role responsibilities, reporting structures, targets and compensation components may be reviewed from time to time based on business requirements, performance and applicable employment terms.
-            </p>
-
-            <h3 className="font-bold underline uppercase mb-2">CONFIDENTIALITY & COMPLIANCE</h3>
-            <div className="space-y-3 mb-5">
-              <p><strong>CONFIDENTIALITY:</strong> You shall protect confidential information relating to the Company, clients, investors, employees, business processes, commercial arrangements, databases, passwords, documents and proprietary information during and after employment.</p>
-              <p><strong>COMPANY PROPERTY & ACCESS:</strong> All Company-issued devices, ID cards, documents, files, credentials, database access and other assets remain Company property and must be protected and returned upon request or separation.</p>
-              <p><strong>FINANCIAL & CLIENT COMPLIANCE:</strong> You are not authorised to make unauthorised commitments regarding returns, approvals, refunds or Company obligations. Company/client/investor money must not be collected into personal bank accounts or personal payment instruments. All financial transactions must follow officially approved procedures.</p>
-              <p><strong>PROFESSIONAL CONDUCT:</strong> Fraud, falsification, misuse of Company systems/property, unauthorised disclosure, harassment, misrepresentation, serious policy violations or unauthorised handling of funds may lead to appropriate action after following applicable process and law.</p>
-              <p><strong>CONFLICT OF INTEREST:</strong> You shall disclose actual or potential conflicts of interest and shall not use your position, Company information or resources for unauthorised personal benefit.</p>
-            </div>
-
-            <h3 className="font-bold underline uppercase mb-1">DOCUMENT REQUIRED & VERIFICATION</h3>
-            <ul className="list-disc pl-5 mb-1 space-y-0.5">
-              <li>Certificate supporting education qualification.</li>
-              <li>Certificate supporting employment from the present and previous organisation.</li>
-              <li>02 passport size photograph.</li>
-              <li>Aadhar card.</li>
-              <li>Pan card.</li>
-            </ul>
-            <p className="mb-5">
-              You need to carry the abovementioned documents in original with you on the day of joining for the cross verification. Employment is subject to verification of submitted information and documents. Materially false, misleading or incomplete information may result in appropriate action under applicable law and Company policy.
-            </p>
-
+            <div
+              dangerouslySetInnerHTML={{
+                __html: (settings?.letterTemplates?.offerLetter?.page2 || "")
+                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
+              }}
+            />
 
           </div>
-          <Footer address={settings?.companyProfile?.address} />
+          <Footer
+            address={settings?.companyProfile?.address}
+            phone={settings?.companyProfile?.phone}
+            email={settings?.companyProfile?.email}
+            website={settings?.companyProfile?.website}
+          />
         </div>
 
         {/* PAGE 2: Offer & Appointment Part 2 */}
@@ -232,20 +205,12 @@ export default function OfferLetterPage() {
           <Header />
 
           <div className="px-10 flex-1 z-10">
-            <h3 className="font-bold underline uppercase mb-1">INTELLECTUAL PROPERTY</h3>
-            <p className="mb-3">
-              Work product and business materials created in the course of employment for Company business shall be handled in accordance with applicable Company policies and law.
-            </p>
-
-            <h3 className="font-bold underline uppercase mb-1">SEPARATION & ACCEPTANCE</h3>
-            <p className="mb-1"><strong>TRANSFER / REASSIGNMENT:</strong> Subject to applicable law and employment terms, the Company may assign you to another department, role, branch or work location according to business requirements and suitability.</p>
-            <p className="mb-1"><strong>SEPARATION & NOTICE:</strong> Either party may terminate the employment relationship in accordance with applicable employment terms, notice requirements and law. Serious misconduct, fraud, unauthorised disclosure or major compliance violations may result in immediate action where legally permitted. Company property, documents and access credentials must be returned upon separation.</p>
-            <p className="mb-3"><strong>COMPANY POLICIES:</strong> You agree to comply with applicable HR, attendance, information-security, confidentiality, workplace-conduct, compliance and operational policies issued by the Company from time to time, subject to applicable law.</p>
-
-            <h3 className="font-bold underline uppercase mb-1">ACCEPTANCE</h3>
-            <p className="mb-10">
-              By signing below, you confirm that you have read and understood this Offer Letter, the information provided by you is accurate to the best of your knowledge, and you agree to comply with applicable Company policies and procedures.
-            </p>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: (settings?.letterTemplates?.offerLetter?.page3 || "")
+                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
+              }}
+            />
 
             <div className="flex justify-between items-end">
               <div>
@@ -261,7 +226,12 @@ export default function OfferLetterPage() {
               </div>
             </div>
           </div>
-          <Footer address={settings?.companyProfile?.address} />
+          <Footer
+            address={settings?.companyProfile?.address}
+            phone={settings?.companyProfile?.phone}
+            email={settings?.companyProfile?.email}
+            website={settings?.companyProfile?.website}
+          />
         </div>
 
         {/* PAGE BREAK 2 */}
@@ -296,6 +266,9 @@ export default function OfferLetterPage() {
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Conveyance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.conveyance || "-"}</td></tr>
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Medical Allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.medicalAllowance || "-"}</td></tr>
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Special Allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.specialAllowance || "-"}</td></tr>
+                {employee.salaryStructure?.incentive && (
+                  <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 font-semibold text-emerald-700">Incentive</td><td className="border border-zinc-200 p-2 text-right font-semibold text-emerald-700">{employee.salaryStructure.incentive}</td></tr>
+                )}
                 <tr className="bg-zinc-100 font-bold"><td className="border border-zinc-200 p-2 text-[#134086]">A. Monthly Gross</td><td className="border border-zinc-200 p-2 text-right text-[#134086]"></td></tr>
 
                 <tr><td className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold" colSpan={2}>Benefits</td></tr>
@@ -327,7 +300,12 @@ export default function OfferLetterPage() {
               <p>• Take home will reduce upon your Income Tax Savings</p>
             </div>
           </div>
-          <Footer address={settings?.companyProfile?.address} />
+          <Footer
+            address={settings?.companyProfile?.address}
+            phone={settings?.companyProfile?.phone}
+            email={settings?.companyProfile?.email}
+            website={settings?.companyProfile?.website}
+          />
         </div>
 
         {/* <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-lg print:shadow-none print:w-[210mm] print:h-[297mm] text-zinc-900 text-[13px] leading-relaxed font-sans relative flex flex-col mb-8 print:mb-0 overflow-hidden box-border">
@@ -362,7 +340,12 @@ export default function OfferLetterPage() {
               <p>**This is a system generated document, no signature is required.**</p>
             </div>
           </div>
-          <Footer address={settings?.companyProfile?.address} />
+          <Footer 
+            address={settings?.companyProfile?.address} 
+            phone={settings?.companyProfile?.phone}
+            email={settings?.companyProfile?.email}
+            website={settings?.companyProfile?.website}
+          />
         </div> */}
 
       </div>

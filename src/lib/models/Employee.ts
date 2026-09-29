@@ -210,6 +210,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
       conveyance: { type: String },
       medicalAllowance: { type: String },
       specialAllowance: { type: String },
+      incentive: { type: String },
       pf: { type: String },
       esi: { type: String },
       insurance: { type: String },
