@@ -49,7 +49,7 @@ export default function NewEmployeePage() {
     emergencyContact: { name: "", relation: "", phone: "" },
     salaryStructure: {
       ctcPerAnnum: "", basic: "", hra: "", conveyance: "", medicalAllowance: "",
-      specialAllowance: "", pf: "", esi: "", insurance: "", leaves: "",
+      specialAllowance: "", incentive: "", pf: "", esi: "", insurance: "", leaves: "",
       lta: "", professionalTax: "", tds: ""
     },
     profilePhotoUrl: "",
@@ -436,10 +436,10 @@ export default function NewEmployeePage() {
                       <option value="Other">Other (Enter manually)</option>
                     </select>
                     {showOtherDepartment && (
-                      <Input 
-                        placeholder="Enter custom department name" 
-                        value={formData.department} 
-                        onChange={(e) => handleChange("department", e.target.value)} 
+                      <Input
+                        placeholder="Enter custom department name"
+                        value={formData.department}
+                        onChange={(e) => handleChange("department", e.target.value)}
                         autoFocus
                       />
                     )}
@@ -469,10 +469,10 @@ export default function NewEmployeePage() {
                       <option value="Other">Other (Enter manually)</option>
                     </select>
                     {showOtherDesignation && (
-                      <Input 
-                        placeholder="Enter custom designation name" 
-                        value={formData.designation} 
-                        onChange={(e) => handleChange("designation", e.target.value)} 
+                      <Input
+                        placeholder="Enter custom designation name"
+                        value={formData.designation}
+                        onChange={(e) => handleChange("designation", e.target.value)}
                         autoFocus
                       />
                     )}
@@ -547,6 +547,10 @@ export default function NewEmployeePage() {
                 <div className="space-y-2">
                   <Label htmlFor="sal_special">Special Allowance</Label>
                   <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sal_incentive">Incentive</Label>
+                  <Input id="sal_incentive" value={formData.salaryStructure?.incentive || ""} onChange={(e) => handleChange("salaryStructure.incentive", e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sal_pf">P.F. Deduction</Label>

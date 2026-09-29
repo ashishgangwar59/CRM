@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import { IncentiveConfiguration } from "@/lib/models/IncentiveConfiguration";
 import { verifyAccessToken } from "@/lib/auth";
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectToDatabase();
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
@@ -12,9 +12,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const userId = payload.userId;
 
     const body = await req.json();
+    const { id } = await params;
     
     const incentive = await IncentiveConfiguration.findByIdAndUpdate(
-      params.id, 
+      id, 
       { ...body, updatedBy: userId }, 
       { new: true }
     );
@@ -26,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectToDatabase();
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
@@ -34,7 +35,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const payload = verifyAccessToken(token);
     const userId = payload.userId;
 
-    const incentive = await IncentiveConfiguration.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const incentive = await IncentiveConfiguration.findByIdAndDelete(id);
     if (!incentive) return NextResponse.json({ error: "Not found" }, { status: 404 });
     
     return NextResponse.json({ message: "Deleted successfully" });

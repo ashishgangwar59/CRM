@@ -7,6 +7,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings, Plug, Database, Download, Upload, AlertTriangle } from "lucide-react";
 
+const RichEditor = ({ defaultValue, onChange }: { defaultValue: string, onChange: (v: string) => void }) => {
+  return (
+    <div className="border border-zinc-300 rounded-md focus-within:ring-2 focus-within:ring-emerald-500 overflow-hidden bg-white">
+      <div className="bg-zinc-50 border-b border-zinc-200 px-2 py-1 text-xs text-zinc-500 flex gap-2 font-medium">
+        <span>Visual Editor</span>
+        <span className="text-zinc-400">|</span>
+        <span>Supports standard keyboard shortcuts (Ctrl+B, Ctrl+I)</span>
+      </div>
+      <div 
+        className="w-full text-sm p-4 min-h-[200px] max-h-[400px] overflow-y-auto focus:outline-none prose prose-sm max-w-none"
+        contentEditable
+        suppressContentEditableWarning
+        dangerouslySetInnerHTML={{ __html: defaultValue }}
+        onInput={(e) => onChange(e.currentTarget.innerHTML)}
+      />
+    </div>
+  );
+};
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("Company Profile");
   const [settings, setSettings] = useState<any>(null);
@@ -35,6 +54,7 @@ export default function SettingsPage() {
     { name: "Office Locations", icon: Building },
     { name: "Policies", icon: Umbrella },
     { name: "Investor Bond Agreement", icon: Shield },
+    { name: "Letter Templates", icon: Mail },
     { name: "Email Templates", icon: Mail },
     { name: "SMS Templates", icon: MessageSquare },
     { name: "Integrations", icon: Plug },
@@ -563,6 +583,50 @@ export default function SettingsPage() {
                       <div className="space-y-2">
                         <Label>MSG91 Sender ID</Label>
                         <Input value={settings.integrations.smsGateway?.msg91SenderId || ""} onChange={e => setSettings({ ...settings, integrations: { ...settings.integrations, smsGateway: { ...settings.integrations.smsGateway, msg91SenderId: e.target.value } } })} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "Letter Templates" && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Offer Letter Templates</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Page 1 (Offer Details)</Label>
+                        <RichEditor 
+                          defaultValue={settings.letterTemplates?.offerLetter?.page1 || ""} 
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page1: v } } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Page 2 (Confidentiality & Compliance)</Label>
+                        <RichEditor 
+                          defaultValue={settings.letterTemplates?.offerLetter?.page2 || ""} 
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page2: v } } })} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Page 3 (Intellectual Property & Separation)</Label>
+                        <RichEditor 
+                          defaultValue={settings.letterTemplates?.offerLetter?.page3 || ""} 
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page3: v } } })} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Joining Letter Templates</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Main Content</Label>
+                        <RichEditor 
+                          defaultValue={settings.letterTemplates?.joiningLetter?.page1 || ""} 
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, joiningLetter: { ...settings.letterTemplates?.joiningLetter, page1: v } } })} 
+                        />
                       </div>
                     </div>
                   </div>

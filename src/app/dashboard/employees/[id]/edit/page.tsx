@@ -51,7 +51,7 @@ export default function EditEmployeePage() {
     emergencyContact: { name: "", relation: "", phone: "" },
     salaryStructure: {
       ctcPerAnnum: "", basic: "", hra: "", conveyance: "", medicalAllowance: "",
-      specialAllowance: "", pf: "", esi: "", insurance: "", leaves: "",
+      specialAllowance: "", incentive: "", pf: "", esi: "", insurance: "", leaves: "",
       lta: "", professionalTax: "", tds: ""
     },
     profilePhotoUrl: "",
@@ -136,6 +136,7 @@ export default function EditEmployeePage() {
               conveyance: emp.salaryStructure?.conveyance || "",
               medicalAllowance: emp.salaryStructure?.medicalAllowance || "",
               specialAllowance: emp.salaryStructure?.specialAllowance || "",
+              incentive: emp.salaryStructure?.incentive || "",
               pf: emp.salaryStructure?.pf || "",
               esi: emp.salaryStructure?.esi || "",
               insurance: emp.salaryStructure?.insurance || "",
@@ -574,6 +575,10 @@ export default function EditEmployeePage() {
                   <div className="space-y-2">
                     <Label htmlFor="sal_special">Special Allowance</Label>
                     <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sal_incentive">Incentive</Label>
+                    <Input id="sal_incentive" value={formData.salaryStructure.incentive || ""} onChange={(e) => handleChange("salaryStructure.incentive", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sal_pf">P.F. Deduction</Label>

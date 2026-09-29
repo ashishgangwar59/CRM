@@ -39,6 +39,7 @@ export async function POST(req: Request) {
 
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const payload = verifyAccessToken(token);
     const data = await req.json();
 
     const structure = await SalaryStructure.findOneAndUpdate(
