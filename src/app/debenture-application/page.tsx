@@ -17,6 +17,7 @@ function DebentureFormContent() {
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
   const [toastMsg, setToastMsg] = useState<{ message: string, type: "success" | "error" } | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File }>({});
 
   const [form, setForm] = useState({
     applicationNo: "",
@@ -391,22 +392,16 @@ function DebentureFormContent() {
     }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
-      const json = await res.json();
-      if (json.success) {
-        setForm((prev) => ({ ...prev, [field]: json.url }));
-      } else {
-        alert(json.error || "File upload failed.");
-      }
-    } catch (e) {
-      alert("Error uploading file.");
-    }
+    
+    // Store file in pending state
+    setPendingFiles(prev => ({ ...prev, [field]: file }));
+    
+    // Set local preview URL or filename so UI shows it's attached
+    const localUrl = URL.createObjectURL(file);
+    setForm((prev) => ({ ...prev, [field]: localUrl }));
   };
 
   const handleCropUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "signatureUrl" | "passportPhotoUrl") => {
@@ -443,40 +438,36 @@ function DebentureFormContent() {
         return;
       }
 
-      const file = new File([croppedBlob], `signature_${Date.now()}.jpg`, { type: "image/jpeg" });
-      const formData = new FormData();
-      formData.append("file", file);
+      const file = new File([croppedBlob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
+      
+      // Store cropped file in pending state
+      setPendingFiles(prev => ({ ...prev, [cropTargetField]: file }));
+      
+      // Create local URL for preview
+      const localUrl = URL.createObjectURL(file);
+      setForm((prev) => ({ ...prev, [cropTargetField]: localUrl }));
 
-      const res = await fetch("/api/employees/upload", { method: "POST", body: formData });
-      const json = await res.json();
-
-      if (json.success) {
-        setForm((prev) => ({ ...prev, [cropTargetField]: json.url }));
-
-        // Draw onto canvas if signature
-        if (cropTargetField === "signatureUrl") {
-          const canvas = canvasRef.current;
-          if (canvas) {
-            const ctx = canvas.getContext("2d");
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => {
-              ctx?.clearRect(0, 0, canvas.width, canvas.height);
-              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = json.url;
-          }
+      // Draw onto canvas if signature
+      if (cropTargetField === "signatureUrl") {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          };
+          img.src = localUrl;
         }
-
-        // Close modal
-        setCropModalOpen(false);
-        setCropImageSrc(null);
-        setRotation(0);
-      } else {
-        alert(json.error || "Signature upload failed.");
       }
+
+      // Close modal
+      setCropModalOpen(false);
+      setCropImageSrc(null);
+      setRotation(0);
     } catch (e) {
-      alert("Error uploading signature.");
+      alert("Error processing image crop.");
     }
   };
 
@@ -528,10 +519,28 @@ function DebentureFormContent() {
     setLoading(true);
 
     try {
+      // 1. Upload pending files to server before submitting
+      let finalForm = { ...form };
+      for (const [field, file] of Object.entries(pendingFiles)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
+        const uploadJson = await uploadRes.json();
+        
+        if (uploadJson.success) {
+          finalForm = { ...finalForm, [field]: uploadJson.url };
+        } else {
+          setToastMsg({ message: `Failed to upload document for ${field}`, type: "error" });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Submit debenture application with uploaded file URLs
       const res = await fetch("/api/debenture-application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(finalForm),
       });
 
       const json = await res.json();
