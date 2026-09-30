@@ -1,33 +1,13 @@
-# version: "3"
-
-# services:
-#   website-dev:
-#     image: website-image
-#     build:
-#       context: .
-#       dockerfile: Dockerfile.production
-#     env_file:
-#       - ".env.production"
-#     ports:
-#       - "11000:3000"
-#     restart: unless-stopped
-
 version: "3"
 
 services:
   website-dev:
     image: website-image
-    stdin_open: true
-    command: npm run start
+    build:
+      context: .
+      dockerfile: Dockerfile.production
     env_file:
       - ".env.production"
     ports:
       - "11000:3000"
-    networks:
-      - website-dev
-    restart: "unless-stopped"
-
-
-networks:
-  website-dev:
-    driver: bridge
+    restart: unless-stopped
