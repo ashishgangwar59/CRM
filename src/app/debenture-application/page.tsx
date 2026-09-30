@@ -1568,7 +1568,14 @@ function DebentureFormContent() {
                 tempDate = new Date(invDate);
                 tempDate.setMonth(tempDate.getMonth() + months);
               }
-              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+              let rawDays = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
+                  if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
+                      let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
+                      let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
+                      days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                  } else {
+                      days = Math.max(0, rawDays);
+                  }
 
               totalInterest = (principal * rate * days / (100 * 30));
 
@@ -1578,7 +1585,14 @@ function DebentureFormContent() {
               const months = 1;
               const matDate = new Date(invDate);
               matDate.setMonth(matDate.getMonth() + months);
-              days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+              let rawDays = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
+                  if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
+                      let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
+                      let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
+                      days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                  } else {
+                      days = Math.max(0, rawDays);
+                  }
 
               const monthlyInterest = (principal * rate * days / (100 * 30));
               totalInterest = monthlyInterest * 1;

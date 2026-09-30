@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download, Loader2, ListFilter, Calendar } from "lucide-react";
@@ -78,7 +78,7 @@ export default function AdminInvestorsPage() {
   const [role, setRole] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showDateFilterModal, setShowDateFilterModal] = useState(false);
-  const [toastMsg, setToastMsg] = useState<{message: string, type: "success" | "error"} | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ message: string, type: "success" | "error" } | null>(null);
 
   const fetchFullInvestorData = async (invId: string) => {
     setActionLoading(true);
@@ -820,11 +820,14 @@ export default function AdminInvestorsPage() {
                   );
 
                   // Calculate total actual calendar days
-                  days =
-                    Math.round(
-                      (maturityDateObj.getTime() - startDate.getTime()) /
-                      (1000 * 60 * 60 * 24)
-                    ) - 2;
+                  let rawDays1 = Math.round((maturityDateObj.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                  if (startDate.getDate() >= 25 && maturityDateObj.getDate() >= 28) {
+        let curr = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1);
+        let limit = new Date(maturityDateObj.getFullYear(), maturityDateObj.getMonth(), maturityDateObj.getDate());
+        days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    } else {
+                      days = Math.max(0, rawDays1);
+                  }
 
 
 
@@ -832,7 +835,14 @@ export default function AdminInvestorsPage() {
                 } else {
                   maturityDateObj = new Date(issueDateObj);
                   maturityDateObj.setMonth(maturityDateObj.getMonth() + months);
-                  days = Math.max(0, Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                  let rawDays2 = Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24));
+                  if (issueDateObj.getDate() >= 25 && maturityDateObj.getDate() >= 28) {
+        let curr = new Date(issueDateObj.getFullYear(), issueDateObj.getMonth() + 1, 1);
+        let limit = new Date(maturityDateObj.getFullYear(), maturityDateObj.getMonth(), maturityDateObj.getDate());
+        days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    } else {
+                      days = Math.max(0, rawDays2);
+                  }
 
 
                   totalInterest = (principal * rate * days / (100 * 30));
@@ -854,7 +864,7 @@ export default function AdminInvestorsPage() {
                   }
 
                   if (years > 0) {
-                    const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
+                    const remainingDays = Math.round((endDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
                     let text = `${years} Year${years > 1 ? 's' : ''}`;
                     if (remainingDays > 0) {
                       text += ` ${remainingDays} Day${remainingDays > 1 ? 's' : ''}`;
@@ -865,7 +875,7 @@ export default function AdminInvestorsPage() {
                     return `${totalDays} Days `;
                   }
                 };
-                console.log(maturityDateObj);
+                // console.log(maturityDateObj);
                 const periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
 
                 // Calculate interest based on calendar months and remaining days
@@ -1287,7 +1297,17 @@ export default function AdminInvestorsPage() {
                 {addForm.investmentDate && addForm.bondMaturityDate && (
                   <div className="col-span-1 md:col-span-2 text-sm font-medium text-emerald-700 bg-emerald-50/80 dark:bg-emerald-500/10 dark:text-emerald-400 p-3 rounded-lg border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between shadow-sm">
                     <span>Total Duration:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base">{Math.max(0, Math.ceil((new Date(addForm.bondMaturityDate).getTime() - new Date(addForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24) + 1))} Days</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base">{(() => {
+                        const start = new Date(addForm.investmentDate);
+                        const end = new Date(addForm.bondMaturityDate);
+                        let raw = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                        if (start.getDate() >= 25 && end.getDate() >= 28) {
+            let curr = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+            let limit = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            return Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        }
+                        return Math.max(0, raw);
+                    })()} Days</span>
                   </div>
                 )}
 
@@ -1363,7 +1383,17 @@ export default function AdminInvestorsPage() {
                 {editForm.investmentDate && editForm.bondMaturityDate && (
                   <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{Math.max(0, Math.ceil((new Date(editForm.bondMaturityDate).getTime() - new Date(editForm.investmentDate).getTime()) / (1000 * 60 * 60 * 24) + 1))} Days</span>
+                    <span className="font-bold">{(() => {
+                        const start = new Date(editForm.investmentDate);
+                        const end = new Date(editForm.bondMaturityDate);
+                        let raw = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                        if (start.getDate() >= 25 && end.getDate() >= 28) {
+            let curr = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+            let limit = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            return Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        }
+                        return Math.max(0, raw);
+                    })()} Days</span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
@@ -1402,7 +1432,14 @@ export default function AdminInvestorsPage() {
                       tempDate = new Date(invDate);
                       tempDate.setMonth(tempDate.getMonth() + months);
                     }
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                    let rawDays3 = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
+                    if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
+        let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
+        let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
+        days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    } else {
+                        days = Math.max(0, rawDays3);
+                    }
 
                     totalInterest = (principal * rate * days / (100 * 30));
 
@@ -1412,7 +1449,15 @@ export default function AdminInvestorsPage() {
                     const months = 1;
                     const matDate = new Date(invDate);
                     matDate.setMonth(matDate.getMonth() + months);
-                    days = Math.max(0, Math.ceil((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
+                    
+                    let rawDays4 = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
+                    if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
+        let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
+        let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
+        days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    } else {
+                        days = Math.max(0, rawDays4);
+                    }
 
                     const monthlyInterest = (principal * rate * days / (100 * 30));
                     totalInterest = monthlyInterest * 1;
