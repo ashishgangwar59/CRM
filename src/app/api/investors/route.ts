@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import { Investor } from "@/lib/models/Investor";
 import { User } from "@/lib/models/User";
 import { Counter } from "@/lib/models/Counter";
+import { Employee } from "@/lib/models/Employee";
 import bcrypt from "bcryptjs";
 import { verifyAccessToken } from "@/lib/auth";
 
@@ -68,6 +69,17 @@ export async function POST(req: Request) {
       accessibleModules: ["Investor Details", "Profile"],
     });
 
+    let referralEmployeeId = undefined;
+    let referralEmployeeName = undefined;
+    const creatorUser = await User.findById(payload.userId);
+    if (creatorUser) {
+      const emp = await Employee.findOne({ email: creatorUser.email });
+      if (emp) {
+        referralEmployeeId = emp._id;
+        referralEmployeeName = `${emp.firstName} ${emp.lastName}`;
+      }
+    }
+
     const investorCode = await getNextInvestorCode();
     const investor = await Investor.create({
       investorCode,
@@ -95,6 +107,8 @@ export async function POST(req: Request) {
       nomineeName,
       nomineeRelation,
       nomineeAge,
+      referralEmployeeId,
+      referralEmployeeName,
     });
 
     return NextResponse.json({ success: true, data: investor }, { status: 201 });

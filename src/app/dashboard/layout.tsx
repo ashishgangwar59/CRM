@@ -138,6 +138,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       if (role === "INVESTOR") return item.roles.includes("INVESTOR");
       if (role === "Employee") {
         if (item.name === "Debenture Form" || item.name === "Calculator") return true;
+        if (item.name === "Investors") {
+          return modules.includes("Investors") || modules.includes("All Investors") || modules.includes("Self Investors");
+        }
         return modules.includes(item.name);
       }
       return item.roles.includes(role);

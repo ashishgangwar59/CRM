@@ -182,7 +182,7 @@ export default function EditEmployeePage() {
           systemRole: value,
           accessibleModules: [
             "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-            "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form"
+            "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "All Investors", "Self Investors", "Invoice Form", "Teams", "Debenture Form"
           ]
         }));
       } else {
@@ -752,7 +752,7 @@ export default function EditEmployeePage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {[
                       "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-                      "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
+                      "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "Employees", "All Investors", "Self Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
                     ].map(module => (
                       <label 
                         key={module} 

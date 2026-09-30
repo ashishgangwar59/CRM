@@ -51,6 +51,15 @@ export default function CertificatesPage() {
     window.print();
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p className="text-zinc-500 dark:text-zinc-400 font-medium animate-pulse">Loading certificate data...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-6 w-full pb-10 print:bg-white print:p-0">
@@ -76,8 +85,9 @@ export default function CertificatesPage() {
                   className="w-full p-2.5 border rounded-lg dark:bg-zinc-900 dark:border-zinc-700 focus:ring-2 focus:ring-[#c9972f] outline-none transition"
                   value={selectedEmployeeId}
                   onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                  disabled={loading}
                 >
-                  <option value="">-- Choose Employee --</option>
+                  <option value="">{loading ? "Loading employees..." : "-- Choose Employee --"}</option>
                   {employees.map((emp) => (
                     <option key={emp._id} value={emp._id}>
                       {emp.firstName} {emp.lastName} ({emp.employeeCode})

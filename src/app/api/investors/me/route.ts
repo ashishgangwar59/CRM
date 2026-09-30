@@ -111,12 +111,14 @@ export async function GET(req: Request) {
 
       // Restrict visibility for employees
       if (userRole !== "ADMIN" && userRole !== "KEYADMIN" && userRole !== "SUPERADMIN") {
-        const currentEmp = await Employee.findOne({ email: user?.email });
-        if (currentEmp) {
-          query.referralEmployeeId = currentEmp._id;
-        } else {
-          // If no employee profile exists, return nothing
-          query.referralEmployeeId = "000000000000000000000000";
+        if (!user?.accessibleModules?.includes("All Investors")) {
+          const currentEmp = await Employee.findOne({ email: user?.email });
+          if (currentEmp) {
+            query.referralEmployeeId = currentEmp._id;
+          } else {
+            // If no employee profile exists, return nothing
+            query.referralEmployeeId = "000000000000000000000000";
+          }
         }
       }
 
