@@ -56,6 +56,13 @@ export default function EmployeesPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Bulk Permissions State
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkModules, setBulkModules] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState<"add" | "remove">("add");
+  const [savingBulk, setSavingBulk] = useState(false);
+
   const fetchEmployees = async () => {
     setLoading(true);
     try {
@@ -229,6 +236,11 @@ export default function EmployeesPage() {
               <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" /> Export Excel
               </Button>
+              {selectedEmployees.length > 0 && (
+                <Button variant="secondary" onClick={() => setShowBulkModal(true)} className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200">
+                  Bulk Permissions ({selectedEmployees.length})
+                </Button>
+              )}
               <Link href="/dashboard/employees/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" /> Add Employee
@@ -297,6 +309,19 @@ export default function EmployeesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                    <TableHead className="w-12">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-zinc-300"
+                        checked={employees.length > 0 && selectedEmployees.length === employees.length}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedEmployees(employees.map((emp: any) => emp._id));
+                          else setSelectedEmployees([]);
+                        }}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Employee</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Department</TableHead>
@@ -327,9 +352,21 @@ export default function EmployeesPage() {
                   <TableRow 
                     key={emp._id} 
                     className="cursor-pointer"
-                    onClick={() => router.push(`/dashboard/employees/${emp._id}`)}
                   >
-                    <TableCell>
+                    {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-zinc-300 cursor-pointer"
+                          checked={selectedEmployees.includes(emp._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedEmployees(prev => [...prev, emp._id]);
+                            else setSelectedEmployees(prev => prev.filter(id => id !== emp._id));
+                          }}
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-200 dark:border-zinc-700">
                           {emp.profilePhotoUrl ? (
@@ -344,10 +381,10 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{emp.employeeCode}</TableCell>
-                    <TableCell>{emp.department || "-"}</TableCell>
-                    <TableCell>{emp.designation || "-"}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)} className="font-medium">{emp.employeeCode}</TableCell>
+                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>{emp.department || "-"}</TableCell>
+                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>{emp.designation || "-"}</TableCell>
+                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         emp.status === "Active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
                         emp.status === "Notice Period" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
@@ -464,6 +501,84 @@ export default function EmployeesPage() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-lg w-full flex flex-col shadow-2xl">
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+              <h2 className="text-xl font-bold">Bulk Assign Permissions</h2>
+              <p className="text-sm text-zinc-500 mt-1">Applying to {selectedEmployees.length} selected employees</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-semibold mb-2 block">Action</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input type="radio" name="action" checked={bulkAction === "add"} onChange={() => setBulkAction("add")} />
+                    <span>Grant Modules</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="radio" name="action" checked={bulkAction === "remove"} onChange={() => setBulkAction("remove")} />
+                    <span>Revoke Modules</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold mb-2 block">Select Modules</label>
+                <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border rounded bg-zinc-50 dark:bg-zinc-800/50">
+                  {[
+                    "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "All Employees", "All Investors", "Self Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
+                  ].map(mod => (
+                    <label key={mod} className="flex items-center space-x-2 text-sm cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-zinc-300"
+                        checked={bulkModules.includes(mod)}
+                        onChange={(e) => {
+                          if (e.target.checked) setBulkModules([...bulkModules, mod]);
+                          else setBulkModules(bulkModules.filter(m => m !== mod));
+                        }}
+                      />
+                      <span>{mod}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2 bg-zinc-50 dark:bg-zinc-900/50">
+              <Button variant="outline" onClick={() => setShowBulkModal(false)} disabled={savingBulk}>Cancel</Button>
+              <Button 
+                disabled={savingBulk || bulkModules.length === 0} 
+                onClick={async () => {
+                  setSavingBulk(true);
+                  try {
+                    const res = await fetch("/api/employees/bulk-permissions", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ employeeIds: selectedEmployees, modules: bulkModules, action: bulkAction })
+                    });
+                    if (res.ok) {
+                      setShowBulkModal(false);
+                      setBulkModules([]);
+                      setSelectedEmployees([]);
+                      alert("Successfully updated permissions!");
+                    } else {
+                      const data = await res.json();
+                      alert(data.error || "Failed to update permissions");
+                    }
+                  } catch(e) {
+                    alert("Error updating permissions");
+                  }
+                  setSavingBulk(false);
+                }}
+              >
+                {savingBulk ? "Saving..." : "Apply Permissions"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

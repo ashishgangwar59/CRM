@@ -28,6 +28,7 @@ export interface IInvoice extends Document {
   chequeDdDate?: string;
   drawnOnBank?: string;
   attachments?: { name: string; type: string; dataUrl: string; size: number }[];
+  themeColor?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +69,7 @@ const InvoiceSchema: Schema<IInvoice> = new Schema(
         size: { type: Number },
       },
     ],
+    themeColor: { type: String, default: "#1a3668" },
   },
   { timestamps: true }
 );

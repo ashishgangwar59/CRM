@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2, Upload, Eye, X, File } from "lucide-react";
+import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2, Upload, Eye, X, File, Edit2 } from "lucide-react";
 
 interface UploadedFile {
   name: string;
@@ -33,6 +33,7 @@ export default function InvoicePage() {
   const [reverseCharge, setReverseCharge] = useState("No");
   const [state, setState] = useState("Delhi");
   const [stateCode, setStateCode] = useState("07");
+  const [themeColor, setThemeColor] = useState("#1a3668");
 
   // Tab & Saved Invoice states
   const [activeTab, setActiveTab] = useState<"editor" | "list">("editor");
@@ -146,7 +147,7 @@ export default function InvoicePage() {
         } else if (data.success && data.data?.companyProfile?.address) {
           setInvoiceFooterText(`Registered Office: ${data.data.companyProfile.address.replace(/\n/g, ", ")}`);
         } else {
-          setInvoiceFooterText("The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001");
+          setInvoiceFooterText("The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station â€¢ Airport Express Line Connaught Place, New Delhi 110001");
         }
         if (data.success && data.data?.companyProfile?.name) {
           setCompanyName(data.data.companyProfile.name);
@@ -193,7 +194,8 @@ export default function InvoicePage() {
         chequeDdNo,
         chequeDdDate,
         drawnOnBank,
-        attachments: uploadedFiles
+        attachments: uploadedFiles,
+        themeColor
       };
 
       const url = editingInvoiceId ? `/api/invoices?id=${editingInvoiceId}` : "/api/invoices";
@@ -534,7 +536,7 @@ export default function InvoicePage() {
           onClick={() => setActiveTab("editor")}
           className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 ${activeTab === "editor"
             ? "border-indigo-650 bg-[#0d2452] text-white "
-            : "border-transparent text-white dark:text-zinc-400"
+            : "border-dark text-dark dark:text-zinc-400"
             }`}
         >
           <FileText className="w-4 h-4 mr-1.5" /> Create / Edit Invoice
@@ -547,7 +549,7 @@ export default function InvoicePage() {
           }}
           className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 
             ${activeTab === "list" ? "border-indigo-650 bg-[#0d2452] text-white" :
-              " border-transparent text-white dark:text-zinc-400"
+              " border-dark text-dark dark:text-zinc-400"
 
             }
            `}
@@ -558,7 +560,7 @@ export default function InvoicePage() {
           <Button
             variant="ghost"
             onClick={exportInvoicesToExcel}
-            className="text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 border-transparent text-emerald-400 hover:text-emerald-300 ml-auto"
+            className="text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 border-transparent text-dark hover:text-emerald-300 ml-auto"
           >
             <FileText className="w-4 h-4 mr-1.5" /> Export to Excel
           </Button>
@@ -656,31 +658,34 @@ export default function InvoicePage() {
                             <td className="px-4 py-3">{inv.invoiceDate}</td>
                             <td className="px-4 py-3">{inv.billToName}</td>
                             <td className="px-4 py-3 text-right font-bold text-zinc-900 dark:text-zinc-100">
-                              ₹{total.toLocaleString()}
+                              â‚¹{total.toLocaleString()}
                             </td>
                             <td className="px-4 py-3 text-center flex items-center justify-center gap-2 cursor-pointer">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleLoadInvoice(inv)}
-                                className="h-7 text-[10px]"
+                                className="h-7 w-7 p-0 flex justify-center items-center"
+                                title="View & Edit"
                               >
-                                View & Edit
+                                <Edit2 className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
                               </Button>
                               <Button
                                 size="sm"
                                 onClick={() => handleLoadAndPrint(inv)}
-                                className="h-7 text-[10px] bg-[#0d2452] hover:bg-[#0a1c3f] text-white flex items-center gap-1 cursor-pointer"
+                                className="h-7 w-7 p-0 bg-[#0d2452] hover:bg-[#0a1c3f] text-white flex justify-center items-center cursor-pointer shadow-sm"
+                                title="View & Print"
                               >
-                                <Printer className="w-3 h-3" /> View & Print
+                                <Printer className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={(e) => handleDeleteInvoice(inv._id, e)}
-                                className="h-7 text-[10px] text-white hover:text-white hover:bg-rose-55 dark:hover:bg-rose-950/20 cursor-pointer"
+                                className="h-7 w-7 p-0 text-rose-600 hover:text-white hover:bg-rose-600 cursor-pointer transition-colors"
+                                title="Delete"
                               >
-                                <Trash2 className="w-3 h-3 mr-0.5" /> Delete
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </td>
                           </tr>
@@ -736,7 +741,19 @@ export default function InvoicePage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Meta Section */}
                 <div className="space-y-3 p-4 bg-white dark:bg-black rounded-xl border border-zinc-100 dark:border-zinc-800">
-                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5">1. Invoice Meta Info</h3>
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 border-b pb-1.5 flex items-center justify-between">
+                    <span>1. Invoice Meta Info</span>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[10px] text-zinc-400 font-normal">Theme Color:</Label>
+                      <input
+                        type="color"
+                        value={themeColor}
+                        onChange={(e) => setThemeColor(e.target.value)}
+                        className="h-5 w-6 cursor-pointer p-0 border-0 rounded overflow-hidden"
+                      />
+                      <button type="button" onClick={() => setThemeColor("${viewInvoice?.themeColor || themeColor}")} className="text-[10px] text-indigo-500 hover:underline">Reset</button>
+                    </div>
+                  </h3>
                   <div className="space-y-2">
                     <div>
                       <Label className="text-xs text-zinc-500">Invoice No (Auto-Generated)</Label>
@@ -862,7 +879,7 @@ export default function InvoicePage() {
                 </div>
               </div>
 
-              {/* Row 2: Invoice Line Items — Full Width, Larger */}
+              {/* Row 2: Invoice Line Items â€” Full Width, Larger */}
               <div className="p-5 bg-white dark:bg-black rounded-xl border border-zinc-100 dark:border-zinc-800">
                 <div className="flex justify-between items-center border-b pb-2 mb-4">
                   <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">4. Invoice Line Items</h3>
@@ -895,7 +912,7 @@ export default function InvoicePage() {
                           <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-9 text-sm text-center" />
                         </div>
                         <div>
-                          <Label className="text-xs text-zinc-500 mb-1 block">Rate (₹)</Label>
+                          <Label className="text-xs text-zinc-500 mb-1 block">Rate (â‚¹)</Label>
                           <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-9 text-sm font-semibold text-right" />
                         </div>
                         <div>
@@ -906,7 +923,7 @@ export default function InvoicePage() {
                           <div className="flex-1">
                             <Label className="text-xs text-zinc-400 mb-1 block">Taxable Value</Label>
                             <div className="h-9 px-3 flex items-center rounded-md bg-zinc-100 dark:bg-zinc-800 text-sm font-bold text-zinc-700 dark:text-zinc-300">
-                              ₹{(item.qty * item.rate).toLocaleString()}
+                              â‚¹{(item.qty * item.rate).toLocaleString()}
                             </div>
                           </div>
                           <Button
@@ -925,12 +942,12 @@ export default function InvoicePage() {
                 </div>
               </div>
 
-              {/* Row 3: Upload Documents — Step 5, Hidden on Print */}
+              {/* Row 3: Upload Documents â€” Step 5, Hidden on Print */}
               <div className="print:hidden p-5 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                 <div className="flex justify-between items-center border-b pb-2 mb-4">
                   <div>
                     <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">5. Upload Supporting Documents</h3>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">Attach payment proof, receipts, etc. (JPG, PNG, PDF only · max 5 files). Not printed on slip.</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">Attach payment proof, receipts, etc. (JPG, PNG, PDF only Â· max 5 files). Not printed on slip.</p>
                   </div>
                   <Button
                     size="sm"
@@ -958,7 +975,7 @@ export default function InvoicePage() {
                   >
                     <Upload className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-2" />
                     <p className="text-xs text-zinc-400">Click to upload JPG, PNG or PDF files</p>
-                    <p className="text-[10px] text-zinc-300 dark:text-zinc-600 mt-1">Up to 5 files · These will be saved with the invoice but will NOT appear on the printed slip</p>
+                    <p className="text-[10px] text-zinc-300 dark:text-zinc-600 mt-1">Up to 5 files Â· These will be saved with the invoice but will NOT appear on the printed slip</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -1025,7 +1042,7 @@ export default function InvoicePage() {
                     <div className="flex items-center justify-between px-5 py-3 border-b dark:border-zinc-700">
                       <div>
                         <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100 truncate max-w-xs">{viewingFile.name}</p>
-                        <p className="text-[10px] text-zinc-400">{(viewingFile.size / 1024).toFixed(1)} KB · {viewingFile.type}</p>
+                        <p className="text-[10px] text-zinc-400">{(viewingFile.size / 1024).toFixed(1)} KB Â· {viewingFile.type}</p>
                       </div>
                       <button onClick={() => setViewingFile(null)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
                         <X className="w-5 h-5" />
@@ -1071,8 +1088,8 @@ export default function InvoicePage() {
               box-shadow: 0 10px 35px rgba(13,36,82,0.15);
               border-radius: 10px;
               overflow: hidden;
-              color: #1a3668;
-              // border: 1px solid #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
+              // border: 1px solid ${viewInvoice?.themeColor || themeColor};
             }
             .header {
               display: flex;
@@ -1080,7 +1097,7 @@ export default function InvoicePage() {
               align-items: center;
               padding: 24px 32px;
               background: #ffffff;
-              border-bottom: 4px solid #1a3668;
+              border-bottom: 4px solid ${viewInvoice?.themeColor || themeColor};
               gap: 20px;
             }
             .brand {
@@ -1097,27 +1114,27 @@ export default function InvoicePage() {
             .brand-text h1 {
               font-size: 22px;
               font-weight: 800;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               letter-spacing: 0.5px;
               line-height: 1.15;
             }
             .brand-text .sub {
               font-size: 12px;
               font-weight: 600;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               letter-spacing: 1.5px;
               margin-top: 2px;
             }
             .brand-text .tagline {
               font-size: 10.5px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               letter-spacing: 1px;
               margin-top: 4px;
             }
             .contact-block {
               text-align: right;
               font-size: 11.5px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               line-height: 1.9;
             }
             .contact-block div {
@@ -1132,8 +1149,8 @@ export default function InvoicePage() {
               justify-content: center;
               width: 16px; height: 16px;
               border-radius: 50%;
-              background: #1a3668;
-              color: #1a3668;
+              background: ${viewInvoice?.themeColor || themeColor};
+              color: ${viewInvoice?.themeColor || themeColor};
               font-size: 9px;
               flex-shrink: 0;
             }
@@ -1153,7 +1170,7 @@ export default function InvoicePage() {
             .title-bar span {
               position: relative;
               z-index: 1;
-              background: #1a3668;
+              background: ${viewInvoice?.themeColor || themeColor};
               color: #ffffff;
               padding: 8px 34px;
               border-radius: 20px;
@@ -1174,7 +1191,7 @@ export default function InvoicePage() {
             }
             .section-label {
               display: inline-block;
-              background: #1a3668;
+              background: ${viewInvoice?.themeColor || themeColor};
               color: #ffffff;
               font-size: 11px;
               font-weight: 700;
@@ -1190,20 +1207,20 @@ export default function InvoicePage() {
             }
             .field-row .label {
               width: 100px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               font-weight: 600;
               flex-shrink: 0;
             }
             .field-row .line {
               flex: 1;
-              border-bottom: 1px solid #1a3668;
+              border-bottom: 1px solid ${viewInvoice?.themeColor || themeColor};
               min-height: 16px;
               font-weight: 700;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
             }
             .invoice-info {
               min-width: 250px;
-              border: 1px solid #1a3668;
+              border: 1px solid ${viewInvoice?.themeColor || themeColor};
               border-radius: 8px;
               overflow: hidden;
               height: fit-content;
@@ -1214,17 +1231,17 @@ export default function InvoicePage() {
               justify-content: space-between;
               font-size: 12.5px;
               padding: 8px 14px;
-              border-bottom: 1px solid #1a3668;
+              border-bottom: 1px solid ${viewInvoice?.themeColor || themeColor};
             }
             .invoice-info .row:last-child { border-bottom: none; }
-            .invoice-info .row .k { color: #1a3668; font-weight: 600; }
+            .invoice-info .row .k { color: ${viewInvoice?.themeColor || themeColor}; font-weight: 600; }
             .invoice-info .row .v { color: #ffae00; font-weight: 700; }
             .barcode-block {
               display: flex;
               flex-direction: column;
               align-items: center;
               justify-content: center;
-              border: 1px solid #1a3668;
+              border: 1px solid ${viewInvoice?.themeColor || themeColor};
               border-radius: 8px;
               padding: 10px;
               background: #ffffff;
@@ -1240,7 +1257,7 @@ export default function InvoicePage() {
             }
             .barcode-title {
               font-size: 8px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               text-transform: uppercase;
               letter-spacing: 0.5px;
               font-weight: bold;
@@ -1252,7 +1269,7 @@ export default function InvoicePage() {
               font-size: 12.5px;
             }
             table.items thead th {
-              background: #1a3668;
+              background: ${viewInvoice?.themeColor || themeColor};
               color: #ffffff;
               font-size: 11px;
               letter-spacing: 0.5px;
@@ -1265,15 +1282,15 @@ export default function InvoicePage() {
             table.items thead th:nth-child(5) { width: 15%; text-align: right;}
             table.items tbody td {
               padding: 12px;
-              border-bottom: 1px solid #1a3668;
+              border-bottom: 1px solid ${viewInvoice?.themeColor || themeColor};
               vertical-align: top;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
             }
             table.items tbody td:nth-child(3) { text-align: center; }
             table.items tbody td:nth-child(4) { text-align: right; }
             table.items tbody td:nth-child(5) { text-align: right; font-weight: 600;}
-            .item-title { font-weight: 700; color: #1a3668; }
-            .item-desc { font-size: 11px; color: #1a3668; margin-top: 2px; }
+            .item-title { font-weight: 700; color: ${viewInvoice?.themeColor || themeColor}; }
+            .item-desc { font-size: 11px; color: ${viewInvoice?.themeColor || themeColor}; margin-top: 2px; }
             .bottom-section {
               display: flex;
               justify-content: space-between;
@@ -1289,7 +1306,7 @@ export default function InvoicePage() {
               gap: 14px;
             }
             .box {
-              border: 1px solid #1a3668;
+              border: 1px solid ${viewInvoice?.themeColor || themeColor};
               border-radius: 8px;
               padding: 12px 14px;
               background: #ffffff;
@@ -1297,7 +1314,7 @@ export default function InvoicePage() {
             .box .box-title {
               font-size: 11px;
               font-weight: 700;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               letter-spacing: 0.5px;
               margin-bottom: 8px;
             }
@@ -1305,7 +1322,7 @@ export default function InvoicePage() {
               display: flex;
               gap: 22px;
               font-size: 10.5px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               text-align: center;
             }
             .pay-icons div { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -1313,10 +1330,10 @@ export default function InvoicePage() {
               width: 32px; height: 32px;
               border-radius: 50%;
               background: #ffffff;
-              border: 1px solid #1a3668;
+              border: 1px solid ${viewInvoice?.themeColor || themeColor};
               display: flex; align-items: center; justify-content: center;
               font-size: 14px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               font-weight: bold;
             }
             .bank-details div {
@@ -1325,18 +1342,18 @@ export default function InvoicePage() {
               font-size: 11.5px;
               padding: 3px 0;
             }
-            .bank-details .k { color: #1a3668; }
-            .bank-details .v { font-weight: 600; color: #1a3668; }
+            .bank-details .k { color: ${viewInvoice?.themeColor || themeColor}; }
+            .bank-details .v { font-weight: 600; color: ${viewInvoice?.themeColor || themeColor}; }
             .terms ul {
               list-style: none;
               font-size: 10.5px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               line-height: 1.7;
               padding-left: 0;
             }
             .terms ul li::before {
-              content: "• ";
-              color: #1a3668;
+              content: "â€¢ ";
+              color: ${viewInvoice?.themeColor || themeColor};
               font-weight: 700;
             }
             .right-col {
@@ -1346,7 +1363,7 @@ export default function InvoicePage() {
               gap: 16px;
             }
             .totals {
-              border: 1px solid #1a3668;
+              border: 1px solid ${viewInvoice?.themeColor || themeColor};
               border-radius: 8px;
               overflow: hidden;
             }
@@ -1355,13 +1372,13 @@ export default function InvoicePage() {
               justify-content: space-between;
               padding: 9px 16px;
               font-size: 12.5px;
-              border-bottom: 1px solid #1a3668;
+              border-bottom: 1px solid ${viewInvoice?.themeColor || themeColor};
               background: #ffffff;
             }
-            .totals .row .k { color: #1a3668; font-weight: 600;}
+            .totals .row .k { color: ${viewInvoice?.themeColor || themeColor}; font-weight: 600;}
             .totals .row .v { font-weight: 700; color: #ffffff; }
             .totals .grand {
-              background: #1a3668;
+              background: ${viewInvoice?.themeColor || themeColor};
               color: #ffffff;
               padding: 12px 16px;
               display: flex;
@@ -1372,7 +1389,7 @@ export default function InvoicePage() {
             .totals .grand .v { color: #ffffff; }
             .amount-words {
               font-size: 10.5px;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               text-align: right;
               font-style: italic;
               line-height: 1.4;
@@ -1384,29 +1401,29 @@ export default function InvoicePage() {
             .sign-block .for-text {
               font-size: 11px;
               font-weight: 700;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               margin-bottom: 34px;
             }
             .sign-block .auth {
               font-size: 10.5px;
               font-weight: 700;
               letter-spacing: 0.5px;
-              color: #1a3668;
-              border-top: 1px solid #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
+              border-top: 1px solid ${viewInvoice?.themeColor || themeColor};
               padding-top: 6px;
               margin-top: 2px;
             }
             .footer {
-            border-top:1px solid #1a3668;
+            border-top:1px solid ${viewInvoice?.themeColor || themeColor};
               margin-top: 26px;
               background: #ffffff;
-              color: #1a3668;
+              color: ${viewInvoice?.themeColor || themeColor};
               text-align: center;
               padding: 14px 20px;
               font-size: 11px;
               line-height: 1.6;
             }
-            .footer strong { color: #1a3668; }
+            .footer strong { color: ${viewInvoice?.themeColor || themeColor}; }
 
              @media print {
                @page {
@@ -1481,15 +1498,15 @@ export default function InvoicePage() {
               </div>
               <div className="contact-block">
                 <div>
-                  <span className="icon">📞</span>
+                  <span className="icon">ðŸ“ž</span>
                   <span>{companyPhone}</span>
                 </div>
                 <div>
-                  <span className="icon">✉️</span>
+                  <span className="icon">âœ‰ï¸</span>
                   <span>{companyEmail}</span>
                 </div>
                 <div>
-                  <span className="icon">🌐</span>
+                  <span className="icon">ðŸŒ</span>
                   <span>{companyWebsite}</span>
                 </div>
               </div>
@@ -1579,8 +1596,8 @@ export default function InvoicePage() {
                       <div className="item-desc">{item.desc}</div>
                     </td>
                     <td>{item.sacCode}</td>
-                    <td>{item.qty} &times; ₹{item.rate.toLocaleString()}</td>
-                    <td>₹{(item.qty * item.rate).toLocaleString()}</td>
+                    <td>{item.qty} &times; â‚¹{item.rate.toLocaleString()}</td>
+                    <td>â‚¹{(item.qty * item.rate).toLocaleString()}</td>
                   </tr>
                 ))}
                 {/* Empty spacer row if items are few */}
@@ -1678,17 +1695,17 @@ export default function InvoicePage() {
                 <div className="totals">
                   <div className="row">
                     <span className="k">Taxable Value</span>
-                    <span className="v">₹{totals.totalTaxableValue.toLocaleString()}</span>
+                    <span className="v">â‚¹{totals.totalTaxableValue.toLocaleString()}</span>
                   </div>
                   {totals.totalIgst > 0 && (
                     <div className="row">
                       <span className="k">IGST</span>
-                      <span className="v">₹{totals.totalIgst.toLocaleString()}</span>
+                      <span className="v">â‚¹{totals.totalIgst.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="grand">
                     <span className="k">Grand Total</span>
-                    <span className="v">₹{totals.grandTotal.toLocaleString()}</span>
+                    <span className="v">â‚¹{totals.grandTotal.toLocaleString()}</span>
                   </div>
                 </div>
 

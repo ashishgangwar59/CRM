@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IndianRupee, Settings, Link as LinkIcon, Download, CheckSquare } from "lucide-react";
+import { IndianRupee, Settings, Link as LinkIcon, Download, CheckSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -186,7 +186,14 @@ export default function PayrollDashboardPage() {
     setCurrentPage(1);
   }, [payrolls, employees, monthYear]);
 
-  if (loading || role === null) return <div className="p-8">Loading...</div>;
+  if (loading || role === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <p className="text-zinc-500 font-medium">Loading Payroll Data...</p>
+      </div>
+    );
+  }
 
   const isEmployee = role === "Employee";
   const isEmployeeView = isEmployee || !monthYear;

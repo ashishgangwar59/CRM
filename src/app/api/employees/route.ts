@@ -226,11 +226,13 @@ export async function GET(req: Request) {
         // Admin and Key Admin see all employees
         if (userRole !== "ADMIN" && userRole !== "KEYADMIN") {
           const user = await User.findById(payload.userId).lean();
-          if (user && user.email) {
-            query.email = user.email; // restrict to their own email
-          } else {
-             // Fallback if email is somehow missing, effectively returns empty
-            query.email = "unauthorized-no-email"; 
+          if (!user?.accessibleModules?.includes("All Employees") && !user?.accessibleModules?.includes("Employees")) {
+            if (user && user.email) {
+              query.email = user.email; // restrict to their own email
+            } else {
+               // Fallback if email is somehow missing, effectively returns empty
+              query.email = "unauthorized-no-email"; 
+            }
           }
         }
       } catch (e) {

@@ -5,6 +5,20 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, Mail, CheckCircle, Lock, ArrowLeft, Printer } from "lucide-react";
 
+function numberToWords(num: number): string {
+  if (num === 0) return "Zero";
+  const a = ["", "One ", "Two ", "Three ", "Four ", "Five ", "Six ", "Seven ", "Eight ", "Nine ", "Ten ", "Eleven ", "Twelve ", "Thirteen ", "Fourteen ", "Fifteen ", "Sixteen ", "Seventeen ", "Eighteen ", "Nineteen "];
+  const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const n = ("000000000" + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+  if (!n) return "";
+  let str = "";
+  str += (Number(n[1]) != 0) ? (a[Number(n[1])] || b[n[1][0] as any] + " " + a[n[1][1] as any]) + "Crore " : "";
+  str += (Number(n[2]) != 0) ? (a[Number(n[2])] || b[n[2][0] as any] + " " + a[n[2][1] as any]) + "Lakh " : "";
+  str += (Number(n[3]) != 0) ? (a[Number(n[3])] || b[n[3][0] as any] + " " + a[n[3][1] as any]) + "Thousand " : "";
+  str += (Number(n[4]) != 0) ? (a[Number(n[4])] || b[n[4][0] as any] + " " + a[n[4][1] as any]) + "Hundred " : "";
+  str += (Number(n[5]) != 0) ? ((str != "") ? "and " : "") + (a[Number(n[5])] || b[n[5][0] as any] + " " + a[n[5][1] as any]) : "";
+  return str.trim() + " Only";
+}
 
 export default function SalarySlipPage() {
   const params = useParams();
@@ -373,47 +387,42 @@ export default function SalarySlipPage() {
           </div>
 
           {/* Net Pay Banner */}
-          <div className="bg-white text-black rounded-xl border border-gray-300 p-8 flex justify-between items-center relative overflow-hidden">
-            <div className="absolute right-0 top-0 opacity-10 h-full w-1/2 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+          <div className="bg-white text-zinc-900 rounded-md p-6 flex flex-col md:flex-row justify-between items-center relative overflow-hidden mb-8 shadow-sm border border-zinc-200 print:border-black print:shadow-none">
+            <div className="absolute right-0 top-0 opacity-10 h-full w-1/2 bg-gradient-to-l from-zinc-200 to-transparent pointer-events-none"></div>
             <div>
-              <p className="text-black font-bold uppercase tracking-widest text-sm mb-1">Net Salary Payable</p>
-              <p className="text-xs text-black-200">Amount transferred to employee bank account</p>
+              <p className="font-bold uppercase tracking-widest text-sm mb-1 text-zinc-700">Net Salary Payable</p>
+              <p className="text-xs text-zinc-500">Amount transferred to employee bank account</p>
             </div>
-            <div className="text-5xl font-black tracking-tighter">
-              <span className="text-black mr-2 font-normal">₹</span>
+            <div className="text-5xl font-black tracking-tighter mt-4 md:mt-0 text-zinc-900">
+              <span className="mr-2 font-normal text-zinc-400">₹</span>
               {payroll.netSalary.toLocaleString()}
             </div>
           </div>
 
-          {/* Footer Area: Signature & QR */}
-          <div className="mt-16 flex justify-between items-end">
-            {/* <div className="flex items-center space-x-4">
-              <div className="p-2 bg-white border-2 border-zinc-200 rounded-lg shadow-sm">
-                <QRCodeSVG value={verificationUrl} size={80} level="M" />
-              </div>
-              <div className="text-xs text-zinc-500">
-                <p className="font-bold text-zinc-800 uppercase tracking-wider mb-1">Scan to Verify</p>
-                <p>Scan this QR code to verify the</p>
-                <p>authenticity of this document online.</p>
-                <p className="font-mono mt-1 text-[10px]">{payroll._id}</p>
-              </div>
-            </div> */}
+          <div className="mb-12 border-l-4 border-emerald-500 pl-4 bg-emerald-50 p-3 text-emerald-900 font-semibold text-sm">
+            <span className="uppercase text-xs tracking-wider text-emerald-700 block mb-1">Amount In Words</span>
+            Rupees {numberToWords(Math.round(payroll.netSalary))}
+          </div>
 
-            {/* <div className="text-center">
+          {/* Footer Area: Signature & Info */}
+          <div className="mt-16 flex justify-between items-end border-t border-zinc-200 pt-8">
+            <div className="text-xs text-zinc-500 max-w-xs">
+              <p className="font-bold text-zinc-800 uppercase tracking-wider mb-1">Important Note</p>
+              <p>This is a system generated document and is valid without a physical signature. Any discrepancies should be reported to HR within 7 days.</p>
+              <p className="font-mono mt-2 text-[10px] bg-zinc-100 p-1 rounded inline-block">ID: {payroll._id}</p>
+            </div>
+
+            <div className="text-center pb-4">
               <div className="h-16 flex items-center justify-center mb-2">
-                <span className="font-[cursive] text-4xl text-indigo-950 opacity-80" style={{ fontFamily: 'Brush Script MT, cursive' }}>John Doe</span>
+                <span className="font-[cursive] text-4xl text-indigo-950 opacity-80" style={{ fontFamily: 'Brush Script MT, cursive' }}>Niventra HR</span>
               </div>
-              <div className="border-t-2 border-zinc-300 w-48 pt-2">
+              <div className="border-t-2 border-zinc-300 w-56 pt-2">
                 <p className="font-bold text-zinc-800 text-sm">Authorized Signatory</p>
-                <p className="text-xs text-zinc-500">Director of Human Resources</p>
+                <p className="text-xs text-zinc-500">Human Resources Department</p>
               </div>
-            </div> */}
+            </div>
           </div>
 
-          {/* Watermark / Footer note */}
-          <div className="absolute bottom-8 left-0 w-full text-center text-[10px] text-zinc-400">
-            <p>This is a system generated document and is valid without a physical signature. Generated on {new Date().toLocaleDateString()}</p>
-          </div>
 
         </div>
       </div>

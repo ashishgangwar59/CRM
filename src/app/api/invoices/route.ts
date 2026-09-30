@@ -76,7 +76,8 @@ export async function POST(req: Request) {
       chequeDdNo,
       chequeDdDate,
       drawnOnBank,
-      attachments
+      attachments,
+      themeColor
     } = body;
 
     if (!invoiceNo || !invoiceDate || !billToName || !billToAddress || !items || items.length === 0 || !transactionUtrNo) {
@@ -107,7 +108,8 @@ export async function POST(req: Request) {
       chequeDdNo,
       chequeDdDate,
       drawnOnBank,
-      attachments: attachments || []
+      attachments: attachments || [],
+      themeColor: themeColor || "#1a3668"
     });
 
     return NextResponse.json({ success: true, data: newInvoice, message: "Invoice saved successfully" });
