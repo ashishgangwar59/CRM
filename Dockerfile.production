@@ -35,12 +35,6 @@ FROM node:24.18.0
 WORKDIR /app
 COPY ./package.json .
 COPY ./package-lock.json .
-# Use Docker BuildKit cache to drastically speed up npm install on subsequent builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm install
+RUN npm install
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-# Use Docker BuildKit cache for Next.js so it doesn't re-compile unchanged pages
-RUN --mount=type=cache,target=/app/.next/cache \
-    npm run build
+RUN npm run build
