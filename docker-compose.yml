@@ -4,7 +4,6 @@ services:
   website-dev:
     image: website-image
     stdin_open: true
-    command: npm run start
     env_file:
       - ".env.production"
     ports:

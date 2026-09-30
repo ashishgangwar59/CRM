@@ -193,13 +193,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
 
     // Forcefully calculate custom days to prevent 35 days output
     let rawDays = Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24));
-    if (issueDateObj.getDate() >= 25 && maturityDateObj.getDate() >= 28) {
-        let curr = new Date(issueDateObj.getFullYear(), issueDateObj.getMonth() + 1, 1);
-        let limit = new Date(maturityDateObj.getFullYear(), maturityDateObj.getMonth(), maturityDateObj.getDate());
-        days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    } else {
-        days = Math.max(0, rawDays);
-    }
+                  days = Math.max(0, rawDays);
 
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
 
@@ -209,13 +203,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
     maturityDateObj = new Date(issueDateObj);
     maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
     let rawDays = Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24));
-    if (issueDateObj.getDate() >= 25 && maturityDateObj.getDate() >= 28) {
-        let curr = new Date(issueDateObj.getFullYear(), issueDateObj.getMonth() + 1, 1);
-        let limit = new Date(maturityDateObj.getFullYear(), maturityDateObj.getMonth(), maturityDateObj.getDate());
-        days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    } else {
-        days = Math.max(0, rawDays);
-    }
+                  days = Math.max(0, rawDays);
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
     const monthlyInterest = principalAmount * (growthRate / 100);
     interestAmount = (principalAmount * growthRate * days / (100 * 30));

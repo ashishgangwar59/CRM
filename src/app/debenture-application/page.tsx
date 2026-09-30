@@ -7,6 +7,7 @@ import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check,
 import { QRCodeSVG } from "qrcode.react";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/cropImage";
+import { getDaysBetweenDates } from "@/lib/dateUtils";
 function DebentureFormContent() {
   const searchParams = useSearchParams();
   const refCodeParam = searchParams.get("ref") || "";
@@ -617,6 +618,14 @@ function DebentureFormContent() {
       </div>
     );
   }
+
+  // form
+  console.log(form);
+  const days = getDaysBetweenDates(
+    form?.investmentDate,
+    form?.bondMaturityDate,
+    true
+  );
 
   return (
     <div className="py-6 px-4" style={{ background: "#e7e7e7", fontFamily: "'Segoe UI', Arial, sans-serif" }}>
@@ -1553,7 +1562,7 @@ function DebentureFormContent() {
             const rate = form.monthlyGrowthPercentage || 0;
 
             let totalInterest = 0;
-            let days = 0;
+
             let matDateStr = "—";
 
             if (form.investmentDate && form.bondMaturityDate) {
@@ -1568,14 +1577,6 @@ function DebentureFormContent() {
                 tempDate = new Date(invDate);
                 tempDate.setMonth(tempDate.getMonth() + months);
               }
-              let rawDays = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
-                  if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
-                      let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
-                      let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
-                      days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                  } else {
-                      days = Math.max(0, rawDays);
-                  }
 
               totalInterest = (principal * rate * days / (100 * 30));
 
@@ -1585,14 +1586,6 @@ function DebentureFormContent() {
               const months = 1;
               const matDate = new Date(invDate);
               matDate.setMonth(matDate.getMonth() + months);
-              let rawDays = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
-                  if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
-                      let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
-                      let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
-                      days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                  } else {
-                      days = Math.max(0, rawDays);
-                  }
 
               const monthlyInterest = (principal * rate * days / (100 * 30));
               totalInterest = monthlyInterest * 1;

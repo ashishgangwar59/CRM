@@ -43,7 +43,17 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    const { fullName, email, phone, investmentAmount, monthlyGrowthPercentage, status, investmentDate, bondMaturityMonths, bondMaturityDate } = data;
+    const { fullName, email, phone, investmentAmount, monthlyGrowthPercentage, status, investmentDate, bondMaturityMonths, bondMaturityDate, nomineeName, nomineeRelation, nomineeAge } = data;
+
+    if (!email || !email.trim()) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+    if (!fullName || !fullName.trim()) {
+      return NextResponse.json({ error: "Full Name is required" }, { status: 400 });
+    }
+    if (!phone || !phone.trim()) {
+      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
@@ -82,11 +92,17 @@ export async function POST(req: Request) {
         bankPassbook: "Pending",
       },
       bondAgreement: { accepted: false },
+      nomineeName,
+      nomineeRelation,
+      nomineeAge,
     });
 
     return NextResponse.json({ success: true, data: investor }, { status: 201 });
   } catch (error: any) {
     console.error("Admin Create Investor Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (error.code === 11000) {
+      return NextResponse.json({ error: `Duplicate Entry: ${error.message}` }, { status: 400 });
+    }
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }

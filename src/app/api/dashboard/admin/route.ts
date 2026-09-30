@@ -50,7 +50,7 @@ export async function GET(req: Request) {
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // 1. Employees & Attendance Today
-    let activeEmployees = await Employee.find().lean();
+    let activeEmployees = await Employee.find().select('_id firstName lastName dateOfBirth department profilePhotoUrl employeeCode isFieldEmployee').lean();
     let totalEmployees = activeEmployees.length;
 
     // Fetch today's attendance records by date string or today's createdAt timestamp
@@ -118,23 +118,43 @@ export async function GET(req: Request) {
       else if (p.status !== "Draft") salaryPending += p.netSalary;
     });
 
-    // 3. Sales (Leads & Revenue)
-    const allLeads = await Lead.find().lean();
+    // 3. Sales (Leads & Revenue) Optimized with Aggregation
+    const leadStats = await Lead.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          revenue: { $sum: "$dealValue" }
+        }
+      }
+    ]);
+    
     let openLeads = 0;
     let wonLeads = 0;
     let revenue = 0;
-    allLeads.forEach(l => {
-      if (l.status === "Open") openLeads++;
-      else if (l.status === "Closed Won") {
-        wonLeads++;
-        revenue += (l.dealValue || 0);
+    let totalLeads = 0;
+
+    leadStats.forEach(stat => {
+      totalLeads += stat.count;
+      if (stat._id === "Open") openLeads += stat.count;
+      else if (stat._id === "Closed Won") {
+        wonLeads += stat.count;
+        revenue += (stat.revenue || 0);
       }
     });
 
-    // 3.5 Investors & Total Investment
-    const allInvestors = await Investor.find().lean();
-    const totalInvestors = allInvestors.length;
-    const totalInvestment = allInvestors.reduce((acc, inv) => acc + (inv.investmentAmount || 0), 0);
+    // 3.5 Investors & Total Investment Optimized with Aggregation
+    const investorStats = await Investor.aggregate([
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          total: { $sum: "$investmentAmount" }
+        }
+      }
+    ]);
+    const totalInvestors = investorStats[0]?.count || 0;
+    const totalInvestment = investorStats[0]?.total || 0;
 
     // 4. Charts (Monthly Trends - mocked historical for UI demonstration if real data is sparse)
     // In a real app, this would be an aggregation pipeline grouping by month over the last 6 months.
@@ -157,7 +177,7 @@ export async function GET(req: Request) {
 
     const leadConversion = [
       { name: "Won", value: wonLeads },
-      { name: "Lost", value: allLeads.length - wonLeads - openLeads },
+      { name: "Lost", value: totalLeads - wonLeads - openLeads },
       { name: "Open", value: openLeads }
     ];
 

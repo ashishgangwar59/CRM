@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Save, X, ExternalLink, Eye, Download, FileText } from "lucide-react";
+import { getDaysBetweenDates } from "@/lib/dateUtils";
 
 function numberToIndianWords(num: number): string {
   const integerPart = Math.floor(num);
@@ -190,6 +191,11 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   const handlePrint = () => {
     window.print();
   };
+  const days = getDaysBetweenDates(
+    editableForm?.investmentDate,
+    editableForm?.bondMaturityDate,
+    true
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 print:static print:bg-transparent print:p-0 print:block print:backdrop-blur-none">
@@ -748,7 +754,6 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 const rate = Number(editableForm.monthlyGrowthPercentage) || 0;
 
                 let totalInterest = 0;
-                let days = 0;
                 let matDateStr = "—";
 
                 if (editableForm.investmentDate && editableForm.bondMaturityDate) {
@@ -764,17 +769,6 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                     tempDate.setMonth(tempDate.getMonth() + months);
                   }
 
-                  // const remainingDays = Math.max(0, Math.round((matDate.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24) + 1));
-                  // const totalMonthsFraction = months + (remainingDays / 30);
-
-                  let rawDays = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
-                  if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
-                      let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
-                      let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
-                      days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                  } else {
-                      days = Math.max(0, rawDays);
-                  }
                   totalInterest = (principal * rate * days / (100 * 30));
                   matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -783,14 +777,6 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                   const months = 1;
                   const matDate = new Date(invDate);
                   matDate.setMonth(matDate.getMonth() + months);
-                  let rawDays = Math.round((matDate.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
-                  if (invDate.getDate() >= 25 && matDate.getDate() >= 28) {
-                      let curr = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 1);
-                      let limit = new Date(matDate.getFullYear(), matDate.getMonth(), matDate.getDate());
-                      days = Math.round((limit.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                  } else {
-                      days = Math.max(0, rawDays);
-                  }
 
                   const monthlyInterest = (principal * rate * days / (100 * 30));
                   totalInterest = monthlyInterest;
