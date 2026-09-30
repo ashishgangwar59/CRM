@@ -300,6 +300,8 @@ export default function AdminInvestorsPage() {
     }
   };
 
+
+
   const handleDeleteInvestor = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to permanently delete investor "${name}"? This action cannot be undone.`)) {
       return;
@@ -386,8 +388,13 @@ export default function AdminInvestorsPage() {
           matDateObj.setMonth(matDateObj.getMonth() + maturityPeriodMonths);
         }
         const matDate = matDateObj.toLocaleDateString("en-GB");
+        const days = getDaysBetweenDates(
+          inv?.investmentDate,
+          inv?.bondMaturityDate,
+          true
+        );
 
-        const days = Math.max(0, Math.round((matDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+        // const days = Math.max(0, Math.round((matDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
         const totalInterest = (amount * rate * days) / (100 * 30);
         const maturityAmount = Math.round(amount + totalInterest);
 
@@ -412,12 +419,6 @@ export default function AdminInvestorsPage() {
     }
   };
 
-
-  const days = getDaysBetweenDates(
-    editForm?.investmentDate,
-    editForm?.bondMaturityDate,
-    true
-  );
 
 
 
@@ -795,7 +796,11 @@ export default function AdminInvestorsPage() {
                 const principal = Number(selectedInvestor.investmentAmount) || 0;
                 const rate = Number(selectedInvestor.monthlyGrowthPercentage);
                 // const months = Number(selectedInvestor.bondMaturityMonths);
-
+                const days = getDaysBetweenDates(
+                  selectedInvestor?.investmentDate,
+                  selectedInvestor?.bondMaturityDate,
+                  true
+                );
                 let issueDateObj: Date;
                 if (selectedInvestor.verifiedAt) {
                   issueDateObj = new Date(selectedInvestor.verifiedAt);
@@ -1346,7 +1351,7 @@ export default function AdminInvestorsPage() {
                 {editForm.investmentDate && editForm.bondMaturityDate && (
                   <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
                     <span>Total Duration:</span>
-                    <span className="font-bold">{days} Days</span>
+                    <span className="font-bold">{getDaysBetweenDates(editForm.investmentDate, editForm.bondMaturityDate, true)} Days</span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
@@ -1368,7 +1373,11 @@ export default function AdminInvestorsPage() {
                 {(() => {
                   const principal = Number(editForm.investmentAmount) || 0;
                   const rate = Number(editForm.monthlyGrowthPercentage) || 0;
-
+                  const days = getDaysBetweenDates(
+                    editForm?.investmentDate,
+                    editForm?.bondMaturityDate,
+                    true
+                  );
                   let totalInterest = 0;
                   // let days = 0;
                   let matDateStr = "—";

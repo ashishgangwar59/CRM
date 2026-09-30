@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, ShieldCheck, X, Printer } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
+import { getDaysBetweenDates } from "@/lib/dateUtils";
 
 const bondStyles = `
         @page { size: A4 landscape; margin: 0; }
@@ -135,6 +136,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   const principalAmount = investor.investmentAmount || investor.debentureForm?.totalApplicationAmount || 0;
   const growthRate = investor.monthlyGrowthPercentage || 2;
   let issueDateObj: Date;
+
   if (investor.verifiedAt) {
     issueDateObj = new Date(investor.verifiedAt);
   } else if (investor.investmentDate) {
@@ -150,7 +152,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   const issueDateStr = issueDateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   let maturityDateObj: Date;
-  let days = 0;
+  // let days = 0;
   let periodText = "";
 
   const getFormattedPeriod = (startDate: Date, endDate: Date, totalDays: number) => {
@@ -177,6 +179,11 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
       return `${totalDays} Days`;
     }
   };
+  let days = getDaysBetweenDates(
+    investor.investmentDate,
+    investor.bondMaturityDate,
+    true
+  );
 
   let interestAmount = 0;
   if (investor.bondMaturityDate) {
@@ -191,9 +198,6 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
       tempDate.setMonth(tempDate.getMonth() + months);
     }
 
-    // Forcefully calculate custom days to prevent 35 days output
-    let rawDays = Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24));
-                  days = Math.max(0, rawDays);
 
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
 
@@ -202,8 +206,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
   } else {
     maturityDateObj = new Date(issueDateObj);
     maturityDateObj.setMonth(maturityDateObj.getMonth() + maturityPeriodMonths);
-    let rawDays = Math.round((maturityDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24));
-                  days = Math.max(0, rawDays);
+
     periodText = getFormattedPeriod(issueDateObj, maturityDateObj, days);
     const monthlyInterest = principalAmount * (growthRate / 100);
     interestAmount = (principalAmount * growthRate * days / (100 * 30));
