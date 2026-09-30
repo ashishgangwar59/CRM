@@ -143,16 +143,8 @@ export async function POST(req: Request) {
 
     // Check if user already exists with this email
     const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
-      // If user exists, they MUST be logged in and matching this user, UNLESS they are an admin/employee acting on behalf
-      const isAdminOrEmployee = ["ADMIN", "KEY_ADMIN", "SUPER_ADMIN", "MANAGER", "EMPLOYEE"].includes(authenticatedUserRole || "");
-      if (!isAdminOrEmployee && (!authenticatedUserId || existingUser._id.toString() !== authenticatedUserId.toString())) {
-        return NextResponse.json({ error: "This Email is already registered. Please login to add a new investment." }, { status: 400 });
-      }
-      if (existingUser.role !== "INVESTOR") {
-        return NextResponse.json({ error: "Only Investor accounts can submit additional applications." }, { status: 400 });
-      }
-    }
+    // If user exists, we will simply link the new investment to their existing account.
+    // Removed strict checks to allow multiple submissions and employees using the same email.
 
     // Resolve referral employee if provided
     let referralEmployeeId = undefined;
@@ -188,84 +180,100 @@ export async function POST(req: Request) {
       userId = user._id;
     }
 
-    const investorCode = await getNextInvestorCode();
-    const applicationNo = data.applicationNo && data.applicationNo.trim() ? data.applicationNo.trim() : await getNextApplicationNo();
+    let investorCode = await getNextInvestorCode();
+    let applicationNo = data.applicationNo && data.applicationNo.trim() ? data.applicationNo.trim() : await getNextApplicationNo();
 
     const applicationDateStr = declDay && declMonth && declYear
       ? `${declYear}-${declMonth.padStart(2, '0')}-${declDay.padStart(2, '0')}`
       : new Date().toISOString().split("T")[0];
 
-    const investor = await Investor.create({
-      investorCode,
-      userId,
-      fullName: fullName.trim(),
-      email: cleanEmail,
-      phone: cleanPhone,
-      investmentAmount: calculatedTotal,
-      monthlyGrowthPercentage: Number(monthlyGrowthPercentage) || 1.333,
-      status: "Pending",
-      investmentDate: investmentDate || applicationDateStr,
-      bondMaturityDate: bondMaturityDate || "",
-      referralEmployeeId,
-      referralEmployeeName,
-      debentureForm: {
-        applicationNo,
-        applicationDate: applicationDateStr,
-        fatherSpouseName: fatherSpouseName ? fatherSpouseName.trim() : "",
-        dob: dob || "",
-        address: address ? address.trim() : "",
-        city: city ? city.trim() : "",
-        state: state ? state.trim() : "",
-        pinCode: pinCode ? pinCode.trim() : "",
-        occupation: occupation ? occupation.trim() : "",
-        typeOfDebenture: typeOfDebenture || (typeSecured ? "Secured" : "Debenture"),
-        typeSecured: Boolean(typeSecured),
-        typeNonConvertible: Boolean(typeNonConvertible),
-        typeRedeemable: Boolean(typeRedeemable),
-        faceValue: Number(faceValue || 1000),
-        noOfDebentures: Number(noOfDebentures || 1),
-        numDebenturesWords: numDebenturesWords || "",
-        totalApplicationAmount: calculatedTotal,
-        totalApplicationAmountWords: totalApplicationAmountWords || "",
-        modeOfPayment: modeOfPayment || "NEFT/RTGS",
-        paymentModeOther: paymentModeOther || "",
-        bankName: bankName || "",
-        accountNo: accountNo || "",
-        ifscCode: ifscCode || "",
-        chequeDdNo: chequeDdNo || "",
-        chequeDdDate: chequeDdDate || "",
-        transactionUtrNo: transactionUtrNo || "",
-        drawnOnBank: drawnOnBank || "",
-        place: place || "",
-        passportPhotoUrl: passportPhotoUrl || "",
-        nomineeName: nomineeName ? nomineeName.trim() : "",
-        nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
-        nomineeAge: nomineeAge ? nomineeAge.trim() : "",
-        nomineeDocUrl: nomineeDocUrl || "",
-      },
-      nomineeName: nomineeName ? nomineeName.trim() : "",
-      nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
-      nomineeAge: nomineeAge ? nomineeAge.trim() : "",
-      nomineeDocUrl: nomineeDocUrl || "",
-      kycDocs: {
-        panNumber: panNumber ? panNumber.toUpperCase().trim() : "",
-        aadharNumber: aadharNumber ? aadharNumber.trim() : "",
-        panDocUrl: panDocUrl || "",
-        aadharDocUrl: aadharDocUrl || "",
-        bankPassbookUrl: bankPassbookUrl || "",
-        bankName: bankName || "",
-        accountNumber: accountNo || "",
-        ifscCode: ifscCode || "",
-      },
-      docVerifications: {
-        aadhar: aadharDocUrl ? "Pending" : "Pending",
-        pan: panDocUrl ? "Pending" : "Pending",
-        marksheet10th: "Pending",
-        marksheet12th: "Pending",
-        bankPassbook: bankPassbookUrl ? "Pending" : "Pending",
-      },
-      bondAgreement: { accepted: true, signatureText: fullName },
-    });
+    let investor;
+    let retries = 5;
+
+    while (retries > 0) {
+      try {
+        investor = await Investor.create({
+          investorCode,
+          userId,
+          fullName: fullName.trim(),
+          email: cleanEmail,
+          phone: cleanPhone,
+          investmentAmount: calculatedTotal,
+          monthlyGrowthPercentage: Number(monthlyGrowthPercentage) || 1.333,
+          status: "Pending",
+          investmentDate: investmentDate || applicationDateStr,
+          bondMaturityDate: bondMaturityDate || "",
+          referralEmployeeId,
+          referralEmployeeName,
+          debentureForm: {
+            applicationNo,
+            applicationDate: applicationDateStr,
+            fatherSpouseName: fatherSpouseName ? fatherSpouseName.trim() : "",
+            dob: dob || "",
+            address: address ? address.trim() : "",
+            city: city ? city.trim() : "",
+            state: state ? state.trim() : "",
+            pinCode: pinCode ? pinCode.trim() : "",
+            occupation: occupation ? occupation.trim() : "",
+            typeOfDebenture: typeOfDebenture || (typeSecured ? "Secured" : "Debenture"),
+            typeSecured: Boolean(typeSecured),
+            typeNonConvertible: Boolean(typeNonConvertible),
+            typeRedeemable: Boolean(typeRedeemable),
+            faceValue: Number(faceValue || 1000),
+            noOfDebentures: Number(noOfDebentures || 1),
+            numDebenturesWords: numDebenturesWords || "",
+            totalApplicationAmount: calculatedTotal,
+            totalApplicationAmountWords: totalApplicationAmountWords || "",
+            modeOfPayment: modeOfPayment || "NEFT/RTGS",
+            paymentModeOther: paymentModeOther || "",
+            bankName: bankName || "",
+            accountNo: accountNo || "",
+            ifscCode: ifscCode || "",
+            chequeDdNo: chequeDdNo || "",
+            chequeDdDate: chequeDdDate || "",
+            transactionUtrNo: transactionUtrNo || "",
+            drawnOnBank: drawnOnBank || "",
+            place: place || "",
+            passportPhotoUrl: passportPhotoUrl || "",
+            nomineeName: nomineeName ? nomineeName.trim() : "",
+            nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
+            nomineeAge: nomineeAge ? nomineeAge.trim() : "",
+            nomineeDocUrl: nomineeDocUrl || "",
+          },
+          nomineeName: nomineeName ? nomineeName.trim() : "",
+          nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
+          nomineeAge: nomineeAge ? nomineeAge.trim() : "",
+          nomineeDocUrl: nomineeDocUrl || "",
+          kycDocs: {
+            panNumber: panNumber ? panNumber.toUpperCase().trim() : "",
+            aadharNumber: aadharNumber ? aadharNumber.trim() : "",
+            panDocUrl: panDocUrl || "",
+            aadharDocUrl: aadharDocUrl || "",
+            bankPassbookUrl: bankPassbookUrl || "",
+            bankName: bankName || "",
+            accountNumber: accountNo || "",
+            ifscCode: ifscCode || "",
+          },
+          docVerifications: {
+            aadhar: aadharDocUrl ? "Pending" : "Pending",
+            pan: panDocUrl ? "Pending" : "Pending",
+            marksheet10th: "Pending",
+            marksheet12th: "Pending",
+            bankPassbook: bankPassbookUrl ? "Pending" : "Pending",
+          },
+          bondAgreement: { accepted: true, signatureText: fullName },
+        });
+        break; // Successfully inserted
+      } catch (error: any) {
+        if (error.code === 11000 && retries > 1) {
+          retries--;
+          investorCode = await getNextInvestorCode();
+          applicationNo = await getNextApplicationNo(); // Ensure a fresh one is generated
+          continue;
+        }
+        throw error; // Throw the error if out of retries or not a duplicate key
+      }
+    }
 
     return NextResponse.json(
       {
@@ -278,7 +286,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Debenture Application API Error:", error);
     if (error.code === 11000) {
-      return NextResponse.json({ error: `This Email or Application Number is already registered. DB_ERROR: ${error.message}` }, { status: 400 });
+      return NextResponse.json({ error: `A duplicate record already exists. DB_ERROR: ${error.message}` }, { status: 400 });
     }
     return NextResponse.json({ error: error.message || "Failed to submit application." }, { status: 400 });
   }

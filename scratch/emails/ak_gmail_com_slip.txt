@@ -6,7 +6,7 @@ Your CRM employee portal account has been created successfully!
 
 Here are your login credentials:
 
-Login Link: http://localhost:3000/login
+Login Link: https://crm.niventracapitaladvisory.com/login
 Username (Email): ak@gmail.com
 Password: Employee@123
 

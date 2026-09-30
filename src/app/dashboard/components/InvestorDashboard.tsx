@@ -242,7 +242,7 @@ export function InvestorDashboard() {
               key={inv._id}
               variant={investor._id === inv._id ? "default" : "outline"}
               onClick={() => loadInvestmentData(inv)}
-              className={investor._id === inv._id ? "bg-[#134086] text-white" : "border-[#134086] text-white"}
+              className={investor._id === inv._id ? "bg-[#134086] text-white" : "border-[#134086] text-dark"}
             >
               Investment {idx + 1} ({inv.investorCode})
             </Button>
@@ -251,7 +251,7 @@ export function InvestorDashboard() {
         <Button
           variant="outline"
           onClick={() => setShowQuickModal(true)}
-          className="border-amber-500 text-white "
+          className="border-amber-500 text-dark "
         >
           + Add New Investment
         </Button>

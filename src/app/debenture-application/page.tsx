@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload, RotateCcw, RotateCw } from "lucide-react";
+import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload, RotateCcw, RotateCw, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/cropImage";
@@ -16,6 +16,7 @@ function DebentureFormContent() {
   const [submitted, setSubmitted] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{ message: string, type: "success" | "error" } | null>(null);
 
   const [form, setForm] = useState({
     applicationNo: "",
@@ -535,15 +536,24 @@ function DebentureFormContent() {
 
       const json = await res.json();
       if (json.success) {
-        setSubmitted(json.data);
+        setToastMsg({ message: "Application submitted successfully!", type: "success" });
+        setTimeout(() => {
+          setSubmitted(json.data);
+          setLoading(false);
+        }, 1500); // Let the user see the toast before showing the success screen
       } else {
+        setToastMsg({ message: json.error || "Failed to submit Debenture Application.", type: "error" });
         setError(json.error || "Failed to submit Debenture Application.");
+        setTimeout(() => setToastMsg(null), 3000);
+        setLoading(false);
       }
     } catch (e) {
+      setToastMsg({ message: "An error occurred while submitting the form.", type: "error" });
       setError("An error occurred while submitting the form.");
-    } finally {
+      setTimeout(() => setToastMsg(null), 3000);
       setLoading(false);
     }
+    // Loading is set to false inside try/catch blocks because of the setTimeout delay.
   };
 
   if (unauthorized) {
@@ -628,7 +638,32 @@ function DebentureFormContent() {
   );
 
   return (
-    <div className="py-6 px-4" style={{ background: "#e7e7e7", fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+    <div className="py-6 px-4 relative" style={{ background: "#e7e7e7", fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+
+      {/* Full Page Loader Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center">
+            <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mb-4" />
+            <p className="font-bold text-lg text-zinc-900">Submitting Application...</p>
+            <p className="text-sm text-zinc-500 mt-2">Please do not close this window.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-6 right-6 z-[110] animate-in slide-in-from-top-5">
+          <div className={`px-5 py-4 rounded-lg shadow-2xl flex items-center gap-3 border ${toastMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+            {toastMsg.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <X className="w-6 h-6" />}
+            <span className="font-bold">{toastMsg.message}</span>
+            <button onClick={() => setToastMsg(null)} className="ml-4 p-1 rounded-full hover:bg-black/5 opacity-70 hover:opacity-100 transition-all">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <style jsx global>{`
         :root {
           --navy: #0c1c3d;

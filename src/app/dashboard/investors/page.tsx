@@ -169,7 +169,9 @@ export default function AdminInvestorsPage() {
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
-        if (Array.isArray(json.data)) {
+        if (json.allInvestments) {
+          setInvestors(json.allInvestments);
+        } else if (Array.isArray(json.data)) {
           setInvestors(json.data);
         } else if (json.data) {
           setInvestors([json.data]);
@@ -181,7 +183,7 @@ export default function AdminInvestorsPage() {
           setTotalItems(json.pagination.total || 0);
         } else {
           setTotalPages(1);
-          setTotalItems(Array.isArray(json.data) ? json.data.length : (json.data ? 1 : 0));
+          setTotalItems(json.allInvestments ? json.allInvestments.length : (Array.isArray(json.data) ? json.data.length : (json.data ? 1 : 0)));
         }
       }
     } catch (e) {
