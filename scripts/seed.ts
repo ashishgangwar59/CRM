@@ -4,9 +4,10 @@ import dotenv from "dotenv";
 
 import fs from "fs";
 
-// if (fs.existsSync(".env.local")) dotenv.config({ path: ".env.local" });
-// else if (fs.existsSync(".env.development")) dotenv.config({ path: ".env.development" });
-// else dotenv.config();
+if (fs.existsSync(".env.local")) dotenv.config({ path: ".env.local" });
+else if (fs.existsSync(".env.development")) dotenv.config({ path: ".env.development" });
+else if (fs.existsSync(".env.production")) dotenv.config({ path: ".env.production" });
+else dotenv.config();
 
 const MONGODB_URI: any = process.env.MONGODB_URI;
 

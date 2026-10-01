@@ -395,13 +395,29 @@ function DebentureFormContent() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    
+
+    // Check file type
+    const validTypes = ["application/pdf", "image/jpeg", "image/png"];
+    if (!validTypes.includes(file.type)) {
+      setToastMsg({ message: "Only PDF, JPG, and PNG files are allowed", type: "error" });
+      e.target.value = '';
+      return;
+    }
+
+    // Check file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      setToastMsg({ message: "File size must be less than 2MB", type: "error" });
+      e.target.value = '';
+      return;
+    }
+
     // Store file in pending state
     setPendingFiles(prev => ({ ...prev, [field]: file }));
-    
+
     // Set local preview URL or filename so UI shows it's attached
     const localUrl = URL.createObjectURL(file);
     setForm((prev) => ({ ...prev, [field]: localUrl }));
+    setToastMsg({ message: "Successfully uploaded", type: "success" });
   };
 
   const handleCropUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "signatureUrl" | "passportPhotoUrl") => {
@@ -439,13 +455,20 @@ function DebentureFormContent() {
       }
 
       const file = new File([croppedBlob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
-      
+
+      // Check file size (1MB max)
+      if (file.size > 1 * 1024 * 1024) {
+        setToastMsg({ message: "Cropped image size must be less than 1MB. Try zooming in to reduce size.", type: "error" });
+        return;
+      }
+
       // Store cropped file in pending state
       setPendingFiles(prev => ({ ...prev, [cropTargetField]: file }));
-      
+
       // Create local URL for preview
       const localUrl = URL.createObjectURL(file);
       setForm((prev) => ({ ...prev, [cropTargetField]: localUrl }));
+      setToastMsg({ message: "Successfully cropped and uploaded", type: "success" });
 
       // Draw onto canvas if signature
       if (cropTargetField === "signatureUrl") {
@@ -516,6 +539,21 @@ function DebentureFormContent() {
       return;
     }
 
+    if (!form.totalApplicationAmount || Number(form.totalApplicationAmount) <= 0) {
+      setError("Total Application Amount is required and must be greater than 0.");
+      return;
+    }
+
+    if (!form.investmentDate || !form.investmentDate.trim()) {
+      setError("Please select the Investment Date.");
+      return;
+    }
+
+    if (!form.bondMaturityDate || !form.bondMaturityDate.trim()) {
+      setError("Please select the Bond Maturity Date.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -526,7 +564,7 @@ function DebentureFormContent() {
         formData.append("file", file);
         const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
         const uploadJson = await uploadRes.json();
-        
+
         if (uploadJson.success) {
           finalForm = { ...finalForm, [field]: uploadJson.url };
         } else {

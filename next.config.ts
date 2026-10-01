@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   // Limit CPU workers so it doesn't overwhelm a 2GB RAM server
   experimental: {
     cpus: 1,
+    serverActions: {
+      bodySizeLimit: '100mb',
+    },
   },
   async rewrites() {
     return [

@@ -15,7 +15,7 @@ const RichEditor = ({ defaultValue, onChange }: { defaultValue: string, onChange
         <span className="text-zinc-400">|</span>
         <span>Supports standard keyboard shortcuts (Ctrl+B, Ctrl+I)</span>
       </div>
-      <div 
+      <div
         className="w-full text-sm p-4 min-h-[200px] max-h-[400px] overflow-y-auto focus:outline-none prose prose-sm max-w-none"
         contentEditable
         suppressContentEditableWarning
@@ -37,7 +37,8 @@ export default function SettingsPage() {
   const [backupFile, setBackupFile] = useState<File | null>(null);
   const [restoreMode, setRestoreMode] = useState<"merge" | "overwrite">("merge");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [backupLoading, setBackupLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
   const [backupMsg, setBackupMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [backupStats, setBackupStats] = useState<{ collections: number; files: number; sizeMb: string } | null>(null);
 
@@ -151,27 +152,18 @@ export default function SettingsPage() {
       setBackupMsg({ type: "error", text: "Please select at least one option (Database or KYC Documents) to export" });
       return;
     }
-    setBackupLoading(true);
+    setExportLoading(true);
     setBackupMsg(null);
     try {
-      const res = await fetch(`/api/settings/backup?includeDb=${exportDb}&includeFiles=${exportFiles}`);
-      if (!res.ok) throw new Error("Failed to export backup");
+      window.location.href = `/api/settings/backup?includeDb=${exportDb}&includeFiles=${exportFiles}`;
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const dateStr = new Date().toISOString().split("T")[0];
-      a.download = `crm_backup_${dateStr}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      setBackupMsg({ type: "success", text: "Database backup downloaded successfully!" });
+      setTimeout(() => {
+        setExportLoading(false);
+        setBackupMsg({ type: "success", text: "Database backup download started!" });
+      }, 1500);
     } catch (e: any) {
       setBackupMsg({ type: "error", text: e.message || "Failed to download backup" });
-    } finally {
-      setBackupLoading(false);
+      setExportLoading(false);
     }
   };
 
@@ -190,52 +182,44 @@ export default function SettingsPage() {
       return;
     }
 
-    setBackupLoading(true);
+    setImportLoading(true);
     setBackupMsg(null);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const text = event.target?.result as string;
-          const parsedData = JSON.parse(text);
+      const arrayBuffer = await backupFile.arrayBuffer();
+      const res = await fetch(`/api/settings/backup/import?mode=${restoreMode}&restoreDb=${importDb}&restoreFiles=${importFiles}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/octet-stream"
+        },
+        body: arrayBuffer
+      });
 
-          const res = await fetch("/api/settings/backup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mode: restoreMode, data: parsedData, restoreDb: importDb, restoreFiles: importFiles })
-          });
-          const json = await res.json();
-          if (json.success) {
-            setBackupMsg({ type: "success", text: "Backup restored successfully!" });
-            setBackupFile(null);
-            setConfirmDelete(false);
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setBackupMsg({ type: "success", text: "Backup restored successfully!" });
+        setBackupFile(null);
+        setConfirmDelete(false);
 
-            // Refresh stats
-            fetch("/api/settings/backup/status")
-              .then(res => res.json())
-              .then(data => {
-                if (data.success) {
-                  setBackupStats({
-                    collections: data.collections,
-                    files: data.files,
-                    sizeMb: data.sizeMb
-                  });
-                }
-              }).catch(console.error);
-          } else {
-            setBackupMsg({ type: "error", text: json.error || "Failed to restore backup" });
-          }
-        } catch (err: any) {
-          setBackupMsg({ type: "error", text: "Invalid JSON format in backup file" });
-        } finally {
-          setBackupLoading(false);
-        }
-      };
-      reader.readAsText(backupFile);
+        // Refresh stats
+        fetch("/api/settings/backup/status")
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              setBackupStats({
+                collections: data.collections,
+                files: data.files,
+                sizeMb: data.sizeMb
+              });
+            }
+          }).catch(console.error);
+      } else {
+        setBackupMsg({ type: "error", text: json.error || "Failed to restore backup" });
+      }
     } catch (err: any) {
-      setBackupMsg({ type: "error", text: "Failed to read backup file" });
-      setBackupLoading(false);
+      setBackupMsg({ type: "error", text: err.message || "Failed to restore backup" });
+    } finally {
+      setImportLoading(false);
     }
   };
 
@@ -266,8 +250,8 @@ export default function SettingsPage() {
                 key={tab.name}
                 onClick={() => setActiveTab(tab.name)}
                 className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md ${activeTab === tab.name
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                   }`}
               >
                 <tab.icon className={`flex-shrink-0 -ml-1 mr-3 h-5 w-5 ${activeTab === tab.name ? "text-indigo-500" : "text-zinc-400"}`} />
@@ -596,23 +580,23 @@ export default function SettingsPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Page 1 (Offer Details)</Label>
-                        <RichEditor 
-                          defaultValue={settings.letterTemplates?.offerLetter?.page1 || ""} 
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page1: v } } })} 
+                        <RichEditor
+                          defaultValue={settings.letterTemplates?.offerLetter?.page1 || ""}
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page1: v } } })}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Page 2 (Confidentiality & Compliance)</Label>
-                        <RichEditor 
-                          defaultValue={settings.letterTemplates?.offerLetter?.page2 || ""} 
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page2: v } } })} 
+                        <RichEditor
+                          defaultValue={settings.letterTemplates?.offerLetter?.page2 || ""}
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page2: v } } })}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Page 3 (Intellectual Property & Separation)</Label>
-                        <RichEditor 
-                          defaultValue={settings.letterTemplates?.offerLetter?.page3 || ""} 
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page3: v } } })} 
+                        <RichEditor
+                          defaultValue={settings.letterTemplates?.offerLetter?.page3 || ""}
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page3: v } } })}
                         />
                       </div>
                     </div>
@@ -623,9 +607,9 @@ export default function SettingsPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Main Content</Label>
-                        <RichEditor 
-                          defaultValue={settings.letterTemplates?.joiningLetter?.page1 || ""} 
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, joiningLetter: { ...settings.letterTemplates?.joiningLetter, page1: v } } })} 
+                        <RichEditor
+                          defaultValue={settings.letterTemplates?.joiningLetter?.page1 || ""}
+                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, joiningLetter: { ...settings.letterTemplates?.joiningLetter, page1: v } } })}
                         />
                       </div>
                     </div>
@@ -657,8 +641,8 @@ export default function SettingsPage() {
                             <td className="px-4 py-3 font-medium text-zinc-900">{u.email}</td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${u.role === "KEY_ADMIN" ? "bg-purple-100 text-purple-700" :
-                                  u.role === "ADMIN" ? "bg-indigo-100 text-indigo-700" :
-                                    "bg-zinc-100 text-zinc-700"
+                                u.role === "ADMIN" ? "bg-indigo-100 text-indigo-700" :
+                                  "bg-zinc-100 text-zinc-700"
                                 }`}>
                                 {u.role}
                               </span>
@@ -691,8 +675,8 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                   {backupMsg && (
                     <div className={`p-4 rounded-lg border text-sm font-bold flex items-center gap-2 ${backupMsg.type === "success"
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                        : "bg-rose-50 border-rose-200 text-rose-800"
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-rose-50 border-rose-200 text-rose-800"
                       }`}>
                       {backupMsg.type === "success" ? "✔" : "⚠"} {backupMsg.text}
                     </div>
@@ -722,7 +706,7 @@ export default function SettingsPage() {
                       <Download className="w-5 h-5 text-indigo-600" /> Export CRM Data
                     </h3>
                     <p className="text-xs text-zinc-500 mb-4">
-                      Choose which components to package into your JSON backup file.
+                      Choose which components to package into your ZIP backup file.
                     </p>
 
                     <div className="space-y-3 mb-4 bg-white dark:bg-zinc-950 p-4 rounded-lg border border-zinc-150 dark:border-zinc-850">
@@ -748,10 +732,10 @@ export default function SettingsPage() {
 
                     <Button
                       onClick={handleExportBackup}
-                      disabled={backupLoading || (!exportDb && !exportFiles)}
+                      disabled={exportLoading || (!exportDb && !exportFiles)}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
                     >
-                      {backupLoading ? "Generating..." : "Download Backup (.json)"}
+                      {exportLoading ? "Generating..." : "Download Backup (.zip)"}
                     </Button>
                   </div>
 
@@ -761,15 +745,15 @@ export default function SettingsPage() {
                       <Upload className="w-5 h-5 text-amber-600" /> Import & Restore Backup
                     </h3>
                     <p className="text-xs text-zinc-500 mb-4">
-                      Upload a previously exported JSON backup and select which components to restore.
+                      Upload a previously exported ZIP backup and select which components to restore.
                     </p>
 
                     <form onSubmit={handleImportBackup} className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Select Backup File (.json)</Label>
+                        <Label>Select Backup File (.zip or .json)</Label>
                         <Input
                           type="file"
-                          accept=".json"
+                          accept=".json,.zip"
                           required
                           onChange={(e) => setBackupFile(e.target.files?.[0] || null)}
                           className="bg-white border-zinc-300 dark:border-zinc-700 cursor-pointer"
@@ -831,13 +815,13 @@ export default function SettingsPage() {
 
                       <Button
                         type="submit"
-                        disabled={backupLoading || !backupFile || (!importDb && !importFiles) || (restoreMode === "overwrite" && !confirmDelete)}
+                        disabled={importLoading || !backupFile || (!importDb && !importFiles) || (restoreMode === "overwrite" && !confirmDelete)}
                         className={`font-bold ${restoreMode === "overwrite"
-                            ? "bg-rose-600 hover:bg-rose-700 text-white"
-                            : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                          ? "bg-rose-600 hover:bg-rose-700 text-white"
+                          : "bg-indigo-600 hover:bg-indigo-700 text-white"
                           }`}
                       >
-                        {backupLoading ? "Restoring..." : "Run Database Import"}
+                        {importLoading ? "Restoring..." : "Run Database Import"}
                       </Button>
                     </form>
                   </div>

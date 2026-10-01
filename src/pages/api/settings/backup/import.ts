@@ -1,12 +1,9 @@
-import { NextResponse } from "next/server";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { connectToDatabase } from "@/lib/db";
-import { verifyAccessToken } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
-
-export const maxDuration = 60; // 60 seconds
-export const dynamic = "force-dynamic";
+import jwt from "jsonwebtoken";
 
 import { Announcement } from "@/lib/models/Announcement";
 import { Attendance } from "@/lib/models/Attendance";
@@ -72,128 +69,74 @@ const collections: Record<string, any> = {
   WalletTransaction
 };
 
-// Check if requester is ADMIN or KEY_ADMIN
-async function checkAuth(req: Request) {
-  const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+export const config = {
+  api: {
+    bodyParser: false, // Bypass Next.js 10MB limit!
+    sizeLimit: '100mb',
+  },
+};
+
+function checkAuth(req: NextApiRequest) {
+  const token = req.cookies?.accessToken;
   if (!token) return null;
 
-  const payload = verifyAccessToken(token);
-  if (!payload || !payload.userId) return null;
-
-  const role = (payload.role || "").toUpperCase().replace("_", "");
-  if (role !== "KEYADMIN" && role !== "ADMIN") return null;
-
-  return payload;
-}
-
-export async function GET(req: Request) {
   try {
-    await connectToDatabase();
-    const authorized = await checkAuth(req);
-    if (!authorized) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any;
+    if (!payload || !payload.userId) return null;
 
-    const { searchParams } = new URL(req.url);
-    const includeDb = searchParams.get("includeDb") !== "false";
-    const includeFiles = searchParams.get("includeFiles") !== "false";
+    const role = (payload.role || "").toUpperCase().replace("_", "");
+    if (role !== "KEYADMIN" && role !== "ADMIN") return null;
 
-    const zip = new AdmZip();
-
-    if (includeDb) {
-      const backupData: Record<string, any[]> = {};
-      for (const [name, model] of Object.entries(collections)) {
-        backupData[name] = await model.find({}).lean();
-      }
-      zip.addFile("database.json", Buffer.from(JSON.stringify(backupData)));
-    }
-
-    if (includeFiles) {
-      // Export uploaded files as a local folder in the zip
-      const uploadDir = path.join(process.cwd(), "public/uploads");
-      if (fs.existsSync(uploadDir)) {
-        zip.addLocalFolder(uploadDir, "uploads");
-      }
-    }
-
-    const zipBuffer = zip.toBuffer();
-    
-    // Verify zip
-    try {
-      new AdmZip(zipBuffer);
-      console.log("Zip successfully verified before export. Size:", zipBuffer.length);
-    } catch (e: any) {
-      console.error("Generated zip is corrupted!", e.message);
-      return NextResponse.json({ error: "Failed to generate a valid ZIP file on the server" }, { status: 500 });
-    }
-
-    const dateStr = new Date().toISOString().split("T")[0];
-    const filename = `crm_backup_${dateStr}_${Date.now()}.zip`;
-    const backupsDir = path.join(process.cwd(), "backups");
-    
-    if (!fs.existsSync(backupsDir)) {
-      fs.mkdirSync(backupsDir, { recursive: true });
-    }
-    
-    const tempPath = path.join(backupsDir, filename);
-    fs.writeFileSync(tempPath, zipBuffer);
-
-    // Redirect to the dedicated download API
-    const redirectUrl = new URL(`/api/settings/backup/download?file=${filename}`, req.url);
-    return NextResponse.redirect(redirectUrl);
-  } catch (error) {
-    console.error("Backup Export Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return payload;
+  } catch (e) {
+    return null;
   }
 }
 
-export async function POST(req: Request) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") return res.status(405).end();
+
+  const authorized = checkAuth(req);
+  if (!authorized) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
   try {
     await connectToDatabase();
-    const authorized = await checkAuth(req);
-    if (!authorized) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
 
-    const { searchParams } = new URL(req.url);
-    const mode = searchParams.get("mode") || "merge";
-    const restoreDb = searchParams.get("restoreDb") === "true";
-    const restoreFiles = searchParams.get("restoreFiles") === "true";
-
-    const chunks = [];
-    let totalLength = 0;
+    // Stream the raw upload directly to disk to bypass NextJS 10MB memory limits
+    const tempZipPath = path.join(process.cwd(), "public", `upload_${Date.now()}.zip`);
+    const writeStream = fs.createWriteStream(tempZipPath);
     
-    if (req.body) {
-      const reader = req.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) {
-          chunks.push(value);
-          totalLength += value.length;
-        }
-      }
+    await new Promise((resolve, reject) => {
+      req.pipe(writeStream);
+      writeStream.on("close", resolve);
+      writeStream.on("error", reject);
+      req.on("error", reject);
+    });
+
+    const buffer = fs.readFileSync(tempZipPath);
+    // Clean up temp file immediately after reading
+    fs.unlinkSync(tempZipPath);
+
+    if (buffer.length === 0) {
+      return res.status(400).json({ error: "No backup file uploaded" });
     }
 
-    if (totalLength === 0) {
-      return NextResponse.json({ error: "No backup file uploaded" }, { status: 400 });
-    }
-
-    const buffer = Buffer.concat(chunks);
+    const mode = req.query.mode as string || "merge";
+    const restoreDb = req.query.restoreDb === "true";
+    const restoreFiles = req.query.restoreFiles === "true";
 
     let zip: AdmZip | null = null;
     let isZip = false;
 
-    console.log("Received backup file. ByteLength:", totalLength);
+    console.log("Pages Router received file. ByteLength:", buffer.length);
 
     try {
       zip = new AdmZip(buffer);
       isZip = true;
-      console.log("Successfully parsed as ZIP file");
     } catch (e: any) {
-      // Not a valid zip file, maybe it's a JSON file
       isZip = false;
-      console.error("AdmZip failed to parse buffer:", e.message || e);
     }
 
     let dbData: any = null;
@@ -204,24 +147,19 @@ export async function POST(req: Request) {
           try {
             dbData = JSON.parse(zip.readAsText(dbEntry));
           } catch (e) {
-            return NextResponse.json({ error: "database.json inside zip is corrupted" }, { status: 400 });
+            return res.status(400).json({ error: "database.json inside zip is corrupted" });
           }
         } else {
-          return NextResponse.json({ error: "No database.json found inside zip" }, { status: 400 });
+          return res.status(400).json({ error: "No database.json found inside zip" });
         }
       } else {
         try {
           dbData = JSON.parse(buffer.toString("utf8"));
-          console.log("Successfully parsed as JSON file");
         } catch (e: any) {
-          console.error("JSON.parse failed on buffer:", e.message || e);
-          
-          const size = buffer.length;
           const hex = buffer.subarray(0, 50).toString('hex');
-          
-          return NextResponse.json({ 
-            error: `Uploaded file is invalid. Size: ${size} bytes. Header: ${hex}` 
-          }, { status: 400 });
+          return res.status(400).json({
+            error: `Uploaded file is invalid. Size: ${buffer.length} bytes. Header: ${hex}`
+          });
         }
       }
 
@@ -272,7 +210,6 @@ export async function POST(req: Request) {
       }
 
       if (isZip && zip) {
-        // Check for uploads/ folder in zip
         const zipEntries = zip.getEntries();
         for (const entry of zipEntries) {
           if (entry.entryName.startsWith("uploads/") && !entry.isDirectory) {
@@ -281,7 +218,6 @@ export async function POST(req: Request) {
         }
       }
 
-      // Compatibility for older backups that had `_uploaded_files` as base64 inside JSON
       if (dbData && Array.isArray(dbData._uploaded_files) && dbData._uploaded_files.length > 0) {
         for (const f of dbData._uploaded_files) {
           const filePath = path.join(uploadDir, f.filename);
@@ -290,13 +226,12 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: "Database and files restored successfully" });
+    return res.status(200).json({ success: true, message: "Database and files restored successfully" });
   } catch (error: any) {
     console.error("Backup Restore Error:", error);
     if (error.code === 11000 || (error.name === 'BulkWriteError' && error.code === 11000) || (error.message && error.message.includes('E11000'))) {
-      console.warn("Ignored some duplicate key errors during restore");
-      return NextResponse.json({ success: true, message: "Restored with some duplicate keys skipped" });
+      return res.status(200).json({ success: true, message: "Restored with some duplicate keys skipped" });
     }
-    return NextResponse.json({ error: error.message || "Internal server error", stack: error.stack }, { status: 500 });
+    return res.status(500).json({ error: error.stack || error.message || "Internal server error" });
   }
 }
