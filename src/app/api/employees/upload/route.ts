@@ -13,11 +13,8 @@ async function saveFileOrFallback(buffer: Buffer, extension: string, originalNam
     await writeFile(filePath, buffer);
     return { success: true, url: `/uploads/${fileName}`, name: originalName || fileName };
   } catch (fsErr: any) {
-    console.warn("Local disk write failed (server filesystem restriction), falling back to Data URL:", fsErr?.message || fsErr);
-    // Fallback to Data URL for serverless/read-only hosting environments
-    const safeMime = mimeType || (extension === ".pdf" ? "application/pdf" : extension === ".png" ? "image/png" : "image/jpeg");
-    const base64Url = `data:${safeMime};base64,${buffer.toString("base64")}`;
-    return { success: true, url: base64Url, name: originalName || fileName };
+    console.warn("Local disk write failed. Returning error instead of Base64 fallback.", fsErr?.message || fsErr);
+    throw new Error(`Failed to write file to directory: ${fsErr?.message}`);
   }
 }
 
