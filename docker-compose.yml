@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: crm
-      MONGO_INITDB_ROOT_PASSWORD: "crm@123"
+      MONGO_INITDB_ROOT_PASSWORD: "crm%40123"
       MONGO_INITDB_DATABASE: crm
     volumes:
       - mongo_data:/data/db

@@ -8,7 +8,7 @@ import fs from "fs";
 // else if (fs.existsSync(".env.development")) dotenv.config({ path: ".env.development" });
 // else dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crm";
+const MONGODB_URI: any = process.env.MONGODB_URI;
 
 // Define simplified User schema just for seeding
 const UserSchema = new mongoose.Schema(
