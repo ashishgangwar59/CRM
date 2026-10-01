@@ -1,6 +1,26 @@
+# version: "3"
+
+# services:
+#   website-dev:
+#     image: website-image
+#     stdin_open: true
+#     env_file:
+#       - ".env.production"
+#     ports:
+#       - "11000:3000"
+#     networks:
+#       - website-dev
+#     restart: "unless-stopped"
+
+
+# networks:
+#   website-dev:
+#     driver: bridge
+
 version: "3"
 
 services:
+
   website-dev:
     image: website-image
     stdin_open: true
@@ -10,9 +30,28 @@ services:
       - "11000:3000"
     networks:
       - website-dev
-    restart: "unless-stopped"
+    depends_on:
+      - mongo
+    restart: unless-stopped
 
+  mongo:
+    image: mongo:8
+    container_name: website-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: crm
+      MONGO_INITDB_ROOT_PASSWORD: "crm@123"
+      MONGO_INITDB_DATABASE: crm
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - website-dev
+    ports:
+      - "11001:27017"
 
 networks:
   website-dev:
     driver: bridge
+
+volumes:
+  mongo_data:
