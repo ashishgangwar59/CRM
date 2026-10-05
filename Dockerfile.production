@@ -33,6 +33,11 @@ RUN chown nextjs:nodejs .next
 # Copy public directory for static assets
 COPY --from=builder /app/public ./public
 
+# Ensure upload and backup directories exist with proper ownership and permissions for nextjs user
+RUN mkdir -p /app/public/uploads /app/backups && \
+    chown -R nextjs:nodejs /app/public /app/backups && \
+    chmod -R 777 /app/public/uploads /app/backups
+
 # Automatically leverage output traces to reduce image size (~150MB instead of 1.5GB)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
