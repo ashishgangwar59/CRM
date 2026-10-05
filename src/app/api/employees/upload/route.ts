@@ -11,7 +11,7 @@ async function saveFileOrFallback(buffer: Buffer, extension: string, originalNam
     await mkdir(uploadsDir, { recursive: true });
     const filePath = path.join(uploadsDir, fileName);
     await writeFile(filePath, buffer);
-    return { success: true, url: `/uploads/${fileName}`, name: originalName || fileName };
+    return { success: true, url: `/api/uploads/${fileName}`, name: originalName || fileName };
   } catch (fsErr: any) {
     console.warn("Local disk write failed. Returning error instead of Base64 fallback.", fsErr?.message || fsErr);
     throw new Error(`Failed to write file to directory: ${fsErr?.message}`);

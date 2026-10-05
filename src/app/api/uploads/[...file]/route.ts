@@ -36,6 +36,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": contentType,
+        "Content-Disposition": `inline; filename="${path.basename(filename)}"`,
         "Cache-Control": "public, max-age=86400, must-revalidate",
       },
     });

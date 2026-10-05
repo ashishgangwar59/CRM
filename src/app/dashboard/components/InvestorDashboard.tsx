@@ -540,9 +540,20 @@ export function InvestorDashboard() {
                         <p className="text-[11px] text-rose-500">PDF files only (Max 15MB limit)</p>
                       </div>
                     ) : fileUrl ? (
-                      <div className="flex items-center gap-2 text-[#00a65a] font-bold text-xs">
-                        <CheckCircle2 className="w-5 h-5 shrink-0" />
-                        <span>PDF Document Attached (Max 15MB)</span>
+                      <div className="flex flex-col items-center gap-1 text-[#00a65a] font-bold text-xs">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 shrink-0" />
+                          <span>PDF Document Attached</span>
+                        </div>
+                        <a 
+                          href={fileUrl} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          onClick={(e) => e.stopPropagation()} 
+                          className="text-xs text-indigo-600 underline font-semibold mt-1 hover:text-indigo-800"
+                        >
+                          👁️ View Document
+                        </a>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center text-center space-y-1">

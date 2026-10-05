@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const filePath = path.join(uploadDir, uniqueFilename);
     await writeFile(filePath, buffer);
 
-    const fileUrl = `/uploads/${uniqueFilename}`;
+    const fileUrl = `/api/uploads/${uniqueFilename}`;
 
     const attachment = await LeadAttachment.create({
       leadId: id,
