@@ -260,7 +260,7 @@ export default function CertificatesPage() {
             .title-ornament b{color:var(--gold);font-size:28px;font-family:serif;transform:scaleX(2)}
             .presented{width:100%;text-align:center;font-size:24px;font-weight:700;letter-spacing:2.3px;margin-top:10px;}
             .recipient{width:486px;text-align:center;margin-top:20px;}
-            .recipient-name{font-size:69px;line-height:70px;white-space:nowrap;outline:0;}
+            .recipient-name{font-size:35px;line-height:70px;white-space:nowrap;outline:0;}
             .recipient-line{height:1px;background:var(--gold);margin-top:8px;width:100%}
             .description{width:90%;max-width:1100px;text-align:center;font-size:17px;line-height:1.35;white-space:pre-wrap;margin-top:20px;}
             .description p{margin:0 0 11px}
@@ -282,9 +282,9 @@ export default function CertificatesPage() {
             .date-box{position:absolute;left:114px;bottom:130px;width:300px;font-size:19px;text-align:left;}
             .date-box>div{display:flex;align-items:end;height:38px}
             .date-box label{white-space:nowrap}
-            .date-box span{display:block;flex:1;height:26px;border-bottom:1px solid var(--navy);margin-left:8px;outline:0;text-align:center;}
+            .date-box span{display:block;flex:1;height:26px;border-bottom:1px solid var(--navy);margin-left:8px;outline:0;text-align:center;    font-family: monospace;    font-size: 15px;}
             .signatory{position:absolute;right:114px;bottom:170px;width:280px;text-align:center}
-            .signature{height:85px;font-family:"Great Vibes","Brush Script MT",cursive;font-size:59px;color:var(--navy);outline:0;transform:rotate(-8deg);transform-origin:bottom center;display:flex;align-items:end;justify-content:center;padding-bottom:10px;}
+            .signature{height:85px;font-family:"Great Vibes","Brush Script MT",cursive;font-size:25px;color:var(--navy);outline:0;;transform-origin:bottom center;display:flex;align-items:end;justify-content:center;padding-bottom:10px;}
             .sig-line{height:1px;background:var(--gold);margin-bottom:12px}
             .signatory b{font-size:17px}
             .signatory small{display:block;margin-top:4px;font-size:13px}

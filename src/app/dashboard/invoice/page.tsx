@@ -658,7 +658,7 @@ export default function InvoicePage() {
                             <td className="px-4 py-3">{inv.invoiceDate}</td>
                             <td className="px-4 py-3">{inv.billToName}</td>
                             <td className="px-4 py-3 text-right font-bold text-zinc-900 dark:text-zinc-100">
-                              â‚¹{total.toLocaleString()}
+                              Rs.{total.toLocaleString()}
                             </td>
                             <td className="px-4 py-3 text-center flex items-center justify-center gap-2 cursor-pointer">
                               <Button
@@ -912,7 +912,7 @@ export default function InvoicePage() {
                           <Input type="number" min="1" value={item.qty} onChange={(e) => handleUpdateItem(item.id, "qty", Number(e.target.value))} className="h-9 text-sm text-center" />
                         </div>
                         <div>
-                          <Label className="text-xs text-zinc-500 mb-1 block">Rate (â‚¹)</Label>
+                          <Label className="text-xs text-zinc-500 mb-1 block">Rate (Rs.)</Label>
                           <Input type="number" min="0" value={item.rate} onChange={(e) => handleUpdateItem(item.id, "rate", Number(e.target.value))} className="h-9 text-sm font-semibold text-right" />
                         </div>
                         <div>
@@ -923,7 +923,7 @@ export default function InvoicePage() {
                           <div className="flex-1">
                             <Label className="text-xs text-zinc-400 mb-1 block">Taxable Value</Label>
                             <div className="h-9 px-3 flex items-center rounded-md bg-zinc-100 dark:bg-zinc-800 text-sm font-bold text-zinc-700 dark:text-zinc-300">
-                              â‚¹{(item.qty * item.rate).toLocaleString()}
+                              Rs.{(item.qty * item.rate).toLocaleString()}
                             </div>
                           </div>
                           <Button
@@ -1149,9 +1149,8 @@ export default function InvoicePage() {
               justify-content: center;
               width: 16px; height: 16px;
               border-radius: 50%;
-              background: ${viewInvoice?.themeColor || themeColor};
               color: ${viewInvoice?.themeColor || themeColor};
-              font-size: 9px;
+              font-size: 12px;
               flex-shrink: 0;
             }
             .title-bar {
@@ -1345,14 +1344,15 @@ export default function InvoicePage() {
             .bank-details .k { color: ${viewInvoice?.themeColor || themeColor}; }
             .bank-details .v { font-weight: 600; color: ${viewInvoice?.themeColor || themeColor}; }
             .terms ul {
-              list-style: none;
+             list-style-type: decimal;
               font-size: 10.5px;
+              margin-left: 10px;
               color: ${viewInvoice?.themeColor || themeColor};
               line-height: 1.7;
               padding-left: 0;
             }
             .terms ul li::before {
-              content: "â€¢ ";
+              content: "";
               color: ${viewInvoice?.themeColor || themeColor};
               font-weight: 700;
             }
@@ -1498,17 +1498,18 @@ export default function InvoicePage() {
               </div>
               <div className="contact-block">
                 <div>
-                  <span className="icon">ðŸ“ž</span>
+                  <span className="icon">📞</span>
                   <span>{companyPhone}</span>
                 </div>
                 <div>
-                  <span className="icon">âœ‰ï¸</span>
+                  <span className="icon">✉️</span>
                   <span>{companyEmail}</span>
                 </div>
                 <div>
-                  <span className="icon">ðŸŒ</span>
+                  <span className="icon">🌐</span>
                   <span>{companyWebsite}</span>
                 </div>
+
               </div>
             </div>
 
@@ -1596,8 +1597,8 @@ export default function InvoicePage() {
                       <div className="item-desc">{item.desc}</div>
                     </td>
                     <td>{item.sacCode}</td>
-                    <td>{item.qty} &times; â‚¹{item.rate.toLocaleString()}</td>
-                    <td>â‚¹{(item.qty * item.rate).toLocaleString()}</td>
+                    <td>{item.qty} &times; Rs.{item.rate.toLocaleString()}</td>
+                    <td>Rs.{(item.qty * item.rate).toLocaleString()}</td>
                   </tr>
                 ))}
                 {/* Empty spacer row if items are few */}
@@ -1695,17 +1696,17 @@ export default function InvoicePage() {
                 <div className="totals">
                   <div className="row">
                     <span className="k">Taxable Value</span>
-                    <span className="v">â‚¹{totals.totalTaxableValue.toLocaleString()}</span>
+                    <span className="v">Rs.{totals.totalTaxableValue.toLocaleString()}</span>
                   </div>
                   {totals.totalIgst > 0 && (
                     <div className="row">
                       <span className="k">IGST</span>
-                      <span className="v">â‚¹{totals.totalIgst.toLocaleString()}</span>
+                      <span className="v">Rs.{totals.totalIgst.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="grand">
                     <span className="k">Grand Total</span>
-                    <span className="v">â‚¹{totals.grandTotal.toLocaleString()}</span>
+                    <span className="v">Rs.{totals.grandTotal.toLocaleString()}</span>
                   </div>
                 </div>
 
