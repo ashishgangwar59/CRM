@@ -4,10 +4,16 @@ import path from "path";
 
 export async function GET(
   req: Request,
-  { params }: { params: { file: string[] } }
+  props: { params: Promise<{ file: string[] }> | { file: string[] } }
 ) {
   try {
-    const filename = params.file.join("/");
+    const rawParams = await props.params;
+    const fileArray = rawParams?.file || [];
+    const filename = Array.isArray(fileArray) ? fileArray.join("/") : String(fileArray);
+
+    if (!filename) {
+      return new NextResponse("Bad Request: File param missing", { status: 400 });
+    }
 
     // Safety check to prevent directory traversal
     if (filename.includes("..") || filename.includes("\0")) {
