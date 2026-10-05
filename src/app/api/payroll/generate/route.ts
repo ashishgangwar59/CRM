@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const payload = verifyAccessToken(token);
 
-    const { employeeId, monthYear, paidDays: customPaidDays, manualIncentive = 0 } = await req.json();
+    const { employeeId, monthYear, paidDays: customPaidDays, manualIncentive = 0, eligibleRevenue = 0 } = await req.json();
 
     // 1. Fetch LOP (Loss of Pay) Leaves for this month
     const leaves = await Leave.find({
@@ -41,18 +41,17 @@ export async function POST(req: Request) {
        lopDays = standardDaysInMonth - customPaidDays;
     }
 
-    // 2. Call the new Automated Payroll Engine!
-    // For now, eligibleRevenue and teamGeneratedRevenue are 0 until we link them to Lead/Invoice module
+    // 2. Call the Automated Payroll Engine with month's eligible revenue
     const result = await calculatePayrollForEmployee(
       employeeId, 
       monthYear, 
-      0, // eligibleRevenue
+      Number(eligibleRevenue) || 0, // eligibleRevenue (monthly sales volume)
       0, // teamGeneratedRevenue
       standardDaysInMonth, 
       lopDays, 
       true, 
       payload.userId,
-      manualIncentive
+      Number(manualIncentive) || 0
     );
 
     // 3. Save Payroll Draft

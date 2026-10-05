@@ -18,6 +18,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState<string>("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebarCollapsed");
+    if (saved !== null) {
+      setIsCollapsed(saved === "true");
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isCollapsed;
+    setIsCollapsed(newVal);
+    localStorage.setItem("sidebarCollapsed", String(newVal));
+  };
   const [hoveredTooltip, setHoveredTooltip] = useState<{ name: string, top: number, left: number } | null>(null);
   const { theme, toggleTheme } = useTheme();
   
@@ -165,7 +178,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside className={cn("relative border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300 shrink-0 print:hidden", isCollapsed ? "w-16" : "w-64")}>
         {/* Toggle Button */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleSidebar}
           className="absolute -right-3 top-6 z-30 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-md transition-all hover:scale-110"
         >
           {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}

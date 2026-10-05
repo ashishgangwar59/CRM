@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Employee } from "@/lib/models/Employee";
 import { User } from "@/lib/models/User";
+import { Team } from "@/lib/models/Team";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -103,7 +104,19 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     // Also delete user account
-    await User.findOneAndDelete({ email: employee.email });
+    const deletedUser = await User.findOneAndDelete({ email: employee.email });
+
+    // Clean up team references
+    if (deletedUser) {
+      await Team.updateMany(
+        { members: deletedUser._id },
+        { $pull: { members: deletedUser._id } }
+      );
+      await Team.updateMany(
+        { owner: deletedUser._id },
+        { $unset: { owner: 1 } }
+      );
+    }
 
     return NextResponse.json({ success: true, message: "Employee deleted successfully" });
   } catch (error) {

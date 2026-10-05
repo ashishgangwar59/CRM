@@ -32,6 +32,9 @@ services:
       - website-dev
     depends_on:
       - mongo
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./backups:/app/backups
     restart: unless-stopped
 
   mongo:

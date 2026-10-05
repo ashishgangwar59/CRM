@@ -45,6 +45,7 @@ export default function EmployeesPage() {
   const [status, setStatus] = useState("");
   const [activeTab, setActiveTab] = useState<"list" | "hierarchy" >("list");
   const [allEmployees, setAllEmployees] = useState([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [loadingHierarchy, setLoadingHierarchy] = useState(false);
   const [role, setRole] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +63,7 @@ export default function EmployeesPage() {
   const [bulkModules, setBulkModules] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<"add" | "remove">("add");
   const [savingBulk, setSavingBulk] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -100,6 +102,18 @@ export default function EmployeesPage() {
     }
   };
 
+  const fetchTeamsForHierarchy = async () => {
+    try {
+      const res = await fetch(`/api/teams`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success) {
+        setTeams(data.data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, status, limit]);
@@ -125,8 +139,9 @@ export default function EmployeesPage() {
   }, [debouncedSearch, status, page, limit]);
 
   useEffect(() => {
-    if (activeTab === "hierarchy" && allEmployees.length === 0) {
-      fetchAllEmployeesForHierarchy();
+    if (activeTab === "hierarchy") {
+      if (allEmployees.length === 0) fetchAllEmployeesForHierarchy();
+      if (teams.length === 0) fetchTeamsForHierarchy();
     }
   }, [activeTab]);
 
@@ -165,6 +180,7 @@ export default function EmployeesPage() {
     if (!window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
       return;
     }
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -176,45 +192,49 @@ export default function EmployeesPage() {
     } catch (e) {
       console.error(e);
       alert("Error deleting employee");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Group employees by department for hierarchy view
-  const departments: { [key: string]: any[] } = {};
-  allEmployees.forEach((emp: any) => {
-    const dept = emp.department || "Unassigned";
-    if (!departments[dept]) {
-      departments[dept] = [];
+  // Build Team Hierarchy
+  const teamRoots = teams.map((team: any) => {
+    const ownerEmail = team.owner?.email;
+    const ownerEmp = ownerEmail ? allEmployees.find((e: any) => e.email === ownerEmail) : null;
+    
+    const memberEmails = (team.members || []).map((m: any) => m.email);
+    const memberEmps = allEmployees.filter((e: any) => memberEmails.includes(e.email)).map((emp: any) => ({...emp, children: []}));
+    
+    if (ownerEmp) {
+      return {
+        ...ownerEmp,
+        teamName: team.name,
+        teamDepartment: team.department,
+        children: memberEmps
+      };
+    } else {
+      return {
+        _id: `team-${team._id}`,
+        firstName: team.name,
+        lastName: "(Team - No Owner)",
+        designation: team.department || "Unassigned",
+        employeeCode: "-",
+        children: memberEmps,
+        isMock: true,
+        teamName: team.name,
+        teamDepartment: team.department
+      };
     }
-    departments[dept].push(emp);
   });
-
-  const buildTree = (deptEmployees: any[]) => {
-    const map = new Map();
-    deptEmployees.forEach(emp => {
-      map.set(emp._id, { ...emp, children: [] });
-    });
-
-    const roots: any[] = [];
-    map.forEach(node => {
-      if (node.reportingManager) {
-        const parentId = typeof node.reportingManager === 'object' ? node.reportingManager._id || node.reportingManager : node.reportingManager;
-        const parent = map.get(parentId.toString());
-        if (parent) {
-          parent.children.push(node);
-        } else {
-          roots.push(node);
-        }
-      } else {
-        roots.push(node);
-      }
-    });
-
-    return roots;
-  };
 
   return (
     <div className="space-y-6">
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-white font-medium">Processing...</p>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Employees</h1>
@@ -274,7 +294,7 @@ export default function EmployeesPage() {
             }`}
           >
             <Layers className="h-4 w-4" />
-            <span>Department Hierarchy</span>
+            <span>Team Hierarchy</span>
           </button>
         )}
       </div>
@@ -477,30 +497,25 @@ export default function EmployeesPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {Object.entries(departments).map(([deptName, deptEmployees]) => {
-            const roots = buildTree(deptEmployees);
-            
-            return (
-              <Card key={deptName} className="border-l-4 border-l-indigo-600">
-                <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/50 py-4 border-b border-zinc-100 dark:border-zinc-800">
-                  <CardTitle className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
-                    {deptName} <span className="text-sm font-normal text-zinc-500 ml-2">({deptEmployees.length} members)</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {roots.length === 0 ? (
-                    <p className="text-sm text-zinc-400 italic">No structure defined.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {roots.map(root => (
-                        <TreeNode key={root._id} node={root} router={router} />
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+          {teamRoots.map(root => (
+            <Card key={root._id} className="border-l-4 border-l-indigo-600">
+              <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/50 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                <CardTitle className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
+                  {root.teamName} <span className="text-sm font-normal text-zinc-500 ml-2">({root.teamDepartment || "General"})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <TreeNode node={root} router={router} />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {teamRoots.length === 0 && (
+            <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-zinc-500">No teams found to display hierarchy.</p>
+            </div>
+          )}
         </div>
       )}
 

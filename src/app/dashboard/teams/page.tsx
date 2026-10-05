@@ -12,6 +12,7 @@ export default function TeamsPage() {
   const [role, setRole] = useState("");
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [departments, setDepartments] = useState<string[]>([]);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -64,7 +65,7 @@ export default function TeamsPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("/api/users");
+      const res = await fetch("/api/users", { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         setUsers(data.data);
@@ -77,7 +78,7 @@ export default function TeamsPage() {
   const fetchTeams = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/teams");
+      const res = await fetch("/api/teams", { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         setTeams(data.data);
@@ -91,6 +92,7 @@ export default function TeamsPage() {
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/teams", {
         method: "POST",
@@ -106,12 +108,15 @@ export default function TeamsPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTeam) return;
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/teams/${selectedTeam._id}`, {
         method: "PUT",
@@ -127,11 +132,14 @@ export default function TeamsPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteTeam = async (id: string) => {
     if (!confirm("Are you sure you want to delete this team?")) return;
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/teams/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -142,6 +150,8 @@ export default function TeamsPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,6 +164,27 @@ export default function TeamsPage() {
   };
 
   const isAdmin = role === "ADMIN" || role === "KEY_ADMIN";
+
+  const getUserName = (email: string) => {
+    const user = users.find(u => u.email === email);
+    if (user && user.firstName) {
+      return user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName;
+    }
+    return email ? email.split("@")[0] : "Unknown";
+  };
+
+  // Compute users already assigned to other teams
+  const alreadyAssignedIds = new Set<string>();
+  teams.forEach(team => {
+    if (!selectedTeam || team._id !== selectedTeam._id) {
+      team.members?.forEach((m: any) => {
+        alreadyAssignedIds.add(m._id || m);
+      });
+      if (team.owner) {
+        alreadyAssignedIds.add(team.owner._id || team.owner);
+      }
+    }
+  });
 
   return (
     <div className="space-y-6 pb-24">
@@ -168,11 +199,18 @@ export default function TeamsPage() {
             setFormOwner("");
             setFormMembers([]);
             setShowAddModal(true);
-          }}>
+          }} disabled={isSubmitting}>
             <Plus className="w-4 h-4 mr-2" /> Create Team
           </Button>
         )}
       </div>
+
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-white font-medium">Processing...</p>
+        </div>
+      )}
 
       <div className="flex border-b border-zinc-200 dark:border-zinc-800 gap-4 mb-6">
         <button
@@ -210,13 +248,13 @@ export default function TeamsPage() {
                       {team.department || "Unassigned"}
                     </span>
                     <div className="flex items-center text-xs text-indigo-600 font-medium">
-                      <Shield className="w-3 h-3 mr-1" /> Owner: {team.owner?.email || "Unknown"}
+                      <Shield className="w-3 h-3 mr-1" /> Owner: {team.owner?.email ? getUserName(team.owner.email) : "Unknown"}
                     </div>
                   </div>
                 </div>
                 {(isAdmin || team.owner?._id === userId) && (
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => {
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={isSubmitting} onClick={() => {
                       setSelectedTeam(team);
                       setFormName(team.name);
                       setFormDepartment(team.department || "");
@@ -227,7 +265,7 @@ export default function TeamsPage() {
                       <Edit2 className="w-4 h-4 text-zinc-500" />
                     </Button>
                     {isAdmin && (
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDeleteTeam(team._id)}>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={isSubmitting} onClick={() => handleDeleteTeam(team._id)}>
                         <Trash2 className="w-4 h-4 text-rose-500" />
                       </Button>
                     )}
@@ -240,7 +278,7 @@ export default function TeamsPage() {
                   {team.members?.map((member: any) => (
                     <div key={member._id} className="flex items-center gap-2 text-sm bg-zinc-50 dark:bg-zinc-800 p-2 rounded">
                       <UserIcon className="w-4 h-4 text-zinc-400" />
-                      {member.email}
+                      {getUserName(member.email)}
                     </div>
                   ))}
                   {(!team.members || team.members.length === 0) && (
@@ -276,7 +314,7 @@ export default function TeamsPage() {
                       <h3 className="font-bold text-md">{team.name}</h3>
                       {(isAdmin || team.owner?._id === userId) && (
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled={isSubmitting} onClick={() => {
                             setSelectedTeam(team);
                             setFormName(team.name);
                             setFormDepartment(team.department || "");
@@ -287,7 +325,7 @@ export default function TeamsPage() {
                             <Edit2 className="w-3 h-3 text-zinc-500" />
                           </Button>
                           {isAdmin && (
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleDeleteTeam(team._id)}>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" disabled={isSubmitting} onClick={() => handleDeleteTeam(team._id)}>
                               <Trash2 className="w-3 h-3 text-rose-500" />
                             </Button>
                           )}
@@ -295,14 +333,14 @@ export default function TeamsPage() {
                       )}
                     </div>
                     <div className="flex items-center text-xs text-indigo-600 font-medium mb-3">
-                      <Shield className="w-3 h-3 mr-1" /> Owner: {team.owner?.email || "Unknown"}
+                      <Shield className="w-3 h-3 mr-1" /> Owner: {team.owner?.email ? getUserName(team.owner.email) : "Unknown"}
                     </div>
                     <p className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">Members ({team.members?.length || 0})</p>
                     <div className="space-y-1.5">
                       {team.members?.map((member: any) => (
                         <div key={member._id} className="flex items-center gap-2 text-xs bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded text-zinc-600 dark:text-zinc-300">
                           <UserIcon className="w-3 h-3 text-zinc-400" />
-                          {member.email}
+                          {getUserName(member.email)}
                         </div>
                       ))}
                       {(!team.members || team.members.length === 0) && (
@@ -354,8 +392,15 @@ export default function TeamsPage() {
                   disabled={!isAdmin}
                 >
                   <option value="" disabled>Select Owner</option>
-                  {users.filter(u => u.role !== "ADMIN" && u.role !== "KEY_ADMIN").map(u => (
-                    <option key={u._id} value={u._id}>{u.email} ({u.role})</option>
+                  {users.filter(u => 
+                    u.role !== "ADMIN" && 
+                    u.role !== "KEY_ADMIN" && 
+                    u.role !== "INVESTOR" &&
+                    !alreadyAssignedIds.has(u._id)
+                  ).map(u => (
+                    <option key={u._id} value={u._id}>
+                      {u.firstName ? (u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName) : (u.email ? u.email.split("@")[0] : "Unknown")} ({u.role})
+                    </option>
                   ))}
                 </select>
               </div>
@@ -363,22 +408,29 @@ export default function TeamsPage() {
               <div className="space-y-2">
                 <Label>Assign Members</Label>
                 <div className="border rounded-md max-h-48 overflow-y-auto p-2 space-y-1 bg-zinc-50 dark:bg-zinc-950">
-                  {users.filter(u => u._id !== formOwner && u.role !== "ADMIN" && u.role !== "KEY_ADMIN").map(u => (
+                  {users.filter(u =>
+                    u._id !== formOwner &&
+                    u.role !== "ADMIN" &&
+                    u.role !== "KEY_ADMIN" &&
+                    u.role !== "INVESTOR" &&
+                    !alreadyAssignedIds.has(u._id)
+                  ).map(u => (
                     <label key={u._id} className="flex items-center gap-2 text-sm p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formMembers.includes(u._id)}
                         onChange={() => toggleMember(u._id)}
+                        disabled={!isAdmin || isSubmitting}
                       />
-                      <span>{u.email} ({u.role})</span>
+                      <span>{u.firstName ? (u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName) : (u.email ? u.email.split("@")[0] : "Unknown")} ({u.role})</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button type="button" variant="ghost" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>Cancel</Button>
-                <Button type="submit">{showAddModal ? "Create Team" : "Save Changes"}</Button>
+                <Button type="button" variant="ghost" disabled={isSubmitting} onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>Cancel</Button>
+                <Button type="submit" disabled={isSubmitting}>{showAddModal ? "Create Team" : "Save Changes"}</Button>
               </div>
             </form>
           </div>

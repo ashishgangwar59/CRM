@@ -80,6 +80,13 @@ export async function calculatePayrollForEmployee(
 
     if (toIncentiveConfig) {
       if (toIncentiveConfig.incentiveType === "Percentage") {
+         // Team Owner gets the Budget Remainder for each member's sale.
+         // E.g., if Budget is 4%, and Member is 1%, Owner gets (4% - 1%) = 3% of that Member's sales.
+         // NOTE: Since individual member revenue is not fully tracked yet (teamGeneratedRevenue is aggregate),
+         // this represents the overall mathematical budget structure.
+         // A full implementation will iterate: sum((OwnerBudget - MemberIncentive) * MemberRevenue)
+         
+         // For now, applying the baseline overall Budget % calculation logic:
          teamBusinessIncentive = (teamGeneratedRevenue * toIncentiveConfig.value) / 100;
       } else {
          teamBusinessIncentive = toIncentiveConfig.value;

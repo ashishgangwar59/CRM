@@ -20,6 +20,7 @@ export default function IncentiveManagementPage() {
   const [value, setValue] = useState("");
   const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchIncentives();
@@ -40,7 +41,7 @@ export default function IncentiveManagementPage() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("/api/employees");
+      const res = await fetch("/api/employees?limit=100000");
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);
@@ -52,6 +53,7 @@ export default function IncentiveManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const payload = {
         targetType,
@@ -77,21 +79,32 @@ export default function IncentiveManagementPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to remove this incentive rule?")) return;
+    setIsSubmitting(true);
     try {
       await fetch(`/api/incentives/${id}`, { method: "DELETE" });
       fetchIncentives();
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="p-6 w-full space-y-6">
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-white font-medium">Processing...</p>
+        </div>
+      )}
       <div className="flex justify-between items-center bg-gradient-to-r from-[#061d31] to-[#092b49] p-8 rounded-2xl shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <Award size={120} />

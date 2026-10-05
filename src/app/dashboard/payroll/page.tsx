@@ -28,6 +28,7 @@ export default function PayrollDashboardPage() {
   const [processingBulk, setProcessingBulk] = useState(false);
   const [selectedDaysMap, setSelectedDaysMap] = useState<Record<string, number>>({});
   const [manualIncentivesMap, setManualIncentivesMap] = useState<Record<string, number>>({});
+  const [revenueMap, setRevenueMap] = useState<Record<string, number>>({});
 
   const fetchPayrolls = async () => {
     try {
@@ -85,11 +86,12 @@ export default function PayrollDashboardPage() {
     setGenerating(true);
     const paidDays = selectedDaysMap[employeeId] || 30;
     const manualIncentive = manualIncentivesMap[employeeId] || 0;
+    const eligibleRevenue = revenueMap[employeeId] || 0;
     try {
       const res = await fetch("/api/payroll/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId, monthYear, paidDays, manualIncentive })
+        body: JSON.stringify({ employeeId, monthYear, paidDays, manualIncentive, eligibleRevenue })
       });
       const data = await res.json();
       if (data.success) {
@@ -440,13 +442,21 @@ export default function PayrollDashboardPage() {
                           </TableCell>
                           <TableCell colSpan={3} className="text-center">
                             <div className="flex items-center justify-center space-x-2">
-                              <span className="text-xs text-zinc-500">Days: {selectedDays}</span>
                               <Input 
                                 type="number" 
-                                placeholder="Achieved Incentive (₹)" 
-                                className="w-36 h-8 text-xs border-zinc-300"
+                                placeholder="Monthly Sales (₹)" 
+                                className="w-32 h-8 text-xs border-zinc-300"
+                                value={revenueMap[emp._id] || ""}
+                                onChange={(e) => setRevenueMap({ ...revenueMap, [emp._id]: Number(e.target.value) })}
+                                title="Sales volume / business revenue achieved this month"
+                              />
+                              <Input 
+                                type="number" 
+                                placeholder="Bonus/Ad-hoc (₹)" 
+                                className="w-32 h-8 text-xs border-zinc-300"
                                 value={manualIncentivesMap[emp._id] || ""}
                                 onChange={(e) => setManualIncentivesMap({ ...manualIncentivesMap, [emp._id]: Number(e.target.value) })}
+                                title="Additional manual bonus/incentive amount"
                               />
                             </div>
                           </TableCell>
