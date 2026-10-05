@@ -42,8 +42,8 @@ RUN mkdir -p /app/public/uploads /app/backups && \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Run as non-root user
-USER nextjs
+# Run as root user so container can freely write to host mounted volumes (/app/public/uploads)
+USER root
 
 EXPOSE 3000
 ENV PORT=3000
