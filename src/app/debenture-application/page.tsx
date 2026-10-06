@@ -1233,7 +1233,7 @@ function DebentureFormContent() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm;
+            margin: 4mm;
           }
           *, *:before, *:after {
             -webkit-print-color-adjust: exact !important;
@@ -1243,6 +1243,7 @@ function DebentureFormContent() {
             background: #fff !important;
             padding: 0 !important;
             margin: 0 !important;
+            width: 100% !important;
           }
           .action-bar,
           #statusMsg,
@@ -1256,18 +1257,142 @@ function DebentureFormContent() {
             max-width: 100% !important;
             width: 100% !important;
             margin: 0 !important;
-            padding: 15px 15px 0 !important;
+            padding: 6px 12px 0 !important;
             border: 2px solid #0c1c3d !important;
             box-shadow: none !important;
             background: #fffdf8 !important;
           }
-          .section-header {
-            page-break-after: avoid;
-            break-after: avoid;
+          .sheet .header {
+            padding: 14px 20px 10px !important;
+            background: linear-gradient(180deg, #0c1c3d, #132a5c) !important;
+            color: #ffffff !important;
+            position: relative !important;
+            border-bottom: 4px solid #c9972f !important;
           }
-          .box, .office-wrap {
-            page-break-inside: avoid;
-            break-inside: avoid;
+          .sheet .company-name {
+            font-size: 20px !important;
+            margin: 2px 0 4px !important;
+            color: #e8b84b !important;
+          }
+          .sheet .logo-badge {
+            position: absolute !important;
+            left: 12px !important;
+            top: 10px !important;
+            width: 55px !important;
+            height: 55px !important;
+          }
+          .sheet .crest {
+            position: absolute !important;
+            right: 12px !important;
+            top: 8px !important;
+            color: #e8b84b !important;
+          }
+          .sheet .addr {
+            font-size: 10.5px !important;
+            margin: 0 0 4px !important;
+            color: #ffffff !important;
+          }
+          .sheet .contact-row {
+            color: #ffffff !important;
+          }
+          .sheet .divider {
+            padding: 2px 0 !important;
+            font-size: 11px !important;
+            color: #c9972f !important;
+          }
+          .sheet .title-block {
+            padding: 4px 10px 2px !important;
+          }
+          .sheet .title-block h1 {
+            font-size: 18px !important;
+            color: #0c1c3d !important;
+          }
+          .sheet .title-block h2 {
+            font-size: 12px !important;
+            margin: 2px 0 4px !important;
+            color: #c05a1e !important;
+          }
+          .sheet .notice {
+            padding: 3px 14px !important;
+            font-size: 9.5px !important;
+            margin-bottom: 4px !important;
+            background: #0c1c3d !important;
+            color: #ffffff !important;
+          }
+          .sheet .app-no-box {
+            position: relative !important;
+            right: auto !important;
+            top: auto !important;
+            float: right !important;
+            margin-top: -45px !important;
+            margin-right: 6px !important;
+            margin-bottom: 6px !important;
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+            border: 1px solid #c9972f !important;
+            background: #fffef9 !important;
+          }
+          .sheet .top-info {
+            padding: 0 10px !important;
+            font-size: 11.5px !important;
+            line-height: 1.35 !important;
+          }
+          .sheet .top-info p {
+            margin-bottom: 4px !important;
+          }
+          .sheet .section-header {
+            margin-top: 6px !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            padding: 3px 14px !important;
+            font-size: 11.5px !important;
+            background: #0c1c3d !important;
+            color: #ffffff !important;
+            display: block !important;
+            width: max-content !important;
+            min-width: 240px !important;
+            clip-path: polygon(0 0, 100% 0, 96% 100%, 0% 100%) !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+          .sheet .box {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            margin-bottom: 6px !important;
+            padding: 6px 12px !important;
+            border: 1px solid #c9972f !important;
+            background: #fffef9 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .sheet .field-row {
+            padding: 2px 0 !important;
+            font-size: 11px !important;
+          }
+          .sheet .office-wrap {
+            margin: 6px 12px 8px !important;
+            padding: 0 !important;
+            width: calc(100% - 24px) !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: row !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .sheet .office-col {
+            flex: 1 1 0% !important;
+            padding: 6px 8px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .sheet .stamp {
+            width: 55px !important;
+            height: 55px !important;
+            margin-top: 2px !important;
+          }
+          .sheet .decl-flex, .sheet .docs-grid {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .sheet input[type="text"],
           .sheet input[type="email"],
@@ -1279,6 +1404,8 @@ function DebentureFormContent() {
             border-bottom: 1px solid #333 !important;
             background: transparent !important;
             color: #000 !important;
+            font-size: 11px !important;
+            padding: 0 2px !important;
           }
         }
       `}</style>
