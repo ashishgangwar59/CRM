@@ -960,6 +960,7 @@ export default function AdminInvestorsPage() {
                     { key: "graduation", title: "Graduation Marksheet", sub: `Name: ${selectedInvestor.fullName}`, url: selectedInvestor.kycDocs?.graduationUrl, req: false },
                     { key: "postGraduation", title: "Post Graduation Marksheet", sub: `Name: ${selectedInvestor.fullName}`, url: selectedInvestor.kycDocs?.postGraduationUrl, req: false },
                     { key: "bankPassbook", title: "Bank Passbook / Cheque", sub: `Name: ${selectedInvestor.fullName} | Bank: ${selectedInvestor.kycDocs?.bankName || "N/A"} | Ac: ${selectedInvestor.kycDocs?.accountNumber || "N/A"} | IFSC: ${selectedInvestor.kycDocs?.ifscCode || "N/A"}`, url: selectedInvestor.kycDocs?.bankPassbookUrl, req: true },
+                    { key: "signature", title: "Applicant Signature", sub: `Name: ${selectedInvestor.fullName}`, url: selectedInvestor.debentureForm?.signatureUrl || selectedInvestor.kycDocs?.signatureUrl || selectedInvestor.signatureUrl, req: false },
                   ].map((docItem) => {
                     const currentStatus = selectedInvestor.docVerifications?.[docItem.key as keyof typeof selectedInvestor.docVerifications] || "Pending";
 
@@ -973,16 +974,18 @@ export default function AdminInvestorsPage() {
                             {docItem.sub && <span className="text-xs text-zinc-500 font-mono">({docItem.sub})</span>}
                             {docItem.req && <span className="text-[10px] bg-[#134086] text-white font-bold px-1.5 py-0.5 rounded">MANDATORY</span>}
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
-                              currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
-                                "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                              }`}>
-                              {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
-                              {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
-                              Status: {currentStatus}
-                            </span>
-                          </div>
+                          {docItem.key !== "signature" && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${currentStatus === "Approved" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" :
+                                currentStatus === "Rejected" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" :
+                                  "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                                }`}>
+                                {currentStatus === "Approved" && <CheckCircle className="w-3.5 h-3.5" />}
+                                {currentStatus === "Rejected" && <XCircle className="w-3.5 h-3.5" />}
+                                Status: {currentStatus}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-3">
                           {docItem.url ? (
@@ -1006,35 +1009,37 @@ export default function AdminInvestorsPage() {
                             </span>
                           )}
 
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              size="sm"
-                              disabled={submitting || !docItem.url}
-                              onClick={() => handleDocVerifyLocal("Approved")}
-                              className={`font-bold h-8 px-3 text-xs ${!docItem.url
-                                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                                : currentStatus === "Approved"
-                                  ? "bg-emerald-600 text-white  shadow-sm"
-                                  : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
-                                }`}
-                            >
-                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={submitting || !docItem.url}
-                              onClick={() => handleDocVerifyLocal("Rejected")}
-                              className={`h-8 px-3 text-xs font-bold ${!docItem.url
-                                ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
-                                : currentStatus === "Rejected"
-                                  ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
-                                  : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
-                                }`}
-                            >
-                              <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
-                            </Button>
-                          </div>
+                          {docItem.key !== "signature" && (
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                size="sm"
+                                disabled={submitting || !docItem.url}
+                                onClick={() => handleDocVerifyLocal("Approved")}
+                                className={`font-bold h-8 px-3 text-xs ${!docItem.url
+                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                                  : currentStatus === "Approved"
+                                    ? "bg-emerald-600 text-white  shadow-sm"
+                                    : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
+                                  }`}
+                              >
+                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={submitting || !docItem.url}
+                                onClick={() => handleDocVerifyLocal("Rejected")}
+                                className={`h-8 px-3 text-xs font-bold ${!docItem.url
+                                  ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
+                                  : currentStatus === "Rejected"
+                                    ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
+                                    : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
+                                  }`}
+                              >
+                                <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

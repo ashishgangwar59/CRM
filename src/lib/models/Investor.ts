@@ -23,6 +23,7 @@ export interface IInvestor extends Document {
     graduationUrl?: string; // Optional
     postGraduationUrl?: string; // Optional
     bankPassbookUrl?: string;
+    signatureUrl?: string;
     bankName?: string;
     accountNumber?: string;
     ifscCode?: string;
@@ -70,6 +71,7 @@ export interface IInvestor extends Document {
     drawnOnBank?: string;
     place?: string;
     passportPhotoUrl?: string;
+    signatureUrl?: string;
     nomineeName?: string;
     nomineeRelation?: string;
     nomineeAge?: string;
@@ -126,6 +128,7 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       graduationUrl: { type: String },
       postGraduationUrl: { type: String },
       bankPassbookUrl: { type: String },
+      signatureUrl: { type: String },
       bankName: { type: String },
       accountNumber: { type: String },
       ifscCode: { type: String },
@@ -172,6 +175,7 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       drawnOnBank: { type: String },
       place: { type: String },
       passportPhotoUrl: { type: String },
+      signatureUrl: { type: String },
       nomineeName: { type: String },
       nomineeRelation: { type: String },
       nomineeAge: { type: String },

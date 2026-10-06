@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload, RotateCcw, RotateCw, Loader2 } from "lucide-react";
+import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload, RotateCcw, RotateCw, Loader2, Eye, Printer } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/cropImage";
 import { getDaysBetweenDates } from "@/lib/dateUtils";
 function DebentureFormContent() {
-  const searchParams = useSearchParams();
+  const searchParams: any = useSearchParams();
   const refCodeParam = searchParams.get("ref") || "";
 
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,7 @@ function DebentureFormContent() {
     ifscCode: "",
     refEmpCode: refCodeParam,
     passportPhotoUrl: "",
+    signatureUrl: "",
     nomineeName: "",
     nomineeRelation: "",
     nomineeAge: "",
@@ -120,6 +121,9 @@ function DebentureFormContent() {
     }
     setCameraActive(false);
   };
+
+  // Document Preview Modal State
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
 
   // Mobile QR Code Signature States
   const [showQrModal, setShowQrModal] = useState(false);
@@ -262,6 +266,8 @@ function DebentureFormContent() {
               nomineeRelation: inv.nomineeRelation || prev.nomineeRelation,
               nomineeAge: inv.nomineeAge || prev.nomineeAge,
               nomineeDocUrl: inv.nomineeDocUrl || prev.nomineeDocUrl,
+              signatureUrl: inv.debentureForm?.signatureUrl || inv.kycDocs?.signatureUrl || inv.signatureUrl || prev.signatureUrl,
+              passportPhotoUrl: inv.debentureForm?.passportPhotoUrl || inv.kycDocs?.passportPhotoUrl || inv.passportPhotoUrl || prev.passportPhotoUrl,
             }));
           }
         })
@@ -462,27 +468,35 @@ function DebentureFormContent() {
         return;
       }
 
-      // Store cropped file in pending state
-      setPendingFiles(prev => ({ ...prev, [cropTargetField]: file }));
+      // Immediately upload file to server to guarantee valid signatureUrl is saved
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
+      const uploadJson = await uploadRes.json();
 
-      // Create local URL for preview
-      const localUrl = URL.createObjectURL(file);
-      setForm((prev) => ({ ...prev, [cropTargetField]: localUrl }));
-      setToastMsg({ message: "Successfully cropped and uploaded", type: "success" });
+      if (uploadJson.success && uploadJson.url) {
+        setForm((prev) => ({ ...prev, [cropTargetField]: uploadJson.url }));
+        setToastMsg({ message: "Successfully uploaded", type: "success" });
 
-      // Draw onto canvas if signature
-      if (cropTargetField === "signatureUrl") {
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => {
-            ctx?.clearRect(0, 0, canvas.width, canvas.height);
-            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          };
-          img.src = localUrl;
+        // Draw onto canvas if signature
+        if (cropTargetField === "signatureUrl") {
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              ctx?.clearRect(0, 0, canvas.width, canvas.height);
+              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = uploadJson.url;
+          }
         }
+      } else {
+        // Fallback to local preview URL if upload fails
+        const localUrl = URL.createObjectURL(file);
+        setPendingFiles(prev => ({ ...prev, [cropTargetField]: file }));
+        setForm((prev) => ({ ...prev, [cropTargetField]: localUrl }));
       }
 
       // Close modal
@@ -498,68 +512,93 @@ function DebentureFormContent() {
     e.preventDefault();
     setError(null);
 
+    // Helper to display error in both error state and toaster notification
+    const showError = (msg: string) => {
+      setError(msg);
+      setToastMsg({ message: msg, type: "error" });
+      setTimeout(() => setToastMsg(null), 4000);
+    };
+
     // Client-side validations
     if (!form.fullName || !form.fullName.trim()) {
-      setError("Please enter the Full Name (Applicant).");
+      showError("Please enter the Full Name (Applicant).");
       return;
     }
 
     if (!form.email || !form.email.trim()) {
-      setError("Please enter your Email address.");
+      showError("Please enter your Email address.");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email.trim())) {
-      setError("Please enter a valid Email address.");
+      showError("Please enter a valid Email address.");
       return;
     }
 
     if (!form.phone || !form.phone.trim()) {
-      setError("Please enter your 10-digit Mobile Number.");
+      showError("Please enter your 10-digit Mobile Number.");
       return;
     }
     const cleanPhone = form.phone.trim().replace(/\D/g, "");
     if (cleanPhone.length < 10) {
-      setError("Mobile Number must be at least 10 digits.");
+      showError("Mobile Number must be at least 10 digits.");
       return;
     }
 
     if (form.panNumber && form.panNumber.trim().length > 0 && form.panNumber.trim().length !== 10) {
-      setError("PAN Number must be exactly 10 characters.");
+      showError("PAN Number must be exactly 10 characters.");
       return;
     }
 
     if (form.aadharNumber && form.aadharNumber.trim().length > 0 && form.aadharNumber.trim().length !== 12) {
-      setError("Aadhaar Number must be exactly 12 digits.");
+      showError("Aadhaar Number must be exactly 12 digits.");
       return;
     }
 
     if (!form.noOfDebentures || Number(form.noOfDebentures) <= 0) {
-      setError("No. of Debentures Applied must be at least 1.");
+      showError("No. of Debentures Applied must be at least 1.");
       return;
     }
 
     if (!form.totalApplicationAmount || Number(form.totalApplicationAmount) <= 0) {
-      setError("Total Application Amount is required and must be greater than 0.");
+      showError("Total Application Amount is required and must be greater than 0.");
       return;
     }
 
     if (!form.investmentDate || !form.investmentDate.trim()) {
-      setError("Please select the Investment Date.");
+      showError("Please select the Investment Date.");
       return;
     }
 
     if (!form.bondMaturityDate || !form.bondMaturityDate.trim()) {
-      setError("Please select the Bond Maturity Date.");
+      showError("Please select the Bond Maturity Date.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. Upload pending files to server before submitting
       let finalForm = { ...form };
-      for (const [field, file] of Object.entries(pendingFiles)) {
+
+      // Create a local map of files to upload
+      const filesToUpload: { [key: string]: File } = { ...pendingFiles };
+
+      // Export canvas signature to data URL if canvas has drawing and signatureUrl is empty
+      const canvas = canvasRef.current;
+      if (canvas && !finalForm.signatureUrl) {
+        const signatureDataUrl = canvas.toDataURL("image/png");
+        // Convert base64 data URL to File object for upload
+        try {
+          const blob = dataURItoBlob(signatureDataUrl);
+          const sigFile = new File([blob], `signature_${Date.now()}.png`, { type: "image/png" });
+          filesToUpload.signatureUrl = sigFile;
+        } catch (err) {
+          finalForm.signatureUrl = signatureDataUrl;
+        }
+      }
+
+      // 1. Upload pending files to server before submitting
+      for (const [field, file] of Object.entries(filesToUpload)) {
         const formData = new FormData();
         formData.append("file", file);
         const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
@@ -677,7 +716,6 @@ function DebentureFormContent() {
   }
 
   // form
-  console.log(form);
   const days = getDaysBetweenDates(
     form?.investmentDate,
     form?.bondMaturityDate,
@@ -1193,20 +1231,54 @@ function DebentureFormContent() {
         }
 
         @media print {
-          body {
-            background: #fff;
-            padding: 0;
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          *, *:before, *:after {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            background: #fff !important;
+            padding: 0 !important;
+            margin: 0 !important;
           }
           .action-bar,
-          #statusMsg {
-            display: none;
+          #statusMsg,
+          .fixed,
+          button,
+          input[type="file"],
+          #sigUploadInput {
+            display: none !important;
           }
           .sheet {
-            border: none;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 15px 15px 0 !important;
+            border: 2px solid #0c1c3d !important;
+            box-shadow: none !important;
+            background: #fffdf8 !important;
           }
-          input,
-          textarea {
+          .section-header {
+            page-break-after: avoid;
+            break-after: avoid;
+          }
+          .box, .office-wrap {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .sheet input[type="text"],
+          .sheet input[type="email"],
+          .sheet input[type="tel"],
+          .sheet input[type="number"],
+          .sheet input[type="date"],
+          .sheet textarea,
+          .sheet select {
+            border-bottom: 1px solid #333 !important;
             background: transparent !important;
+            color: #000 !important;
           }
         }
       `}</style>
@@ -1214,12 +1286,12 @@ function DebentureFormContent() {
       <form className="sheet" id="debentureForm" onSubmit={handleSubmit}>
         {/* HEADER */}
         <div className="header">
-          <div className="logo-badge">
+          <div className="logo-badge" style={{ position: "absolute", left: "18px", top: "14px", width: "70px", height: "70px", borderRadius: "50%", background: "radial-gradient(circle, #12224e 60%, #0c1c3d 100%)", border: "3px solid #b89547", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
 
             <img
               src="/logo.png"
               alt="Company Logo"
-              style={{ width: "100%", height: "100%", objectFit: "contain", padding: "3px", borderRadius: "50%", background: "#fff" }}
+              style={{ width: "100%", maxWidth: "100%", height: "100%", objectFit: "contain", padding: "3px", borderRadius: "50%", background: "#fff" }}
               onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
             />
           </div>
@@ -1249,13 +1321,14 @@ function DebentureFormContent() {
           <div className="notice">PLEASE READ THE INSTRUCTIONS CAREFULLY BEFORE FILLING THE FORM</div>
         </div>
 
-        <div className="app-no-box">
-          <div>
+        <div className="app-no-box" title={`Application No: ${form.applicationNo || "APP-AUTO"}`}>
+          <div title={`Application No: ${form.applicationNo || "APP-AUTO"}`}>
             Application No.{" "}
             <input
               type="text"
               name="applicationNo"
               value={form.applicationNo || "APP-AUTO"}
+              title={`Application No: ${form.applicationNo || "APP-AUTO"}`}
               readOnly
               disabled
               style={{
@@ -1928,11 +2001,20 @@ function DebentureFormContent() {
                 </span>
               </div>
             </div>
-            <div className="sig-pad-wrap">
-              <canvas className="sig-pad" ref={canvasRef} width={220} height={60}></canvas>
+            <div className="sig-pad-wrap" style={{ position: "relative" }}>
+              {form.signatureUrl ? (
+                <div className="relative w-[220px] h-[60px] bg-white border border-slate-300 rounded flex items-center justify-center overflow-hidden">
+                  <img src={form.signatureUrl} alt="Applicant Signature" className="w-full h-full object-contain p-1" />
+                </div>
+              ) : (
+                <canvas className="sig-pad" ref={canvasRef} width={220} height={60}></canvas>
+              )}
               <div style={{ fontWeight: 600, marginTop: "2px" }}>Signature of Applicant</div>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <button type="button" className="sig-clear" onClick={clearSignature}>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                <button type="button" className="sig-clear" onClick={() => {
+                  clearSignature();
+                  setForm(prev => ({ ...prev, signatureUrl: "" }));
+                }}>
                   Clear signature
                 </button>
                 <button
@@ -1955,6 +2037,15 @@ function DebentureFormContent() {
                   className="hidden"
                   onChange={(e) => handleCropUpload(e, "signatureUrl")}
                 />
+                {form.signatureUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDoc({ title: "Applicant Signature", url: form.signatureUrl })}
+                    className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition-colors"
+                  >
+                    <Eye className="w-3 h-3 mr-1 text-sky-600" /> View Large
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1995,22 +2086,66 @@ function DebentureFormContent() {
             <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
               <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach PAN Card</span>
               <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "panDocUrl")} />
-              {form.panDocUrl && <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>}
+              {form.panDocUrl && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDoc({ title: "PAN Card Document", url: form.panDocUrl })}
+                    className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
+                  >
+                    <Eye className="w-3 h-3 text-indigo-600" /> View
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
               <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Aadhaar Card</span>
               <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "aadharDocUrl")} />
-              {form.aadharDocUrl && <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>}
+              {form.aadharDocUrl && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDoc({ title: "Aadhaar Card Document", url: form.aadharDocUrl })}
+                    className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
+                  >
+                    <Eye className="w-3 h-3 text-indigo-600" /> View
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
               <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Bank Proof / Passbook</span>
               <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "bankPassbookUrl")} />
-              {form.bankPassbookUrl && <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>}
+              {form.bankPassbookUrl && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDoc({ title: "Bank Passbook / Cheque Proof", url: form.bankPassbookUrl })}
+                    className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
+                  >
+                    <Eye className="w-3 h-3 text-indigo-600" /> View
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
               <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Nominee Proof</span>
               <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "nomineeDocUrl")} />
-              {form.nomineeDocUrl && <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>}
+              {form.nomineeDocUrl && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDoc({ title: "Nominee ID / Proof Document", url: form.nomineeDocUrl })}
+                    className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
+                  >
+                    <Eye className="w-3 h-3 text-indigo-600" /> View
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2138,9 +2273,15 @@ function DebentureFormContent() {
           Reset Form
         </button>
 
-        {/* <button type="button" id="printBtn" onClick={() => window.print()}>
+        <button
+          type="button"
+          id="printBtn"
+          onClick={() => window.print()}
+          className="flex items-center gap-2"
+        >
+          <Printer className="w-4 h-4" />
           Print / Save as PDF
-        </button> */}
+        </button>
 
         <button
           type="button"
@@ -2366,6 +2507,42 @@ function DebentureFormContent() {
                   Crop & Upload
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl border-2 border-[#0c1c3d] flex flex-col">
+            <div className="flex justify-between items-center px-4 py-3 border-b bg-[#0c1c3d] text-white">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                <Eye className="w-4 h-4 text-amber-400" /> {previewDoc.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="text-zinc-300 hover:text-white p-1 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 bg-zinc-900 flex items-center justify-center min-h-[250px] max-h-[70vh] overflow-auto">
+              <img
+                src={previewDoc.url}
+                alt={previewDoc.title}
+                className="max-w-full max-h-[60vh] object-contain rounded bg-white p-2 shadow"
+              />
+            </div>
+            <div className="p-3 bg-zinc-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="px-4 py-1.5 text-xs font-bold text-white bg-[#0c1c3d] hover:bg-[#132a5c] rounded"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

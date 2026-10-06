@@ -32,7 +32,6 @@ interface DebentureFormModalProps {
 export default function DebentureFormModal({ investor, onClose, onUpdate }: DebentureFormModalProps) {
   const form = investor.debentureForm || {};
   const kyc = investor.kycDocs || {};
-
   // Comprehensive URL resolution for photo, signature, and KYC documents
   const passportPhotoUrl = form.passportPhotoUrl || kyc.passportPhotoUrl || investor.passportPhotoUrl || investor.photoUrl || kyc.photoUrl || "";
   const signatureUrl = form.signatureUrl || kyc.signatureUrl || investor.signatureUrl || "";
@@ -197,6 +196,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
     form?.bondMaturityDate,
     true
   );
+  console.log(signatureUrl)
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 print:static print:bg-transparent print:p-0 print:block print:backdrop-blur-none">
@@ -875,18 +875,18 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
               <div style={{ marginTop: "14px", borderTop: "1px solid #e3c98a", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px" }}>
                 <div>
                   Digital Signature: <span className="font-mono font-bold text-[#0c1c3d]">{investor.fullName} ✔</span>
-                  {signatureUrl && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <img src={signatureUrl} alt="Applicant Signature" className="h-8 max-w-[140px] object-contain border bg-white rounded p-0.5" />
+                  {signatureUrl ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <img src={signatureUrl} alt="Applicant Signature" className="h-16 max-w-[220px] object-contain border bg-white rounded p-1 shadow-sm" />
                       <button
                         type="button"
                         onClick={() => setPreviewDoc({ title: "Applicant Signature", url: signatureUrl })}
-                        className="text-[10px] font-bold text-indigo-700 hover:underline print:hidden flex items-center gap-0.5"
+                        className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 print:hidden flex items-center gap-1"
                       >
-                        <Eye className="w-3 h-3" /> View
+                        <Eye className="w-3.5 h-3.5 text-indigo-600" /> View Signature
                       </button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 <div>
                   Referred By: <span className="font-bold text-[#134086]">{investor.referralEmployeeName || "Direct"}</span>
@@ -897,7 +897,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             {/* SECTION 5 DOCUMENTS */}
             <div className="section-header">5. ATTACHED KYC & NOMINEE DOCUMENTS</div>
             <div className="box">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs print:hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs print:hidden">
                 <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
                   <span className="font-bold text-zinc-800">1. PAN Card</span>
                   {panDocUrl ? (
@@ -961,6 +961,22 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                       <Eye className="w-3.5 h-3.5" /> View
                     </button>
                   ) : <span className="text-zinc-400 font-medium text-[11px]">Not Attached</span>}
+                </div>
+
+                <div className="p-2.5 border rounded-lg bg-white flex flex-col justify-between shadow-sm col-span-2 sm:col-span-1">
+                  <span className="font-bold text-zinc-800">6. Signature</span>
+                  {signatureUrl ? (
+                    <div className="flex flex-col items-start gap-1 mt-1">
+                      <img src={signatureUrl} alt="Applicant Signature" className="h-10 object-contain border rounded bg-white p-0.5 shadow-sm" />
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDoc({ title: "Applicant Signature", url: signatureUrl })}
+                        className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 text-[10px]"
+                      >
+                        <Eye className="w-3 h-3" /> View Large
+                      </button>
+                    </div>
+                  ) : <span className="text-rose-500 font-semibold text-[11px] mt-1">Missing</span>}
                 </div>
               </div>
             </div>

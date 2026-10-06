@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import fs from "fs";
+import path from "path";
 import { connectToDatabase } from "@/lib/db";
 import { Investor } from "@/lib/models/Investor";
 import { User } from "@/lib/models/User";
@@ -26,6 +28,7 @@ function getToken(req: Request): string | null {
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
+    console.log("Fetching investors...");
     const token = getToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -359,10 +362,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Investor profile not found" }, { status: 404 });
     }
 
-    const { investmentAmount, kycDocs, bondAgreement } = body;
+    const { investmentAmount, kycDocs, bondAgreement, debentureForm } = body;
 
     if (investmentAmount !== undefined) {
       investor.investmentAmount = Number(investmentAmount);
+    }
+
+    if (debentureForm) {
+      investor.debentureForm = { ...(investor.debentureForm || {}), ...debentureForm };
     }
 
     if (kycDocs) {
@@ -395,6 +402,7 @@ export async function PUT(req: Request) {
     investor.markModified("kycDocs");
     investor.markModified("docVerifications");
     investor.markModified("bondAgreement");
+    investor.markModified("debentureForm");
     await investor.save();
 
     return NextResponse.json({ success: true, data: investor });
@@ -433,6 +441,46 @@ export async function DELETE(req: Request) {
     const investor = await Investor.findById(investorId);
     if (!investor) {
       return NextResponse.json({ error: "Investor not found" }, { status: 404 });
+    }
+
+    // Delete physical uploaded documents from public/uploads directory
+    if (investor.kycDocs) {
+      const docUrls = Object.values(investor.kycDocs).filter((val): val is string => typeof val === "string" && val.length > 0);
+      for (const url of docUrls) {
+        if (url.startsWith("/uploads/") || url.startsWith("/api/uploads/")) {
+          const filename = path.basename(url);
+          const filePath = path.join(process.cwd(), "public/uploads", filename);
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          } catch (e) {
+            console.warn(`Failed to delete investor file ${filename}:`, e);
+          }
+        }
+      }
+    }
+
+    if (investor.debentureForm) {
+      const formDocUrls = [
+        investor.debentureForm.passportPhotoUrl,
+        investor.debentureForm.signatureUrl,
+        investor.debentureForm.nomineeDocUrl
+      ].filter((val): val is string => typeof val === "string" && val.length > 0);
+
+      for (const url of formDocUrls) {
+        if (url.startsWith("/uploads/") || url.startsWith("/api/uploads/")) {
+          const filename = path.basename(url);
+          const filePath = path.join(process.cwd(), "public/uploads", filename);
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          } catch (e) {
+            console.warn(`Failed to delete investor debenture file ${filename}:`, e);
+          }
+        }
+      }
     }
 
     // Delete associated user account if present

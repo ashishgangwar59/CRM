@@ -42,6 +42,7 @@ async function getNextApplicationNo() {
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
+    console.log("Processing debenture application...");
     const data = await req.json();
 
     const {
@@ -80,6 +81,7 @@ export async function POST(req: Request) {
       declMonth,
       declYear,
       passportPhotoUrl,
+      signatureUrl,
       panDocUrl,
       aadharDocUrl,
       bankPassbookUrl,
@@ -235,6 +237,7 @@ export async function POST(req: Request) {
             drawnOnBank: drawnOnBank || "",
             place: place || "",
             passportPhotoUrl: passportPhotoUrl || "",
+            signatureUrl: signatureUrl || "",
             nomineeName: nomineeName ? nomineeName.trim() : "",
             nomineeRelation: nomineeRelation ? nomineeRelation.trim() : "",
             nomineeAge: nomineeAge ? nomineeAge.trim() : "",
@@ -250,6 +253,7 @@ export async function POST(req: Request) {
             panDocUrl: panDocUrl || "",
             aadharDocUrl: aadharDocUrl || "",
             bankPassbookUrl: bankPassbookUrl || "",
+            signatureUrl: signatureUrl || "",
             bankName: bankName || "",
             accountNumber: accountNo || "",
             ifscCode: ifscCode || "",

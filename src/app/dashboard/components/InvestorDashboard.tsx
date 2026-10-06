@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award, IndianRupee, CalendarDays } from "lucide-react";
 import PaymentBondModal from "../investors/PaymentBondModal";
+import DashboardPhotoSignatureUploader from "@/components/DashboardPhotoSignatureUploader";
 
 export function InvestorDashboard() {
   const [allInvestments, setAllInvestments] = useState<any[]>([]);
@@ -34,6 +35,8 @@ export function InvestorDashboard() {
     accountNumber: "",
     ifscCode: "",
     branchName: "",
+    passportPhotoUrl: "",
+    signatureUrl: "",
   });
 
   const [bondAccepted, setBondAccepted] = useState(false);
@@ -58,6 +61,8 @@ export function InvestorDashboard() {
       accountNumber: data.kycDocs?.accountNumber || "",
       ifscCode: data.kycDocs?.ifscCode || "",
       branchName: data.kycDocs?.branchName || "",
+      passportPhotoUrl: data.debentureForm?.passportPhotoUrl || data.kycDocs?.passportPhotoUrl || "",
+      signatureUrl: data.debentureForm?.signatureUrl || data.kycDocs?.signatureUrl || "",
     });
     setBondAccepted(!!data.bondAgreement?.accepted);
     setSignatureText(data.bondAgreement?.signatureText || data.fullName || "");
@@ -248,6 +253,13 @@ export function InvestorDashboard() {
             </Button>
           ))}
         </div>
+        <Button
+          variant="outline"
+          onClick={() => window.open("/debenture-application?existing=true", "_blank")}
+          className="border-indigo-500 text-indigo-700 font-bold bg-indigo-50 hover:bg-indigo-100 mr-2"
+        >
+          📷 Update Photo & Signature
+        </Button>
         <Button
           variant="outline"
           onClick={() => setShowQuickModal(true)}
@@ -691,6 +703,8 @@ export function InvestorDashboard() {
                 className="bg-white border-[#eee]"
               />
             </div>
+
+            <DashboardPhotoSignatureUploader kycDocs={kycDocs} setKycDocs={setKycDocs} investor={investor} />
           </div>
         </CardContent>
       </Card>
