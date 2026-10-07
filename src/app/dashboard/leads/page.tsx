@@ -14,7 +14,7 @@ export default function LeadsDashboardPage() {
   const router = useRouter();
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Auth and Employee States
   const [role, setRole] = useState<string | null>(null);
   const [accessibleModules, setAccessibleModules] = useState<string[]>([]);
@@ -59,7 +59,6 @@ export default function LeadsDashboardPage() {
     }
     const headers = ["FIRST_NAME", "SECOND_NAME", "MOBILE", "COMPANY", "ADDRESS1", "ADDRESS2", "ADDRESS3", "CITY", "STATE", "PINCODE", "REMARK"];
     const rows = [
-      ["Rajesh", "Sharma", "9876543210", "Apex Solutions", "Plot 42", "Phase 2", "", "Delhi", "Delhi", "110059", "Interested in CRM software"],
       ["Anita", "Verma", "9123456789", "Niventra Capital", "Block B", "Suite 101", "", "Mumbai", "Maharashtra", "400001", "Requested call back"]
     ];
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
@@ -265,7 +264,7 @@ export default function LeadsDashboardPage() {
     const lead = leads.find(l => l._id === leadId);
     if (lead?.isLocked) return;
 
-    setSelectedLeadIds(prev => 
+    setSelectedLeadIds(prev =>
       prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
     );
   };
@@ -355,13 +354,13 @@ export default function LeadsDashboardPage() {
         <div className="flex flex-wrap items-center gap-2">
           {(isUserAdmin || hasDistributeAccess) && (
             <div className="flex border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5 bg-zinc-50 dark:bg-zinc-950">
-              <button 
+              <button
                 onClick={() => setActiveTab("pipeline")}
                 className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === "pipeline" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm" : "text-zinc-500 hover:text-zinc-900"}`}
               >
                 Lead Pipeline
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("planner")}
                 className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === "planner" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm" : "text-zinc-500 hover:text-zinc-900"}`}
               >
@@ -384,20 +383,20 @@ export default function LeadsDashboardPage() {
                 Export CSV
               </Button>
 
-              <input 
-                type="file" 
-                ref={csvInputRef} 
-                accept=".csv,.xlsx,.xls" 
-                className="hidden" 
-                onChange={handleImportCSV} 
+              <input
+                type="file"
+                ref={csvInputRef}
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={handleImportCSV}
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => csvInputRef.current?.click()} 
+                onClick={() => csvInputRef.current?.click()}
                 disabled={importing}
               >
-                <Upload className="mr-1.5 h-3.5 w-3.5" /> 
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
                 {importing ? "Importing..." : "Import CSV"}
               </Button>
             </>
@@ -437,7 +436,7 @@ export default function LeadsDashboardPage() {
                 {leads.filter(l => {
                   const todayStr = new Date().toDateString();
                   return (l.createdAt && new Date(l.createdAt).toDateString() === todayStr) ||
-                         (l.nextFollowUp && new Date(l.nextFollowUp).toDateString() === todayStr);
+                    (l.nextFollowUp && new Date(l.nextFollowUp).toDateString() === todayStr);
                 }).length}
               </p>
             </div>
@@ -450,8 +449,8 @@ export default function LeadsDashboardPage() {
                   <label className="text-xs font-semibold text-zinc-500 uppercase">Search</label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
-                    <Input 
-                      placeholder="Search by name, company, email, phone..." 
+                    <Input
+                      placeholder="Search by name, company, email, phone..."
                       className="pl-9"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
@@ -462,9 +461,9 @@ export default function LeadsDashboardPage() {
                 {/* Day-Wise Date Filter */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-zinc-500 uppercase">Date Filter</label>
-                  <select 
-                    className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" 
-                    value={dateFilter} 
+                  <select
+                    className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                    value={dateFilter}
                     onChange={e => setDateFilter(e.target.value)}
                   >
                     <option value="">All Dates</option>
@@ -478,10 +477,10 @@ export default function LeadsDashboardPage() {
                 {dateFilter === "custom" && (
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-500 uppercase">Select Date</label>
-                    <Input 
-                      type="date" 
-                      value={customDate} 
-                      onChange={e => setCustomDate(e.target.value)} 
+                    <Input
+                      type="date"
+                      value={customDate}
+                      onChange={e => setCustomDate(e.target.value)}
                     />
                   </div>
                 )}
@@ -510,9 +509,9 @@ export default function LeadsDashboardPage() {
                 {isUserAdmin && (
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-zinc-500 uppercase">Employee-Wise View</label>
-                    <select 
-                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" 
-                      value={employeeIdFilter} 
+                    <select
+                      className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                      value={employeeIdFilter}
                       onChange={e => setEmployeeIdFilter(e.target.value)}
                     >
                       <option value="">All Employees</option>
@@ -579,8 +578,8 @@ export default function LeadsDashboardPage() {
                           )}
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             {isUserAdmin ? (
-                              <button 
-                                onClick={(e) => handleToggleLock(e, lead._id, !!lead.isLocked)} 
+                              <button
+                                onClick={(e) => handleToggleLock(e, lead._id, !!lead.isLocked)}
                                 title={lead.isLocked ? "Click to Unlock Lead" : "Click to Lock Lead"}
                                 className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                               >
@@ -601,11 +600,10 @@ export default function LeadsDashboardPage() {
                           <TableCell className="font-medium text-zinc-700 dark:text-zinc-300">{lead.company || "-"}</TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1 items-start">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                                lead.stage === "New" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${lead.stage === "New" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
                                 lead.stage === "Qualified" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                                "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                              }`}>
+                                  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                }`}>
                                 {lead.stage}
                               </span>
                               {isDone ? (
@@ -618,10 +616,9 @@ export default function LeadsDashboardPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className={`text-xs font-bold ${
-                              lead.priority === "High" ? "text-rose-600" : 
+                            <span className={`text-xs font-bold ${lead.priority === "High" ? "text-rose-600" :
                               lead.priority === "Medium" ? "text-amber-600" : "text-zinc-500"
-                            }`}>
+                              }`}>
                               {lead.priority}
                             </span>
                           </TableCell>
@@ -734,17 +731,16 @@ export default function LeadsDashboardPage() {
                         const count = getWorkloadCount(emp._id, day);
                         const isSelected = selectedDayAndEmployee?.employeeId === emp._id && selectedDayAndEmployee?.date.toDateString() === day.toDateString();
                         return (
-                          <TableCell 
-                            key={idx} 
+                          <TableCell
+                            key={idx}
                             className={`text-center cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${isSelected ? "bg-indigo-50 dark:bg-indigo-950/20 ring-2 ring-indigo-500 ring-inset" : ""}`}
                             onClick={() => setSelectedDayAndEmployee({ employeeId: emp._id, date: day })}
                           >
-                            <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${
-                              count > 5 ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400" :
+                            <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${count > 5 ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400" :
                               count > 2 ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" :
-                              count > 0 ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400" :
-                              "bg-zinc-50 text-zinc-400 dark:bg-zinc-900/40"
-                            }`}>
+                                count > 0 ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400" :
+                                  "bg-zinc-50 text-zinc-400 dark:bg-zinc-900/40"
+                              }`}>
                               {count}
                             </span>
                           </TableCell>
@@ -785,9 +781,9 @@ export default function LeadsDashboardPage() {
                   <TableBody>
                     {leads.filter(lead => {
                       const leadOwnerId = lead.ownerId?._id || lead.ownerId;
-                      return leadOwnerId === selectedDayAndEmployee.employeeId && 
-                             lead.nextFollowUp && 
-                             new Date(lead.nextFollowUp).toDateString() === selectedDayAndEmployee.date.toDateString();
+                      return leadOwnerId === selectedDayAndEmployee.employeeId &&
+                        lead.nextFollowUp &&
+                        new Date(lead.nextFollowUp).toDateString() === selectedDayAndEmployee.date.toDateString();
                     }).length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
@@ -797,9 +793,9 @@ export default function LeadsDashboardPage() {
                     ) : (
                       leads.filter(lead => {
                         const leadOwnerId = lead.ownerId?._id || lead.ownerId;
-                        return leadOwnerId === selectedDayAndEmployee.employeeId && 
-                               lead.nextFollowUp && 
-                               new Date(lead.nextFollowUp).toDateString() === selectedDayAndEmployee.date.toDateString();
+                        return leadOwnerId === selectedDayAndEmployee.employeeId &&
+                          lead.nextFollowUp &&
+                          new Date(lead.nextFollowUp).toDateString() === selectedDayAndEmployee.date.toDateString();
                       }).map(lead => (
                         <TableRow key={lead._id} className="hover:bg-zinc-50/50 cursor-pointer" onClick={() => router.push(`/dashboard/leads/${lead._id}`)}>
                           <TableCell className="font-bold text-zinc-900 dark:text-zinc-50">
@@ -912,7 +908,7 @@ export default function LeadsDashboardPage() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase flex justify-between items-center">
                       <span>Employees</span>
-                      <button 
+                      <button
                         onClick={() => {
                           if (selectedEmployeeIds.length === employees.length) {
                             setSelectedEmployeeIds([]);
@@ -929,10 +925,10 @@ export default function LeadsDashboardPage() {
                       {employees.map(emp => {
                         const isChecked = selectedEmployeeIds.includes(emp._id);
                         return (
-                          <div 
-                            key={emp._id} 
+                          <div
+                            key={emp._id}
                             onClick={() => {
-                              setSelectedEmployeeIds(prev => 
+                              setSelectedEmployeeIds(prev =>
                                 prev.includes(emp._id) ? prev.filter(id => id !== emp._id) : [...prev, emp._id]
                               );
                             }}
@@ -951,18 +947,18 @@ export default function LeadsDashboardPage() {
                   {/* Scheduled Target Day */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase">Target Day / Follow-Up Date</label>
-                    <Input 
-                      type="date" 
-                      value={scheduledDate} 
-                      onChange={e => setScheduledDate(e.target.value)} 
+                    <Input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={e => setScheduledDate(e.target.value)}
                     />
                     <p className="text-[10px] text-zinc-400">Optionally assign follow-up tasks to these distributed leads on a specific day.</p>
                   </div>
 
                   {/* Distribute Button */}
-                  <Button 
-                    className="w-full flex items-center justify-center" 
-                    onClick={handleBulkDistribute} 
+                  <Button
+                    className="w-full flex items-center justify-center"
+                    onClick={handleBulkDistribute}
                     disabled={distributing}
                   >
                     {distributing ? (
@@ -990,11 +986,11 @@ export default function LeadsDashboardPage() {
             </span>
             <span className="text-sm font-semibold text-zinc-200">leads selected for bulk distribution</span>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
             {/* Quick Employee Select */}
             <div className="min-w-[180px]">
-              <select 
+              <select
                 className="flex h-9 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 value={selectedEmployeeIds.length === 1 ? selectedEmployeeIds[0] : ""}
                 onChange={(e) => {
@@ -1010,24 +1006,24 @@ export default function LeadsDashboardPage() {
             </div>
 
             {/* Quick Date Select */}
-            <input 
-              type="date" 
+            <input
+              type="date"
               className="flex h-9 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
             />
 
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
               disabled={distributing}
               onClick={handleBulkDistribute}
             >
               {distributing ? "Assigning..." : "Assign"}
             </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
+            <Button
+              size="sm"
+              variant="ghost"
               className="text-zinc-400 hover:text-white"
               onClick={() => {
                 setSelectedLeadIds([]);

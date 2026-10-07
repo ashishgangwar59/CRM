@@ -197,6 +197,11 @@ export default function SalarySlipPage() {
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
+            zoom: 0.89;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 0mm;
           }
           .print\\:hidden {
             display: none !important;
@@ -257,22 +262,18 @@ export default function SalarySlipPage() {
         <div ref={slipRef} className="p-5 w-full h-full bg-white relative">
 
           {/* Header Area */}
-          <div className="flex justify-between items-start border-b-2 border-indigo-900 pb-6 mb-8">
+          <div className="flex justify-between items-start border-b-2  pb-6 mb-8">
             <div className="flex items-center space-x-4">
-              <div className="h-16 w-16 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-zinc-200">
+              <div className="h-18 w-18 bg-white rounded-lg flex items-center justify-center overflow-hidden">
                 <img src="/logo.png" alt="Company Logo" className="h-full w-full object-contain" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-indigo-950 tracking-tight">{companyProfile.name}</h2>
-                <p className="text-xs text-zinc-500">{companyProfile.address}</p>
-                <p className="text-xs text-zinc-500 font-medium">
-                  {companyProfile.email} | {companyProfile.phone} | {companyProfile.website}
-                </p>
+                <h2 className="text-xl font-black text-[#134086] tracking-tight">{companyProfile.name}</h2>
                 <div className="mt-2 flex items-center space-x-3">
-                  <span className="text-xs font-black tracking-widest text-white bg-indigo-900 px-3 py-1 rounded">
+                  <span className="text-[10px] font-black tracking-widest text-white bg-[#134086] px-3 py-1 rounded">
                     PAYSLIP FOR {monthNameStr}
                   </span>
-                  <span className="text-xs font-bold text-indigo-900 border border-indigo-900 px-2.5 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-indigo-900 border border-indigo-900 px-2.5 py-0.5 rounded">
                     PAID DAYS: {payroll.paidDays || 30} DAYS
                   </span>
                 </div>
@@ -289,7 +290,7 @@ export default function SalarySlipPage() {
             <div className="flex space-x-6">
               {/* Employee Photo */}
 
-              <div className="grid grid-cols-3 gap-x-8 gap-y-3">
+              <div className="grid grid-cols-4 gap-x-8 gap-y-3">
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Employee Name</p>
                   <p className="font-bold text-base text-zinc-900">{emp.firstName} {emp.lastName}</p>
@@ -313,6 +314,18 @@ export default function SalarySlipPage() {
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Paid Days</p>
                   <p className="font-bold text-base text-emerald-700">{payroll.paidDays || 30} Days / 30</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">PAN Card</p>
+                  <p className="font-medium text-zinc-800">{emp.kyc?.panNumber || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Bank A/C No.</p>
+                  <p className="font-medium text-zinc-800">{emp.bankDetails?.accountNumber || "—"}</p>
+                </div>
+                <div className="col-span-5">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Company Bank Details</p>
+                  <p className="font-medium text-zinc-800">084002000002213, Indian Overseas Bank, New Delhi</p>
                 </div>
               </div>
             </div>
@@ -338,6 +351,7 @@ export default function SalarySlipPage() {
               )}
             </div>
           </div>
+
 
           {/* Salary Structure Table */}
           <div className="grid grid-cols-2 gap-8 mb-8">
@@ -424,6 +438,17 @@ export default function SalarySlipPage() {
             </div>
           </div>
 
+          {/* Company Footer */}
+          <div className="mt-8 pt-4 border-t border-zinc-200 text-center flex flex-col items-center">
+            <h3 className="font-bold text-zinc-800 text-sm uppercase tracking-wide">{companyProfile.name}</h3>
+            <p className="text-xs text-zinc-500 mt-1">{companyProfile.address}</p>
+            <p className="text-xs text-zinc-500 mt-1 font-medium">
+              E: {companyProfile.email} <span className="mx-2">|</span> T: {companyProfile.phone} <span className="mx-2">|</span> W: {companyProfile.website}
+            </p>
+            {/* <p className="text-xs text-zinc-500 mt-1 font-medium">
+              Company Bank: Indian Overseas Bank, New Delhi <span className="mx-2">|</span> A/C No: 084002000002213
+            </p> */}
+          </div>
 
         </div>
       </div>

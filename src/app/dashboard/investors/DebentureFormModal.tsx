@@ -25,11 +25,13 @@ function numberToIndianWords(num: number): string {
 
 interface DebentureFormModalProps {
   investor: any;
+  role?: string | null;
   onClose: () => void;
   onUpdate: () => void;
 }
 
-export default function DebentureFormModal({ investor, onClose, onUpdate }: DebentureFormModalProps) {
+export default function DebentureFormModal({ investor, role, onClose, onUpdate }: DebentureFormModalProps) {
+  const isVerifiedReadOnly = investor.status === "Verified" && role !== "ADMIN" && role !== "KEY_ADMIN";
   const form = investor.debentureForm || {};
   const kyc = investor.kycDocs || {};
   // Comprehensive URL resolution for photo, signature, and KYC documents
@@ -117,6 +119,30 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
       .then((data) => setSettings(data))
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.employee) {
+          const empName = `${data.employee.firstName || ""} ${data.employee.lastName || ""}`.trim();
+          const empDesig = data.employee.designation || "";
+
+          setOfficeData((prev) => ({
+            ...prev,
+            verifiedName: form.verifiedName || empName || prev.verifiedName,
+            verifiedDesignation: form.verifiedDesignation || empDesig || prev.verifiedDesignation,
+            verifiedSignDate: form.verifiedSignDate || new Date().toISOString().split("T")[0],
+          }));
+        } else if (data.success && data.role) {
+          setOfficeData((prev) => ({
+            ...prev,
+            verifiedName: form.verifiedName || data.role || prev.verifiedName,
+          }));
+        }
+      })
+      .catch(console.error);
+  }, [form.verifiedName, form.verifiedDesignation, form.verifiedSignDate]);
 
   const [officeData, setOfficeData] = useState({
     officeReceivedOn: form.officeReceivedOn || new Date().toISOString().split("T")[0],
@@ -213,15 +239,17 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button
-              size="sm"
-              onClick={handleSaveForm}
-              disabled={saving}
-              className="bg-[#c9972f] hover:bg-[#e8b84b] text-zinc-950 font-bold text-xs"
-            >
-              <Save className="w-3.5 h-3.5 mr-1.5" />
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
+            {!isVerifiedReadOnly && (
+              <Button
+                size="sm"
+                onClick={handleSaveForm}
+                disabled={saving}
+                className="bg-[#c9972f] hover:bg-[#e8b84b] text-zinc-950 font-bold text-xs"
+              >
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={handlePrint}
@@ -243,6 +271,12 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
 
         {/* Modal Body (Scrollable) */}
         <div className="overflow-y-auto print:overflow-visible flex-1 p-4 sm:p-6 print:p-0">
+          {isVerifiedReadOnly && (
+            <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 p-3 rounded-lg mb-4 text-sm font-semibold flex items-center print:hidden">
+              <Eye className="w-4 h-4 mr-2" />
+              View Mode Only: This investor is verified. Form editing is restricted.
+            </div>
+          )}
           <style jsx global>{`
             :root {
               --navy: #0c1c3d;
@@ -473,9 +507,9 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             }
 
             .sheet-view .stamp {
-              width: 60px;
-              height: 60px;
-              border: 2px solid var(--navy);
+              width: 80px;
+              height: 80px;
+             
               border-radius: 50%;
               display: flex;
               align-items: center;
@@ -524,7 +558,7 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
                 max-width: 100% !important;
                 margin: 0 !important;
                 box-shadow: none !important;
-                zoom: 0.85; /* Scale down to fit single page */
+                zoom: 0.80; /* Scale down to fit single page */
               }
             }
           `}</style>
@@ -582,321 +616,324 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             </div>
 
             {/* SECTION 1 */}
-            <div className="section-header">1. INVESTOR DETAILS</div>
-            <div className="box">
-              <div className="field-row">
-                <div className="field-label">Full Name (Applicant)</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.fullName} onChange={e => setEditableForm({ ...editableForm, fullName: e.target.value })} />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Father's / Spouse Name</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.fatherSpouseName} onChange={e => setEditableForm({ ...editableForm, fatherSpouseName: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Date of Birth / Incorporation</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-                  <input type="date" value={editableForm.dob} onChange={e => setEditableForm({ ...editableForm, dob: e.target.value })} style={{ width: "120px" }} />
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    <b>PAN No:</b> <input type="text" value={editableForm.panNumber} onChange={e => setEditableForm({ ...editableForm, panNumber: e.target.value.toUpperCase() })} placeholder="PAN Number" style={{ width: "110px", fontFamily: "monospace" }} />
-                    <b>| Aadhar No:</b> <input type="text" value={editableForm.aadharNumber} onChange={e => setEditableForm({ ...editableForm, aadharNumber: e.target.value })} placeholder="Aadhar Number" style={{ width: "130px", fontFamily: "monospace" }} />
+            <fieldset disabled={isVerifiedReadOnly} className="border-none p-0 m-0 min-w-0">
+              <div className="section-header">1. INVESTOR DETAILS</div>
+              <div className="box">
+                <div className="field-row">
+                  <div className="field-label">Full Name (Applicant)</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.fullName} onChange={e => setEditableForm({ ...editableForm, fullName: e.target.value })} />
                   </div>
                 </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Address</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.address} onChange={e => setEditableForm({ ...editableForm, address: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">City / State / PIN</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", gap: "5px" }}>
-                  <input type="text" value={editableForm.city} onChange={e => setEditableForm({ ...editableForm, city: e.target.value })} placeholder="City" />
-                  <input type="text" value={editableForm.state} onChange={e => setEditableForm({ ...editableForm, state: e.target.value })} placeholder="State" />
-                  <input type="text" value={editableForm.pinCode} onChange={e => setEditableForm({ ...editableForm, pinCode: e.target.value })} placeholder="PIN" style={{ width: "80px" }} />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Mobile & Email</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>📞 {investor.phone}</span>
-                  <span>✉️ {investor.email}</span>
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Occupation</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.occupation} onChange={e => setEditableForm({ ...editableForm, occupation: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Bank Name</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.bankName} onChange={e => setEditableForm({ ...editableForm, bankName: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Account No.</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.accountNo} onChange={e => setEditableForm({ ...editableForm, accountNo: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">IFSC Code</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.ifscCode} onChange={e => setEditableForm({ ...editableForm, ifscCode: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Nominee Name</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill font-bold">
-                  <input type="text" value={editableForm.nomineeName} onChange={e => setEditableForm({ ...editableForm, nomineeName: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Nominee Relation / Age</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
-                  <input type="text" value={editableForm.nomineeRelation} onChange={e => setEditableForm({ ...editableForm, nomineeRelation: e.target.value })} placeholder="Relation" />
-                  <input type="text" value={editableForm.nomineeAge} onChange={e => setEditableForm({ ...editableForm, nomineeAge: e.target.value })} placeholder="Age" style={{ width: "60px" }} />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 2 */}
-            <div className="section-header">2. INVESTMENT DETAILS</div>
-            <div className="box">
-              <div className="field-row">
-                <div className="field-label">Type of Debenture</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.typeOfDebenture} onChange={e => setEditableForm({ ...editableForm, typeOfDebenture: e.target.value })} placeholder="Secured" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Face Value (Per Debenture)</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", alignItems: "center" }}>
-                  <span>₹</span>
-                  <input type="number" value={editableForm.faceValue} onChange={e => setEditableForm({ ...editableForm, faceValue: Number(e.target.value) })} placeholder="1000" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">No. of Debentures Applied</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
-                  <input type="number" value={editableForm.noOfDebentures} onChange={e => setEditableForm({ ...editableForm, noOfDebentures: Number(e.target.value) })} placeholder="1" style={{ width: "80px" }} />
-                  <input type="text" disabled value={numberToIndianWords(editableForm.noOfDebentures) ? `${numberToIndianWords(editableForm.noOfDebentures)} Units` : ""} placeholder="Units" style={{ backgroundColor: "transparent", border: "none", width: "100%" }} />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Total Application Amount</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                  <span>₹</span>
-                  <input type="number" value={editableForm.totalApplicationAmount} onChange={e => setEditableForm({ ...editableForm, totalApplicationAmount: Number(e.target.value) })} placeholder="1000" style={{ width: "100px", color: "#00a65a", fontWeight: "bold" }} />
-                  <input type="text" disabled value={numberToIndianWords(editableForm.totalApplicationAmount) ? `${numberToIndianWords(editableForm.totalApplicationAmount)} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Investment Details</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: "bold" }}>Date:</span>
-                    <input
-                      type="date"
-                      value={editableForm.investmentDate}
-                      onChange={(e) => setEditableForm({ ...editableForm, investmentDate: e.target.value })}
-                      style={{ maxWidth: "130px" }}
-                    />
+                <div className="field-row">
+                  <div className="field-label">Father's / Spouse Name</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.fatherSpouseName} onChange={e => setEditableForm({ ...editableForm, fatherSpouseName: e.target.value })} placeholder="—" />
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: "bold" }}>Maturity:</span>
-                    <input
-                      type="date"
-                      value={editableForm.bondMaturityDate}
-                      onChange={(e) => setEditableForm({ ...editableForm, bondMaturityDate: e.target.value })}
-                      style={{ maxWidth: "130px" }}
-                    />
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Date of Birth / Incorporation</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                    <input type="date" value={editableForm.dob} onChange={e => setEditableForm({ ...editableForm, dob: e.target.value })} style={{ width: "120px" }} />
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      <b>PAN No:</b> <input type="text" value={editableForm.panNumber} onChange={e => setEditableForm({ ...editableForm, panNumber: e.target.value.toUpperCase() })} placeholder="PAN Number" style={{ width: "110px", fontFamily: "monospace" }} />
+                      <b>| Aadhar No:</b> <input type="text" value={editableForm.aadharNumber} onChange={e => setEditableForm({ ...editableForm, aadharNumber: e.target.value })} placeholder="Aadhar Number" style={{ width: "130px", fontFamily: "monospace" }} />
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: "bold" }}>Growth (%):</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editableForm.monthlyGrowthPercentage}
-                      onChange={(e) => setEditableForm({ ...editableForm, monthlyGrowthPercentage: parseFloat(e.target.value) || 0 })}
-                      style={{ maxWidth: "70px" }}
-                    />
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Address</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.address} onChange={e => setEditableForm({ ...editableForm, address: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">City / State / PIN</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", gap: "5px" }}>
+                    <input type="text" value={editableForm.city} onChange={e => setEditableForm({ ...editableForm, city: e.target.value })} placeholder="City" />
+                    <input type="text" value={editableForm.state} onChange={e => setEditableForm({ ...editableForm, state: e.target.value })} placeholder="State" />
+                    <input type="text" value={editableForm.pinCode} onChange={e => setEditableForm({ ...editableForm, pinCode: e.target.value })} placeholder="PIN" style={{ width: "80px" }} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Mobile & Email</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>📞 {investor.phone}</span>
+                    <span>✉️ {investor.email}</span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Occupation</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.occupation} onChange={e => setEditableForm({ ...editableForm, occupation: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Bank Name</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.bankName} onChange={e => setEditableForm({ ...editableForm, bankName: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Account No.</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.accountNo} onChange={e => setEditableForm({ ...editableForm, accountNo: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">IFSC Code</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.ifscCode} onChange={e => setEditableForm({ ...editableForm, ifscCode: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Nominee Name</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill font-bold">
+                    <input type="text" value={editableForm.nomineeName} onChange={e => setEditableForm({ ...editableForm, nomineeName: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Nominee Relation / Age</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
+                    <input type="text" value={editableForm.nomineeRelation} onChange={e => setEditableForm({ ...editableForm, nomineeRelation: e.target.value })} placeholder="Relation" />
+                    <input type="text" value={editableForm.nomineeAge} onChange={e => setEditableForm({ ...editableForm, nomineeAge: e.target.value })} placeholder="Age" style={{ width: "260px" }} />
                   </div>
                 </div>
               </div>
 
-              {/* Amount Payable on Maturity (Auto-Calculated, visible on print) */}
-              {(() => {
-                const principal = Number(editableForm.totalApplicationAmount) || 0;
-                const rate = Number(editableForm.monthlyGrowthPercentage) || 0;
+              {/* SECTION 2 */}
+              <div className="section-header">2. INVESTMENT DETAILS</div>
+              <div className="box">
+                <div className="field-row">
+                  <div className="field-label">Type of Debenture</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.typeOfDebenture} onChange={e => setEditableForm({ ...editableForm, typeOfDebenture: e.target.value })} placeholder="Secured" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Face Value (Per Debenture)</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", alignItems: "center" }}>
+                    <span>₹</span>
+                    <input type="number" value={editableForm.faceValue} onChange={e => setEditableForm({ ...editableForm, faceValue: Number(e.target.value) })} placeholder="1000" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">No. of Debentures Applied</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", gap: "10px" }}>
+                    <input type="number" value={editableForm.noOfDebentures} onChange={e => setEditableForm({ ...editableForm, noOfDebentures: Number(e.target.value) })} placeholder="1" style={{ width: "80px" }} />
+                    <input type="text" disabled value={numberToIndianWords(editableForm.noOfDebentures) ? `${numberToIndianWords(editableForm.noOfDebentures)} Units` : ""} placeholder="Units" style={{ backgroundColor: "transparent", border: "none", width: "100%" }} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Total Application Amount</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ fontSize: "14px", color: "#00a65a", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <span>₹</span>
+                    <input type="number" value={editableForm.totalApplicationAmount} onChange={e => setEditableForm({ ...editableForm, totalApplicationAmount: Number(e.target.value) })} placeholder="1000" style={{ width: "100px", color: "#00a65a", fontWeight: "bold" }} />
+                    <input type="text" disabled value={numberToIndianWords(editableForm.totalApplicationAmount) ? `${numberToIndianWords(editableForm.totalApplicationAmount)} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Investment Details</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: "bold" }}>Date:</span>
+                      <input
+                        type="date"
+                        value={editableForm.investmentDate}
+                        onChange={(e) => setEditableForm({ ...editableForm, investmentDate: e.target.value })}
+                        style={{ maxWidth: "130px" }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: "bold" }}>Maturity:</span>
+                      <input
+                        type="date"
+                        value={editableForm.bondMaturityDate}
+                        onChange={(e) => setEditableForm({ ...editableForm, bondMaturityDate: e.target.value })}
+                        style={{ maxWidth: "130px" }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: "bold" }}>Growth (%):</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editableForm.monthlyGrowthPercentage}
+                        onChange={(e) => setEditableForm({ ...editableForm, monthlyGrowthPercentage: parseFloat(e.target.value) || 0 })}
+                        style={{ maxWidth: "70px" }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                let totalInterest = 0;
-                let matDateStr = "—";
+                {/* Amount Payable on Maturity (Auto-Calculated, visible on print) */}
+                {(() => {
+                  const principal = Number(editableForm.totalApplicationAmount) || 0;
+                  const rate = Number(editableForm.monthlyGrowthPercentage) || 0;
 
-                if (editableForm.investmentDate && editableForm.bondMaturityDate) {
-                  const invDate = new Date(editableForm.investmentDate);
-                  const matDate = new Date(editableForm.bondMaturityDate);
+                  let totalInterest = 0;
+                  let matDateStr = "—";
 
-                  let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
-                  let tempDate = new Date(invDate);
-                  tempDate.setMonth(tempDate.getMonth() + months);
-                  if (tempDate.getTime() > matDate.getTime()) {
-                    months--;
-                    tempDate = new Date(invDate);
+                  if (editableForm.investmentDate && editableForm.bondMaturityDate) {
+                    const invDate = new Date(editableForm.investmentDate);
+                    const matDate = new Date(editableForm.bondMaturityDate);
+
+                    let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
+                    let tempDate = new Date(invDate);
                     tempDate.setMonth(tempDate.getMonth() + months);
+                    if (tempDate.getTime() > matDate.getTime()) {
+                      months--;
+                      tempDate = new Date(invDate);
+                      tempDate.setMonth(tempDate.getMonth() + months);
+                    }
+
+                    totalInterest = (principal * rate * days / (100 * 30));
+                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+                  } else if (editableForm.investmentDate) {
+                    const invDate = new Date(editableForm.investmentDate);
+                    const months = 1;
+                    const matDate = new Date(invDate);
+                    matDate.setMonth(matDate.getMonth() + months);
+
+                    const monthlyInterest = (principal * rate * days / (100 * 30));
+                    totalInterest = monthlyInterest;
+                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                   }
+                  const totalMaturityAmount = principal + totalInterest;
 
-                  totalInterest = (principal * rate * days / (100 * 30));
-                  matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-
-                } else if (editableForm.investmentDate) {
-                  const invDate = new Date(editableForm.investmentDate);
-                  const months = 1;
-                  const matDate = new Date(invDate);
-                  matDate.setMonth(matDate.getMonth() + months);
-
-                  const monthlyInterest = (principal * rate * days / (100 * 30));
-                  totalInterest = monthlyInterest;
-                  matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                }
-                const totalMaturityAmount = principal + totalInterest;
-
-                return (
-                  <>
-                    {/* Amount Payable on Maturity (Auto-Calculated, visible on print) */}
-                    <div className="field-row">
-                      <div className="field-label">Amount Payable on Maturity</div>
-                      <div className="field-colon">:</div>
-                      <div className="field-fill" style={{ fontSize: "14px", color: "#e11d48", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                        <span>₹</span>
-                        <input type="text" disabled value={totalMaturityAmount > 0 ? Math.round(totalMaturityAmount) : ""} placeholder="Auto-calculated" style={{ width: "120px", color: "#e11d48", fontWeight: "bold", backgroundColor: "transparent", border: "none" }} />
-                        <input type="text" disabled value={totalMaturityAmount > 0 && numberToIndianWords(Math.round(totalMaturityAmount)) ? `${numberToIndianWords(Math.round(totalMaturityAmount))} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
-                      </div>
-                    </div>
-
-                    {/* Payment Bond Auto-Calculation Preview (Hidden on print) */}
-                    <div className="print:hidden">
-                      <div style={{ padding: "8px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#78350f", marginBottom: "8px" }}>
-                        <div style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px", color: "#d97706", marginBottom: "4px" }}>✦ Bond Maturity Auto-Calculation Preview ✦</div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                          <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                          <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{Math.round(totalInterest)}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "4px", fontWeight: "bold" }}>
-                          <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
-                          <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{Math.round(totalMaturityAmount)}/-</span></span>
+                  return (
+                    <>
+                      {/* Amount Payable on Maturity (Auto-Calculated, visible on print) */}
+                      <div className="field-row">
+                        <div className="field-label">Amount Payable on Maturity</div>
+                        <div className="field-colon">:</div>
+                        <div className="field-fill" style={{ fontSize: "14px", color: "#e11d48", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                          <span>₹</span>
+                          <input type="text" disabled value={totalMaturityAmount > 0 ? Math.round(totalMaturityAmount) : ""} placeholder="Auto-calculated" style={{ width: "120px", color: "#e11d48", fontWeight: "bold", backgroundColor: "transparent", border: "none" }} />
+                          <input type="text" disabled value={totalMaturityAmount > 0 && numberToIndianWords(Math.round(totalMaturityAmount)) ? `${numberToIndianWords(Math.round(totalMaturityAmount))} Rupees Only` : ""} placeholder="Amount in words" style={{ flex: 1, fontSize: "12px", color: "#666", backgroundColor: "transparent", border: "none" }} />
                         </div>
                       </div>
-                    </div>
-                  </>
-                );
-              })()}
-              <div className="field-row">
-                <div className="field-label">Mode of Payment</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.modeOfPayment} onChange={e => setEditableForm({ ...editableForm, modeOfPayment: e.target.value })} placeholder="NEFT/RTGS" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Transaction / UTR No.</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill font-mono">
-                  <input type="text" value={editableForm.transactionUtrNo} onChange={e => setEditableForm({ ...editableForm, transactionUtrNo: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Cheque / DD No.</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill font-mono">
-                  <input type="text" value={editableForm.chequeDdNo} onChange={e => setEditableForm({ ...editableForm, chequeDdNo: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field-label">Bank Name (Payment)</div>
-                <div className="field-colon">:</div>
-                <div className="field-fill">
-                  <input type="text" value={editableForm.drawnOnBank} onChange={e => setEditableForm({ ...editableForm, drawnOnBank: e.target.value })} placeholder="—" />
-                </div>
-              </div>
-            </div>
 
-            {/* SECTION 4 */}
-            <div className="section-header">4. DECLARATION & PHOTOGRAPH</div>
-            <div className="box">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "16px" }}>
-                <div style={{ flex: 1, fontSize: "11px", lineHeight: "1.6" }}>
-                  I/We hereby declare and confirm that:
-                  <ol style={{ margin: "4px 0 0 16px" }}>
-                    <li>I/We have read and understood the terms and conditions of the Information Memorandum and Debenture Trust Deed.</li>
-                    <li>The information provided by me/us in this application is true, correct and complete.</li>
-                    <li>I/We agree to be bound by the terms and conditions governing the issue of Secured Debentures.</li>
-                  </ol>
-                  <div style={{ marginTop: "12px" }}>
-                    <b>Place:</b> {form.place || "Delhi"} &nbsp;|&nbsp; <b>Date:</b> {form.applicationDate || investor.createdAt?.split("T")[0]}
+                      {/* Payment Bond Auto-Calculation Preview (Hidden on print) */}
+                      <div className="print:hidden">
+                        <div style={{ padding: "8px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "6px", fontSize: "11px", color: "#78350f", marginBottom: "8px" }}>
+                          <div style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.5px", color: "#d97706", marginBottom: "4px" }}>✦ Bond Maturity Auto-Calculation Preview ✦</div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                            <span>Total Interest ({days} days @ {rate}%/mo):</span>
+                            <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{Math.round(totalInterest)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "4px", fontWeight: "bold" }}>
+                            <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
+                            <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{Math.round(totalMaturityAmount)}/-</span></span>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+                <div className="field-row">
+                  <div className="field-label">Mode of Payment</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.modeOfPayment} onChange={e => setEditableForm({ ...editableForm, modeOfPayment: e.target.value })} placeholder="NEFT/RTGS" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Transaction / UTR No.</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill font-mono">
+                    <input type="text" value={editableForm.transactionUtrNo} onChange={e => setEditableForm({ ...editableForm, transactionUtrNo: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Cheque / DD No.</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill font-mono">
+                    <input type="text" value={editableForm.chequeDdNo} onChange={e => setEditableForm({ ...editableForm, chequeDdNo: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Bank Name (Payment)</div>
+                  <div className="field-colon">:</div>
+                  <div className="field-fill">
+                    <input type="text" value={editableForm.drawnOnBank} onChange={e => setEditableForm({ ...editableForm, drawnOnBank: e.target.value })} placeholder="—" />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4 */}
+              <div className="section-header">4. DECLARATION & PHOTOGRAPH</div>
+              <div className="box">
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "16px" }}>
+                  <div style={{ flex: 1, fontSize: "11px", lineHeight: "1.6" }}>
+                    I/We hereby declare and confirm that:
+                    <ol style={{ margin: "4px 0 0 16px" }}>
+                      <li>I/We have read and understood the terms and conditions of the Information Memorandum and Debenture Trust Deed.</li>
+                      <li>The information provided by me/us in this application is true, correct and complete.</li>
+                      <li>I/We agree to be bound by the terms and conditions governing the issue of Secured Debentures.</li>
+                    </ol>
+                    <div style={{ marginTop: "12px" }}>
+                      <b>Place:</b> {form.place || "Delhi"} &nbsp;|&nbsp; <b>Date:</b> {form.applicationDate || investor.createdAt?.split("T")[0]}
+                    </div>
+                  </div>
+
+                  <div className="photo-box flex flex-col items-center justify-center overflow-hidden border-2 border-[#0c1c3d] bg-white">
+                    {passportPhotoUrl ? (
+                      <img src={passportPhotoUrl} alt="Passport Photo" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 font-bold text-center leading-tight">
+                        No Photo<br />Attached
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="photo-box flex flex-col items-center justify-center overflow-hidden border-2 border-[#0c1c3d] bg-white">
-                  {passportPhotoUrl ? (
-                    <img src={passportPhotoUrl} alt="Passport Photo" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] text-zinc-500 font-bold text-center leading-tight">
-                      No Photo<br />Attached
-                    </span>
-                  )}
+                <div style={{ marginTop: "14px", borderTop: "1px solid #e3c98a", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px" }}>
+                  <div>
+                    Digital Signature: <span className="font-mono font-bold text-[#0c1c3d]">{investor.fullName} ✔</span>
+                    {signatureUrl ? (
+                      <div className="mt-2 flex items-center gap-2">
+                        <img src={signatureUrl} alt="Applicant Signature" className="h-16 max-w-[220px] object-contain border bg-white rounded p-1 shadow-sm" />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setPreviewDoc({ title: "Applicant Signature", url: signatureUrl })}
+                          className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 print:hidden flex items-center gap-1 cursor-pointer w-fit"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-600" /> View Signature
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div>
+                    Referred By: <span className="font-bold text-[#134086]">{investor.referralEmployeeName || "Direct"}</span>
+                  </div>
                 </div>
               </div>
-
-              <div style={{ marginTop: "14px", borderTop: "1px solid #e3c98a", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px" }}>
-                <div>
-                  Digital Signature: <span className="font-mono font-bold text-[#0c1c3d]">{investor.fullName} ✔</span>
-                  {signatureUrl ? (
-                    <div className="mt-2 flex items-center gap-2">
-                      <img src={signatureUrl} alt="Applicant Signature" className="h-16 max-w-[220px] object-contain border bg-white rounded p-1 shadow-sm" />
-                      <button
-                        type="button"
-                        onClick={() => setPreviewDoc({ title: "Applicant Signature", url: signatureUrl })}
-                        className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 print:hidden flex items-center gap-1"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-indigo-600" /> View Signature
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-                <div>
-                  Referred By: <span className="font-bold text-[#134086]">{investor.referralEmployeeName || "Direct"}</span>
-                </div>
-              </div>
-            </div>
+            </fieldset>
 
             {/* SECTION 5 DOCUMENTS */}
             <div className="section-header">5. ATTACHED KYC & NOMINEE DOCUMENTS</div>
             <div className="box">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs print:hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
                 <div className="p-2.5 border rounded-lg bg-white flex items-center justify-between shadow-sm">
                   <span className="font-bold text-zinc-800">1. PAN Card</span>
                   {panDocUrl ? (
@@ -981,153 +1018,160 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
             </div>
 
             {/* OFFICE USE ONLY (EDITABLE BY ADMIN) */}
-            <div className="office-wrap">
-              <div className="office-col">
-                <div className="office-title">FOR OFFICE USE ONLY</div>
-                <div className="row">
-                  <span className="lbl">Received On:</span>
-                  <input
-                    type="date"
-                    value={officeData.officeReceivedOn}
-                    onChange={(e) => setOfficeData({ ...officeData, officeReceivedOn: e.target.value })}
-                  />
+            <fieldset disabled={isVerifiedReadOnly} className="border-none p-0 m-0 min-w-0">
+              <div className="office-wrap">
+                <div className="office-col">
+                  <div className="office-title">FOR OFFICE USE ONLY</div>
+                  <div className="row">
+                    <span className="lbl">Received On:</span>
+                    <input
+                      type="date"
+                      value={officeData.officeReceivedOn}
+                      onChange={(e) => setOfficeData({ ...officeData, officeReceivedOn: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Received By:</span>
+                    <input
+                      type="text"
+                      value={officeData.officeReceivedBy}
+                      onChange={(e) => setOfficeData({ ...officeData, officeReceivedBy: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Amount Received:</span>
+                    ₹<input
+                      type="number"
+                      value={officeData.officeAmountReceived}
+                      onChange={(e) => setOfficeData({ ...officeData, officeAmountReceived: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Total App Amount (Figures):</span>
+                    ₹<input
+                      type="number"
+                      value={officeData.totalApplicationAmount}
+                      onChange={(e) => setOfficeData({ ...officeData, totalApplicationAmount: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Total App Amount (Words):</span>
+                    <input
+                      type="text"
+                      value={officeData.totalApplicationAmountWords}
+                      onChange={(e) => setOfficeData({ ...officeData, totalApplicationAmountWords: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Payment Mode:</span>
+                    <input
+                      type="text"
+                      value={officeData.officePaymentMode}
+                      onChange={(e) => setOfficeData({ ...officeData, officePaymentMode: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Remark:</span>
+                    <input
+                      type="text"
+                      value={officeData.officeRemark}
+                      onChange={(e) => setOfficeData({ ...officeData, officeRemark: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Application Status:</span>
+                    <select
+                      value={officeData.officeStatus}
+                      onChange={(e) => setOfficeData({ ...officeData, officeStatus: e.target.value })}
+                      className="text-xs bg-[#fbf6e8]"
+                    >
+                      <option value="Accepted">Accepted</option>
+                      <option value="Rejected">Rejected</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Allotted Debenture No:</span>
+                    <input
+                      type="text"
+                      value={officeData.officeAllottedNo}
+                      onChange={(e) => setOfficeData({ ...officeData, officeAllottedNo: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="row">
-                  <span className="lbl">Received By:</span>
-                  <input
-                    type="text"
-                    value={officeData.officeReceivedBy}
-                    onChange={(e) => setOfficeData({ ...officeData, officeReceivedBy: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Amount Received:</span>
-                  ₹<input
-                    type="number"
-                    value={officeData.officeAmountReceived}
-                    onChange={(e) => setOfficeData({ ...officeData, officeAmountReceived: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Total App Amount (Figures):</span>
-                  ₹<input
-                    type="number"
-                    value={officeData.totalApplicationAmount}
-                    onChange={(e) => setOfficeData({ ...officeData, totalApplicationAmount: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Total App Amount (Words):</span>
-                  <input
-                    type="text"
-                    value={officeData.totalApplicationAmountWords}
-                    onChange={(e) => setOfficeData({ ...officeData, totalApplicationAmountWords: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Payment Mode:</span>
-                  <input
-                    type="text"
-                    value={officeData.officePaymentMode}
-                    onChange={(e) => setOfficeData({ ...officeData, officePaymentMode: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Remark:</span>
-                  <input
-                    type="text"
-                    value={officeData.officeRemark}
-                    onChange={(e) => setOfficeData({ ...officeData, officeRemark: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Application Status:</span>
-                  <select
-                    value={officeData.officeStatus}
-                    onChange={(e) => setOfficeData({ ...officeData, officeStatus: e.target.value })}
-                    className="text-xs bg-[#fbf6e8]"
-                  >
-                    <option value="Accepted">Accepted</option>
-                    <option value="Rejected">Rejected</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-                <div className="row">
-                  <span className="lbl">Allotted Debenture No:</span>
-                  <input
-                    type="text"
-                    value={officeData.officeAllottedNo}
-                    onChange={(e) => setOfficeData({ ...officeData, officeAllottedNo: e.target.value })}
-                  />
-                </div>
-              </div>
 
-              <div className="office-col">
-                <div className="office-title">VERIFIED BY</div>
-                <div className="row">
-                  <span className="lbl">Name:</span>
-                  <input
-                    type="text"
-                    value={officeData.verifiedName}
-                    onChange={(e) => setOfficeData({ ...officeData, verifiedName: e.target.value })}
-                  />
+                <div className="office-col">
+                  <div className="office-title">VERIFIED BY</div>
+                  <div className="row">
+                    <span className="lbl">Name:</span>
+                    <input
+                      type="text"
+                      value={officeData.verifiedName}
+                      onChange={(e) => setOfficeData({ ...officeData, verifiedName: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Designation:</span>
+                    <input
+                      type="text"
+                      value={officeData.verifiedDesignation}
+                      onChange={(e) => setOfficeData({ ...officeData, verifiedDesignation: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Sign &amp; Date:</span>
+                    <input
+                      type="text"
+                      value={officeData.verifiedSignDate}
+                      onChange={(e) => setOfficeData({ ...officeData, verifiedSignDate: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="row">
-                  <span className="lbl">Designation:</span>
-                  <input
-                    type="text"
-                    value={officeData.verifiedDesignation}
-                    onChange={(e) => setOfficeData({ ...officeData, verifiedDesignation: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Sign &amp; Date:</span>
-                  <input
-                    type="text"
-                    value={officeData.verifiedSignDate}
-                    onChange={(e) => setOfficeData({ ...officeData, verifiedSignDate: e.target.value })}
-                  />
-                </div>
-              </div>
 
-              <div className="office-col">
-                <div className="office-title">APPROVED BY</div>
-                <div className="row">
-                  <span className="lbl">Name:</span>
-                  <input
-                    type="text"
-                    value={officeData.approvedName}
-                    onChange={(e) => setOfficeData({ ...officeData, approvedName: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Designation:</span>
-                  <input
-                    type="text"
-                    value={officeData.approvedDesignation}
-                    onChange={(e) => setOfficeData({ ...officeData, approvedDesignation: e.target.value })}
-                  />
-                </div>
-                <div className="row">
-                  <span className="lbl">Sign &amp; Date:</span>
-                  <input
-                    type="text"
-                    value={officeData.approvedSignDate}
-                    onChange={(e) => setOfficeData({ ...officeData, approvedSignDate: e.target.value })}
-                  />
-                </div>
-                <div style={{ marginTop: "4px", fontWeight: 700, fontSize: "10px" }}>For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
-                <div className="sign-name">{officeData.approvedName}</div>
-                <div style={{ fontSize: "9.5px" }}>
-                  {officeData.approvedName}<br />{officeData.approvedDesignation}
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <div className="stamp">
-                    NEW DELHI<br />110059<br />INDIA
+                <div className="office-col">
+                  <div className="office-title">APPROVED BY</div>
+                  <div className="row">
+                    <span className="lbl">Name:</span>
+                    <input
+                      type="text"
+                      value={officeData.approvedName}
+                      onChange={(e) => setOfficeData({ ...officeData, approvedName: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Designation:</span>
+                    <input
+                      type="text"
+                      value={officeData.approvedDesignation}
+                      onChange={(e) => setOfficeData({ ...officeData, approvedDesignation: e.target.value })}
+                    />
+                  </div>
+                  <div className="row">
+                    <span className="lbl">Sign &amp; Date:</span>
+                    <input
+                      type="text"
+                      value={officeData.approvedSignDate}
+                      onChange={(e) => setOfficeData({ ...officeData, approvedSignDate: e.target.value })}
+                    />
+                  </div>
+                  <div style={{ marginTop: "4px", fontWeight: 700, fontSize: "10px" }}>For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
+                  <div className="sign-name">{officeData.approvedName}</div>
+                  <div style={{ fontSize: "9.5px" }}>
+                    {officeData.approvedName}<br />{officeData.approvedDesignation}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <div className="stamp">
+                      <img
+                        src="/company-seal.png"
+                        alt="Company Logo"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", padding: "3px", borderRadius: "50%", background: "#fff" }}
+                        onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </fieldset>
           </div>
         </div>
       </div>

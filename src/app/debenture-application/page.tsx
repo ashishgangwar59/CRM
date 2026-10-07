@@ -1161,7 +1161,6 @@ function DebentureFormContent() {
         .sheet .stamp {
           width: 70px;
           height: 70px;
-          border: 2px solid var(--navy);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -2340,9 +2339,9 @@ function DebentureFormContent() {
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <div className="stamp">
                 <img
-                  src="/company-seal.jpg"
+                  src="/company-seal.png"
                   alt="Company Logo"
-                  style={{ width: "100%", height: "100%", objectFit: "contain", padding: "3px", borderRadius: "50%", background: "#fff" }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", padding: "3px", borderRadius: "50%", background: "#fff" }}
                   onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
                 />
               </div>

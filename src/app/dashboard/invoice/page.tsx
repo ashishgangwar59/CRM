@@ -1078,6 +1078,10 @@ export default function InvoicePage() {
         <div className="sheet-container">
           <style dangerouslySetInnerHTML={{
             __html: `
+              .stamp{
+                 width:80px;
+                 height:80px;
+                 }
             .sheet-container {
               width: 100%;
               max-width: 820px;
@@ -1402,7 +1406,7 @@ export default function InvoicePage() {
               font-size: 11px;
               font-weight: 700;
               color: ${viewInvoice?.themeColor || themeColor};
-              margin-bottom: 34px;
+              margin-bottom: 5px;
             }
             .sign-block .auth {
               font-size: 10.5px;
@@ -1482,6 +1486,7 @@ export default function InvoicePage() {
                  -webkit-print-color-adjust: exact !important;
                  print-color-adjust: exact !important;
                }
+               
              }
           ` }} />
 
@@ -1717,6 +1722,16 @@ export default function InvoicePage() {
 
                 <div className="sign-block">
                   <div className="for-text">For {companyName}</div>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div className="stamp">
+                      <img
+                        src="/company-seal.png"
+                        alt="Company Logo"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", padding: "3px", borderRadius: "50%", background: "#fff" }}
+                        onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                      />
+                    </div>
+                  </div>
                   <div className="auth">{authSignatory}</div>
                 </div>
               </div>

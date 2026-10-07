@@ -41,8 +41,11 @@ function getInvestorMaturityDates(inv: any): { issueDateObj: Date, matDateObj: D
 function calculateInvestorMaturityAmount(inv: any) {
   const amount = inv.investmentAmount || 0;
   const rate = inv.monthlyGrowthPercentage || 0;
-  const { issueDateObj, matDateObj } = getInvestorMaturityDates(inv);
-  const days = Math.max(0, Math.round((matDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+  const days = getDaysBetweenDates(
+    inv?.investmentDate,
+    inv?.bondMaturityDate,
+    true
+  );
   const totalInterest = (amount * rate * days) / (100 * 30);
   return Math.round(amount + totalInterest) || 0;
 }
@@ -195,6 +198,7 @@ export default function AdminInvestorsPage() {
     nomineeName: "",
     nomineeRelation: "",
     nomineeAge: "",
+    status: "",
   });
 
   const fetchInvestors = async () => {
@@ -571,8 +575,10 @@ export default function AdminInvestorsPage() {
                 <TableHead>Investor Code & Name</TableHead>
                 <TableHead>Contact Email / Phone</TableHead>
                 <TableHead>Referred By</TableHead>
+                <TableHead className="min-w-[130px] whitespace-nowrap">Investment Date</TableHead>
                 <TableHead>Invest RS Amount</TableHead>
                 <TableHead>Monthly Growth %</TableHead>
+                <TableHead className="min-w-[140px] whitespace-nowrap">Maturity Date</TableHead>
                 <TableHead>Maturity Rs</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Bond Agreement</TableHead>
@@ -582,7 +588,7 @@ export default function AdminInvestorsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-10">
+                  <TableCell colSpan={11} className="text-center py-10">
                     <div className="flex flex-col items-center justify-center text-zinc-500">
                       <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mb-2" />
                       <span>Loading investors...</span>
@@ -591,20 +597,30 @@ export default function AdminInvestorsPage() {
                 </TableRow>
               ) : investors.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-10 text-zinc-500">No investors found.</TableCell>
+                  <TableCell colSpan={11} className="text-center py-10 text-zinc-500">No investors found.</TableCell>
                 </TableRow>
               ) : (
                 investors.map((inv) => {
                   const maturityAmount = calculateInvestorMaturityAmount(inv);
-                  const { matDateObj } = getInvestorMaturityDates(inv);
+                  const { issueDateObj, matDateObj } = getInvestorMaturityDates(inv);
+                  const formatDateFormatted = (d: Date) => {
+                    if (!d || isNaN(d.getTime())) return "-";
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const month = months[d.getMonth()];
+                    const year = d.getFullYear();
+                    return `${day}-${month}-${year}`;
+                  };
+                  const formattedInvestmentDate = formatDateFormatted(issueDateObj);
+                  const formattedMaturityDate = formatDateFormatted(matDateObj);
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   const tempMat = new Date(matDateObj);
                   tempMat.setHours(0, 0, 0, 0);
                   const daysToMaturity = Math.round((tempMat.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                  
+
                   let maturityAlert = null;
-                  const dateStr = matDateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+                  const dateStr = formatDateFormatted(matDateObj);
                   if (inv.status === "Verified") {
                     if (daysToMaturity === 0) {
                       maturityAlert = { text: `Matures: ${dateStr}`, color: "text-rose-600 bg-rose-50 border-rose-200" };
@@ -614,165 +630,173 @@ export default function AdminInvestorsPage() {
                       maturityAlert = { text: `Matured: ${dateStr}`, color: "text-rose-600 bg-rose-50 border-rose-200" };
                     }
                   }
-                  
+
                   return (
-                  <TableRow key={inv._id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-bold text-zinc-900 dark:text-zinc-100">{inv.fullName}</p>
-                        <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400 font-semibold">{inv.investorCode}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{inv.email}</p>
-                      <p className="text-xs text-zinc-500">{inv.phone}</p>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs font-bold text-[#134086] bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                        {inv.referralEmployeeName || "Direct / Self"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-bold text-zinc-900 dark:text-zinc-100">
-                      ₹{(inv.investmentAmount || 0).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {inv.monthlyGrowthPercentage || 1.33}% / mo
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1.5">
-                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                          ₹{maturityAmount.toLocaleString()}
+                    <TableRow key={inv._id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-bold text-zinc-900 dark:text-zinc-100">{inv.fullName}</p>
+                          <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400 font-semibold">{inv.investorCode}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{inv.email}</p>
+                        <p className="text-xs text-zinc-500">{inv.phone}</p>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs font-bold text-[#134086] bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                          {inv.referralEmployeeName || "Direct / Self"}
                         </span>
-                        {maturityAlert && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1 w-max shadow-sm ${maturityAlert.color} animate-in fade-in zoom-in duration-300`}>
-                            <AlertCircle className={`w-3 h-3 ${daysToMaturity <= 0 ? 'animate-pulse' : ''}`} />
-                            {maturityAlert.text}
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 min-w-[130px] whitespace-nowrap">
+                        {formattedInvestmentDate}
+                      </TableCell>
+                      <TableCell className="font-bold text-zinc-900 dark:text-zinc-100">
+                        ₹{(inv.investmentAmount || 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {inv.monthlyGrowthPercentage || 1.33}% / mo
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 min-w-[140px] whitespace-nowrap">
+                        {formattedMaturityDate}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                            ₹{maturityAmount.toLocaleString()}
                           </span>
+                          {maturityAlert && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1 w-max shadow-sm ${maturityAlert.color} animate-in fade-in zoom-in duration-300`}>
+                              <AlertCircle className={`w-3 h-3 ${daysToMaturity <= 0 ? 'animate-pulse' : ''}`} />
+                              {maturityAlert.text}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${inv.status === "Verified" ? "bg-[#00a65a] text-white" :
+                            inv.status === "Rejected" ? "bg-rose-600 text-white" :
+                              "bg-orange-500 text-white"
+                            }`}>
+                            {inv.status}
+                          </span>
+                          {inv.docVerifications && (
+                            <p className="text-[11px] text-zinc-500 font-medium">
+                              Docs: <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                {["aadhar", "pan", "bankPassbook"].filter(k => inv.docVerifications?.[k as keyof typeof inv.docVerifications] === "Approved").length} / 3
+                              </span> Approved
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {inv.bondAgreement?.accepted ? (
+                          <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> Accepted ({inv.bondAgreement.signatureText})
+                          </span>
+                        ) : (
+                          <span className="text-xs text-zinc-400 font-medium">Not Accepted</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${inv.status === "Verified" ? "bg-[#00a65a] text-white" :
-                          inv.status === "Rejected" ? "bg-rose-600 text-white" :
-                            "bg-orange-500 text-white"
-                          }`}>
-                          {inv.status}
-                        </span>
-                        {inv.docVerifications && (
-                          <p className="text-[11px] text-zinc-500 font-medium">
-                            Docs: <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                              {["aadhar", "pan", "bankPassbook"].filter(k => inv.docVerifications?.[k as keyof typeof inv.docVerifications] === "Approved").length} / 3
-                            </span> Approved
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {inv.bondAgreement?.accepted ? (
-                        <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                          <CheckCircle className="w-3.5 h-3.5" /> Accepted ({inv.bondAgreement.signatureText})
-                        </span>
-                      ) : (
-                        <span className="text-xs text-zinc-400 font-medium">Not Accepted</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="relative group flex items-center justify-center">
-                          <button
-                            onClick={() => setQuickAddModal(inv)}
-                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
-                            Add Investment
-                          </div>
-                        </div>
-                        <div className="relative group flex items-center justify-center">
-                          <button
-                            onClick={async () => {
-                              const fullData = await fetchFullInvestorData(inv._id);
-                              if (fullData) setDebentureModalInvestor(fullData);
-                            }}
-                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded transition-colors"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
-                            View Form
-                          </div>
-                        </div>
-                        <div className="relative group flex items-center justify-center">
-                          <button
-                            onClick={async () => {
-                              const fullData = await fetchFullInvestorData(inv._id);
-                              if (fullData) setSelectedInvestor(fullData);
-                            }}
-                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
-                            View & Verify
-                          </div>
-                        </div>
-                        <div className="relative group flex items-center justify-center">
-                          <button
-                            onClick={async () => {
-                              const fullData = await fetchFullInvestorData(inv._id);
-                              if (fullData) {
-                                setEditForm({
-                                  investorId: fullData._id,
-                                  fullName: fullData.fullName,
-                                  email: fullData.email,
-                                  phone: fullData.phone,
-                                  investmentAmount: fullData.investmentAmount || 0,
-                                  monthlyGrowthPercentage: fullData.monthlyGrowthPercentage || 1.33,
-                                  investmentDate: fullData.investmentDate || (fullData.verifiedAt ? new Date(fullData.verifiedAt).toISOString().split("T")[0] : new Date(fullData.createdAt).toISOString().split("T")[0]),
-                                  bondMaturityDate: fullData.bondMaturityDate || "",
-                                  nomineeName: fullData.debentureForm?.nomineeName || fullData.nomineeName || "",
-                                  nomineeRelation: fullData.debentureForm?.nomineeRelation || fullData.nomineeRelation || "",
-                                  nomineeAge: fullData.debentureForm?.nomineeAge || fullData.nomineeAge || "",
-                                });
-                                setShowEditModal(true);
-                              }
-                            }}
-                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
-                            Edit Profile
-                          </div>
-                        </div>
-                        {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <div className="relative group flex items-center justify-center">
                             <button
-                              onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
-                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+                              onClick={() => setQuickAddModal(inv)}
+                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Plus className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
-                              Delete
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                              Add Investment
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                          <div className="relative group flex items-center justify-center">
+                            <button
+                              onClick={async () => {
+                                const fullData = await fetchFullInvestorData(inv._id);
+                                if (fullData) setDebentureModalInvestor(fullData);
+                              }}
+                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded transition-colors"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                              View Form
+                            </div>
+                          </div>
+                          <div className="relative group flex items-center justify-center">
+                            <button
+                              onClick={async () => {
+                                const fullData = await fetchFullInvestorData(inv._id);
+                                if (fullData) setSelectedInvestor(fullData);
+                              }}
+                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                              View & Verify
+                            </div>
+                          </div>
+                          <div className="relative group flex items-center justify-center">
+                            <button
+                              onClick={async () => {
+                                const fullData = await fetchFullInvestorData(inv._id);
+                                if (fullData) {
+                                  setEditForm({
+                                    investorId: fullData._id,
+                                    fullName: fullData.fullName,
+                                    email: fullData.email,
+                                    phone: fullData.phone,
+                                    investmentAmount: fullData.investmentAmount || 0,
+                                    monthlyGrowthPercentage: fullData.monthlyGrowthPercentage || 1.33,
+                                    investmentDate: fullData.investmentDate || (fullData.verifiedAt ? new Date(fullData.verifiedAt).toISOString().split("T")[0] : new Date(fullData.createdAt).toISOString().split("T")[0]),
+                                    bondMaturityDate: fullData.bondMaturityDate || "",
+                                    nomineeName: fullData.debentureForm?.nomineeName || fullData.nomineeName || "",
+                                    nomineeRelation: fullData.debentureForm?.nomineeRelation || fullData.nomineeRelation || "",
+                                    nomineeAge: fullData.debentureForm?.nomineeAge || fullData.nomineeAge || "",
+                                    status: fullData.status || "",
+                                  });
+                                  setShowEditModal(true);
+                                }
+                              }}
+                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                              Edit Profile
+                            </div>
+                          </div>
+                          {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                            <div className="relative group flex items-center justify-center">
+                              <button
+                                onClick={() => handleDeleteInvestor(inv._id, inv.fullName)}
+                                className="cursor-pointer p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
+                                Delete
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={3} className="text-right font-bold text-lg">Total:</TableCell>
+                <TableCell colSpan={4} className="text-right font-bold text-lg">Total:</TableCell>
                 <TableCell className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
                   ₹{investors.reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0).toLocaleString()}
                 </TableCell>
+                <TableCell></TableCell>
                 <TableCell></TableCell>
                 <TableCell className="font-bold text-lg text-indigo-600 dark:text-indigo-400">
                   ₹{investors.reduce((sum, inv) => sum + calculateInvestorMaturityAmount(inv), 0).toLocaleString()}
@@ -869,6 +893,7 @@ export default function AdminInvestorsPage() {
 
               {/* Payment Bond Maturity Calculation Summary */}
               {(() => {
+
                 const principal = Number(selectedInvestor.investmentAmount) || 0;
                 const rate = Number(selectedInvestor.monthlyGrowthPercentage);
                 // const months = Number(selectedInvestor.bondMaturityMonths);
@@ -1087,33 +1112,40 @@ export default function AdminInvestorsPage() {
 
                           {docItem.key !== "signature" && (
                             <div className="flex items-center gap-1.5">
-                              <Button
-                                size="sm"
-                                disabled={submitting || !docItem.url}
-                                onClick={() => handleDocVerifyLocal("Approved")}
-                                className={`font-bold h-8 px-3 text-xs ${!docItem.url
-                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                                  : currentStatus === "Approved"
-                                    ? "bg-emerald-600 text-white  shadow-sm"
-                                    : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
-                                  }`}
-                              >
-                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={submitting || !docItem.url}
-                                onClick={() => handleDocVerifyLocal("Rejected")}
-                                className={`h-8 px-3 text-xs font-bold ${!docItem.url
-                                  ? "bg-[#eee] text-zinc-400 cursor-not-allowed border-[#eee]"
-                                  : currentStatus === "Rejected"
-                                    ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
-                                    : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
-                                  }`}
-                              >
-                                <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
-                              </Button>
+                              {(() => {
+                                const isVerifiedReadOnly = selectedInvestor.status === "Verified" && role !== "ADMIN" && role !== "KEY_ADMIN";
+                                return (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      disabled={submitting || !docItem.url || isVerifiedReadOnly}
+                                      onClick={() => handleDocVerifyLocal("Approved")}
+                                      className={`font-bold h-8 px-3 text-xs ${!docItem.url || isVerifiedReadOnly
+                                        ? "bg-zinc-300 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed border-zinc-300"
+                                        : currentStatus === "Approved"
+                                          ? "bg-emerald-600 text-white  shadow-sm"
+                                          : "bg-emerald-700/80 hover:bg-emerald-600 text-white opacity-90"
+                                        }`}
+                                    >
+                                      <CheckCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Approved" ? "Approved ✔" : "Approve"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={submitting || !docItem.url || isVerifiedReadOnly}
+                                      onClick={() => handleDocVerifyLocal("Rejected")}
+                                      className={`h-8 px-3 text-xs font-bold ${!docItem.url || isVerifiedReadOnly
+                                        ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed border-zinc-300"
+                                        : currentStatus === "Rejected"
+                                          ? "bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400"
+                                          : "bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100"
+                                        }`}
+                                    >
+                                      <XCircle className="w-3.5 h-3.5 mr-1" /> {currentStatus === "Rejected" ? "Rejected ❌" : "Reject"}
+                                    </Button>
+                                  </>
+                                );
+                              })()}
                             </div>
                           )}
                         </div>
@@ -1184,34 +1216,39 @@ export default function AdminInvestorsPage() {
                       </p>
                     )}
 
-                    <div className="flex justify-end gap-3">
-                      <Button
-                        variant="outline"
-                        className={`bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100 font-bold ${!hasUploadedDocs ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
-                        onClick={() => setShowRejectBox(!showRejectBox)}
-                        disabled={submitting || !hasUploadedDocs}
-                      >
-                        Reject Investor Docs
-                      </Button>
-                      {(role === "ADMIN" || role === "KEY_ADMIN") ? (
-                        <Button
-                          className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                          onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
-                          disabled={submitting || !hasAllMandatoryUploaded}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
-                        </Button>) : ""}
-                      {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (role === "ADMIN" || role === "KEY_ADMIN") && (
-                        <Button
-                          className="bg-amber-500 hover:bg-amber-600 text-white font-black shadow-md"
-                          onClick={() => setBondModalInvestor(selectedInvestor)}
-                        >
-                          <Award className="w-4 h-4 mr-2" /> Download Payment Bond (PDF)
-                        </Button>
-                      )}
-                    </div>
+                    {(() => {
+                      const isVerifiedReadOnly = selectedInvestor.status === "Verified" && role !== "ADMIN" && role !== "KEY_ADMIN";
+                      return (
+                        <div className="flex justify-end gap-3">
+                          <Button
+                            variant="outline"
+                            className={`bg-[#eee] text-rose-600 border-[#eee] hover:bg-rose-100 font-bold ${!hasUploadedDocs || isVerifiedReadOnly ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
+                            onClick={() => setShowRejectBox(!showRejectBox)}
+                            disabled={submitting || !hasUploadedDocs || isVerifiedReadOnly}
+                          >
+                            Reject Investor Docs
+                          </Button>
+                          {(role === "ADMIN" || role === "KEY_ADMIN") ? (
+                            <Button
+                              className={`bg-emerald-600 hover:bg-emerald-500 text-white font-bold ${!hasAllMandatoryUploaded ? "opacity-50 cursor-not-allowed" : ""
+                                }`}
+                              onClick={() => handleUpdateStatus(selectedInvestor._id, "Verified")}
+                              disabled={submitting || !hasAllMandatoryUploaded}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" /> Verify All Docs & Approve
+                            </Button>) : ""}
+                          {(selectedInvestor.status === "Verified" || hasAllMandatoryUploaded) && (role === "ADMIN" || role === "KEY_ADMIN") && (
+                            <Button
+                              className="bg-amber-500 hover:bg-amber-600 text-white font-black shadow-md"
+                              onClick={() => setBondModalInvestor(selectedInvestor)}
+                            >
+                              <Award className="w-4 h-4 mr-2" /> Download Payment Bond (PDF)
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -1233,6 +1270,7 @@ export default function AdminInvestorsPage() {
       {debentureModalInvestor && (
         <DebentureFormModal
           investor={debentureModalInvestor}
+          role={role}
           onClose={() => setDebentureModalInvestor(null)}
           onUpdate={() => {
             setDebentureModalInvestor(null);
@@ -1386,139 +1424,159 @@ export default function AdminInvestorsPage() {
       )}
 
       {/* --- Edit Investor Modal --- */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
-              <h2 className="text-xl font-bold">Edit Investor Profile</h2>
-              <Button variant="ghost" onClick={() => setShowEditModal(false)}>✕</Button>
-            </div>
-            <div className="overflow-y-auto flex-1 p-6 space-y-4">
+      {showEditModal && (() => {
+        const isVerifiedReadOnly = editForm.status === "Verified" && role !== "ADMIN" && role !== "KEY_ADMIN";
 
-              <form onSubmit={handleEditSave} className="space-y-3">
-                <div className="space-y-1">
-                  <Label>Full Name</Label>
-                  <Input value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} />
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+              <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 dark:border-zinc-800 shrink-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold">Edit Investor Profile</h2>
+                  {isVerifiedReadOnly && (
+                    <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2.5 py-0.5 rounded border border-amber-300">
+                      Read-Only (Verified)
+                    </span>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <Label>Email</Label>
-                  <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Phone</Label>
-                  <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Invest RS Amount (₹)</Label>
-                    <Input type="number" value={editForm.investmentAmount} onChange={(e) => setEditForm({ ...editForm, investmentAmount: Number(e.target.value) })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Monthly Growth (%)</Label>
-                    <Input type="number" step="0.1" value={editForm.monthlyGrowthPercentage} onChange={(e) => setEditForm({ ...editForm, monthlyGrowthPercentage: Number(e.target.value) })} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Investment Date</Label>
-                    <Input type="date" value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Bond Maturity Date</Label>
-                    <Input type="date" min={editForm.investmentDate || undefined} value={editForm.bondMaturityDate} onChange={(e) => setEditForm({ ...editForm, bondMaturityDate: e.target.value })} />
-                  </div>
-                </div>
-                {editForm.investmentDate && editForm.bondMaturityDate && (
-                  <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
-                    <span>Total Duration:</span>
-                    <span className="font-bold">{getDaysBetweenDates(editForm.investmentDate, editForm.bondMaturityDate, true)} Days</span>
+                <Button variant="ghost" onClick={() => setShowEditModal(false)}>✕</Button>
+              </div>
+              <div className="overflow-y-auto flex-1 p-6 space-y-4">
+                {isVerifiedReadOnly && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                    <span>This investor is <strong>Verified & Approved</strong>. Only Admin and Key Admin can modify these details.</span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
+
+                <form onSubmit={handleEditSave} className="space-y-3">
                   <div className="space-y-1">
-                    <Label>Nominee Name</Label>
-                    <Input value={editForm.nomineeName} onChange={(e) => setEditForm({ ...editForm, nomineeName: e.target.value })} />
+                    <Label>Full Name</Label>
+                    <Input disabled={isVerifiedReadOnly} value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} />
                   </div>
                   <div className="space-y-1">
-                    <Label>Nominee Relation</Label>
-                    <Input value={editForm.nomineeRelation} onChange={(e) => setEditForm({ ...editForm, nomineeRelation: e.target.value })} />
+                    <Label>Email</Label>
+                    <Input disabled={isVerifiedReadOnly} type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <Label>Nominee Age</Label>
-                  <Input type="number" value={editForm.nomineeAge} onChange={(e) => setEditForm({ ...editForm, nomineeAge: e.target.value })} />
-                </div>
+                  <div className="space-y-1">
+                    <Label>Phone</Label>
+                    <Input disabled={isVerifiedReadOnly} value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Invest RS Amount (₹)</Label>
+                      <Input disabled={isVerifiedReadOnly} type="number" value={editForm.investmentAmount} onChange={(e) => setEditForm({ ...editForm, investmentAmount: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Monthly Growth (%)</Label>
+                      <Input disabled={isVerifiedReadOnly} type="number" step="0.1" value={editForm.monthlyGrowthPercentage} onChange={(e) => setEditForm({ ...editForm, monthlyGrowthPercentage: Number(e.target.value) })} />
+                    </div>
+                  </div>
 
-                {/* Payment Bond Auto-Calculation Preview */}
-                {(() => {
-                  const principal = Number(editForm.investmentAmount) || 0;
-                  const rate = Number(editForm.monthlyGrowthPercentage) || 0;
-                  const days = getDaysBetweenDates(
-                    editForm?.investmentDate,
-                    editForm?.bondMaturityDate,
-                    true
-                  );
-                  let totalInterest = 0;
-                  // let days = 0;
-                  let matDateStr = "—";
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Investment Date</Label>
+                      <Input disabled={isVerifiedReadOnly} type="date" value={editForm.investmentDate} onChange={(e) => setEditForm({ ...editForm, investmentDate: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Bond Maturity Date</Label>
+                      <Input disabled={isVerifiedReadOnly} type="date" min={editForm.investmentDate || undefined} value={editForm.bondMaturityDate} onChange={(e) => setEditForm({ ...editForm, bondMaturityDate: e.target.value })} />
+                    </div>
+                  </div>
+                  {editForm.investmentDate && editForm.bondMaturityDate && (
+                    <div className="text-xs font-medium text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex items-center justify-between">
+                      <span>Total Duration:</span>
+                      <span className="font-bold">{getDaysBetweenDates(editForm.investmentDate, editForm.bondMaturityDate, true)} Days</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Nominee Name</Label>
+                      <Input disabled={isVerifiedReadOnly} value={editForm.nomineeName} onChange={(e) => setEditForm({ ...editForm, nomineeName: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Nominee Relation</Label>
+                      <Input disabled={isVerifiedReadOnly} value={editForm.nomineeRelation} onChange={(e) => setEditForm({ ...editForm, nomineeRelation: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Nominee Age</Label>
+                    <Input disabled={isVerifiedReadOnly} type="number" value={editForm.nomineeAge} onChange={(e) => setEditForm({ ...editForm, nomineeAge: e.target.value })} />
+                  </div>
 
-                  if (editForm.investmentDate && editForm.bondMaturityDate) {
-                    const invDate = new Date(editForm.investmentDate);
-                    const matDate = new Date(editForm.bondMaturityDate);
+                  {/* Payment Bond Auto-Calculation Preview */}
+                  {(() => {
+                    const principal = Number(editForm.investmentAmount) || 0;
+                    const rate = Number(editForm.monthlyGrowthPercentage) || 0;
+                    const days = getDaysBetweenDates(
+                      editForm?.investmentDate,
+                      editForm?.bondMaturityDate,
+                      true
+                    );
+                    let totalInterest = 0;
+                    let matDateStr = "—";
 
-                    let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
-                    let tempDate = new Date(invDate);
-                    tempDate.setMonth(tempDate.getMonth() + months);
-                    if (tempDate.getTime() > matDate.getTime()) {
-                      months--;
-                      tempDate = new Date(invDate);
+                    if (editForm.investmentDate && editForm.bondMaturityDate) {
+                      const invDate = new Date(editForm.investmentDate);
+                      const matDate = new Date(editForm.bondMaturityDate);
+
+                      let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
+                      let tempDate = new Date(invDate);
                       tempDate.setMonth(tempDate.getMonth() + months);
+                      if (tempDate.getTime() > matDate.getTime()) {
+                        months--;
+                        tempDate = new Date(invDate);
+                        tempDate.setMonth(tempDate.getMonth() + months);
+                      }
+
+                      totalInterest = (principal * rate * days / (100 * 30));
+
+                      matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                    } else if (editForm.investmentDate) {
+                      const invDate = new Date(editForm.investmentDate);
+                      const months = 1;
+                      const matDate = new Date(invDate);
+                      matDate.setMonth(matDate.getMonth() + months);
+
+                      const monthlyInterest = (principal * rate * days / (100 * 30));
+                      totalInterest = monthlyInterest * 1;
+
+                      matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                     }
 
-                    totalInterest = (principal * rate * days / (100 * 30));
+                    const totalMaturityAmount = principal + totalInterest;
 
-                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  } else if (editForm.investmentDate) {
-                    const invDate = new Date(editForm.investmentDate);
-                    const months = 1;
-                    const matDate = new Date(invDate);
-                    matDate.setMonth(matDate.getMonth() + months);
-
-                    const monthlyInterest = (principal * rate * days / (100 * 30));
-                    totalInterest = monthlyInterest * 1;
-
-                    matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  }
-
-                  const totalMaturityAmount = principal + totalInterest;
-
-                  return (
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 mt-2 text-amber-900 dark:text-amber-200">
-                      <p className="font-bold uppercase text-[10px] tracking-wider text-amber-600 dark:text-amber-400">✦ Bond Maturity Auto-Calculation Preview ✦</p>
-                      <div className="flex justify-between">
-                        <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{Math.round(totalInterest)}</span>
+                    return (
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1 mt-2 text-amber-900 dark:text-amber-200">
+                        <p className="font-bold uppercase text-[10px] tracking-wider text-amber-600 dark:text-amber-400">✦ Bond Maturity Auto-Calculation Preview ✦</p>
+                        <div className="flex justify-between">
+                          <span>Total Interest ({days} days @ {rate}%/mo):</span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{Math.round(totalInterest)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-amber-500/20 pt-1 font-bold">
+                          <span>Auto Maturity Date: <span className="text-indigo-600 dark:text-indigo-400 font-mono">{matDateStr}</span></span>
+                          <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{Math.round(totalMaturityAmount)}/-</span></span>
+                        </div>
                       </div>
-                      <div className="flex justify-between border-t border-amber-500/20 pt-1 font-bold">
-                        <span>Auto Maturity Date: <span className="text-indigo-600 dark:text-indigo-400 font-mono">{matDateStr}</span></span>
-                        <span>Payable: <span className="text-rose-600 dark:text-rose-400 font-mono">₹{Math.round(totalMaturityAmount)}/-</span></span>
-                      </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
 
-                <div className="flex justify-end gap-2 pt-3">
-                  <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>Cancel</Button>
-                  <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
-                    {submitting ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
-              </form>
+                  <div className="flex justify-end gap-2 pt-3">
+                    <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+                      {isVerifiedReadOnly ? "Close" : "Cancel"}
+                    </Button>
+                    {!isVerifiedReadOnly && (
+                      <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
+                        {submitting ? "Saving..." : "Save Changes"}
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* In-App Document Viewer Modal for Admin & KeyAdmin */}
       {previewDoc && (

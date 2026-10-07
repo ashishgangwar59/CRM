@@ -19,11 +19,11 @@ export async function GET(req: Request) {
     }
 
     const settings = await SystemSettings.findOne().lean();
-    const address = settings?.companyProfile?.address || "A-91, Block A, Gali No. 2, Sewak Park, Near Dwarka Mor Metro Station, Dwarka Mor, New Delhi – 110059, India.";
-    const companyName = settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD";
-    const companyPhone = settings?.companyProfile?.phone || "18008900818";
-    const companyEmail = settings?.companyProfile?.email || "info@niventracapitaladvisory.com";
-    const companyWebsite = settings?.companyProfile?.website || "www.niventracapitaladvisory.com";
+    const address = settings?.companyProfile?.address || "";
+    const companyName = settings?.companyProfile?.name || "";
+    const companyPhone = settings?.companyProfile?.phone || "";
+    const companyEmail = settings?.companyProfile?.email || "";
+    const companyWebsite = settings?.companyProfile?.website || "";
 
     // Calculations
     let totalTaxableValue = 0;
@@ -288,7 +288,10 @@ export async function GET(req: Request) {
     letter-spacing: 0.5px;
     font-weight: bold;
   }
-
+      .stamp{
+                 width:80px;
+                 height:80px;
+                 }
   table.items {
     width: calc(100% - 64px);
     margin: 22px 32px 0;
@@ -411,7 +414,7 @@ export async function GET(req: Request) {
     font-size: 11px;
     font-weight: 700;
     color: #f0c975;
-    margin-bottom: 34px;
+    margin-bottom: 5px;
   }
   .sign-block .auth {
     font-size: 10.5px;
@@ -702,6 +705,15 @@ export async function GET(req: Request) {
 
         <div class="sign-block">
           <div class="for-text">For ${companyName}</div>
+            <div style="display: flex;justify-content: center;">
+                    <div class="stamp">
+                      <img
+                        src="/company-seal.png"
+                        alt="Company Logo"
+                        style="width: 100%;height: 100%;object-fit: cover;padding: 3px;border-radius: 50%;background: #fff;"
+                      />
+                    </div>
+                  </div>
           <div class="auth">Authorized Signatory</div>
         </div>
       </div>

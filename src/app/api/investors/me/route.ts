@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/lib/db";
 import { Investor } from "@/lib/models/Investor";
 import { User } from "@/lib/models/User";
 import { Employee } from "@/lib/models/Employee";
+import { Team } from "@/lib/models/Team";
 import { Counter } from "@/lib/models/Counter";
 import { verifyAccessToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
@@ -115,9 +116,28 @@ export async function GET(req: Request) {
       // Restrict visibility for employees
       if (userRole !== "ADMIN" && userRole !== "KEYADMIN" && userRole !== "SUPERADMIN") {
         if (!user?.accessibleModules?.includes("All Investors")) {
-          const currentEmp = await Employee.findOne({ email: user?.email });
-          if (currentEmp) {
-            query.referralEmployeeId = currentEmp._id;
+          // Check if user is a team owner
+          const team = await Team.findOne({ owner: user._id });
+          let allowedEmployeeIds = [];
+
+          if (team) {
+            // Include owner and all team members
+            const memberUserIds = team.members || [];
+            const userIdsToFetch = [user._id, ...memberUserIds];
+            const usersInTeam = await User.find({ _id: { $in: userIdsToFetch } });
+            const userEmails = usersInTeam.map(u => u.email);
+            const teamEmployees = await Employee.find({ email: { $in: userEmails } });
+            allowedEmployeeIds = teamEmployees.map(e => e._id);
+          } else {
+            // Not a team owner, only self
+            const currentEmp = await Employee.findOne({ email: user?.email });
+            if (currentEmp) {
+              allowedEmployeeIds.push(currentEmp._id);
+            }
+          }
+
+          if (allowedEmployeeIds.length > 0) {
+            query.referralEmployeeId = { $in: allowedEmployeeIds };
           } else {
             // If no employee profile exists, return nothing
             query.referralEmployeeId = "000000000000000000000000";
@@ -263,7 +283,7 @@ export async function PUT(req: Request) {
 
     // If Admin/KeyAdmin/Manager/Staff verifying/editing an investor
     if (role !== "INVESTOR") {
-      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, kycDocs, investmentDate, bondMaturityMonths, bondMaturityDate } = body;
+      const { investorId, _id, id, status, rejectionReason, investmentAmount, monthlyGrowthPercentage, fullName, phone, email, docVerifications, debentureForm, kycDocs, investmentDate, bondMaturityMonths, bondMaturityDate, nomineeName, nomineeRelation, nomineeAge } = body;
       const targetId = investorId || _id || id;
 
       if (!targetId) return NextResponse.json({ error: "Investor ID required" }, { status: 400 });
@@ -289,6 +309,9 @@ export async function PUT(req: Request) {
       if (fullName) updateFields.fullName = fullName;
       if (phone) updateFields.phone = phone;
       if (email) updateFields.email = email;
+      if (nomineeName !== undefined) updateFields.nomineeName = nomineeName;
+      if (nomineeRelation !== undefined) updateFields.nomineeRelation = nomineeRelation;
+      if (nomineeAge !== undefined) updateFields.nomineeAge = nomineeAge;
 
       if (status === "Verified") {
         updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
@@ -326,8 +349,20 @@ export async function PUT(req: Request) {
         }
       }
 
-      if (debentureForm) {
-        updateFields.debentureForm = { ...(currentInv.debentureForm || {}), ...debentureForm };
+      if (debentureForm || nomineeName !== undefined || nomineeRelation !== undefined || nomineeAge !== undefined || investmentAmount !== undefined || monthlyGrowthPercentage !== undefined) {
+        const formUpdates = { ...(currentInv.debentureForm || {}), ...(debentureForm || {}) };
+        if (nomineeName !== undefined) formUpdates.nomineeName = nomineeName;
+        if (nomineeRelation !== undefined) formUpdates.nomineeRelation = nomineeRelation;
+        if (nomineeAge !== undefined) formUpdates.nomineeAge = nomineeAge;
+        if (investmentAmount !== undefined && !isNaN(Number(investmentAmount))) {
+          formUpdates.totalApplicationAmount = Number(investmentAmount);
+          formUpdates.officeAmountReceived = Number(investmentAmount);
+          formUpdates.faceValue = Number(investmentAmount);
+        }
+        if (monthlyGrowthPercentage !== undefined && !isNaN(Number(monthlyGrowthPercentage))) {
+          formUpdates.monthlyGrowthPercentage = Number(monthlyGrowthPercentage);
+        }
+        updateFields.debentureForm = formUpdates;
       }
 
       if (kycDocs) {
