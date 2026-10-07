@@ -185,7 +185,7 @@ export default function PayrollDashboardPage() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -498,41 +498,60 @@ export default function PayrollDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between py-4">
-          <div className="text-sm text-zinc-500">
-            Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, currentDataList.length)}</span> of <span className="font-medium">{currentDataList.length}</span> results
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <div className="flex items-center space-x-1 px-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 rounded-full text-sm font-medium ${currentPage === pageNum ? 'bg-indigo-600 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
-                >
-                  {pageNum}
-                </button>
-              ))}
+      {currentDataList.length > 0 && (
+        <div className="flex flex-col md:flex-row items-center justify-between py-4 gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-zinc-500">
+              Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, currentDataList.length)}</span> of <span className="font-medium">{currentDataList.length}</span> results
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-zinc-500">Per page:</span>
+              <select 
+                className="border border-zinc-300 rounded px-2 py-1 text-sm bg-white"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
+          {totalPages > 1 && (
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center space-x-1 px-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 rounded-full text-sm font-medium ${currentPage === pageNum ? 'bg-indigo-600 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
