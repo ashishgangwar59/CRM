@@ -8,6 +8,7 @@ import { Payroll } from "@/lib/models/Payroll";
 import { Announcement } from "@/lib/models/Announcement";
 import { EmployeeTask } from "@/lib/models/EmployeeTask";
 import { Holiday } from "@/lib/models/Holiday"; // Assuming we have this, or we can just mock upcoming if not
+import { User } from "@/lib/models/User";
 
 function getToken(req: Request): string | null {
   const cookieHeader = req.headers.get("cookie");
@@ -34,7 +35,13 @@ export async function GET(req: Request) {
     try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
-    const employeeId = payload.userId;
+    const user = await User.findById(payload.userId);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    
+    const employee = await Employee.findOne({ email: user.email });
+    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+    
+    const employeeId = employee._id;
 
     const todayStr = new Date().toISOString().split("T")[0];
 
@@ -76,8 +83,8 @@ export async function GET(req: Request) {
       value: value as number
     }));
 
-    // 4. Salary Summary & History
-    const salaries = await Payroll.find({ employeeId, status: "Paid" })
+    // 4. Salary Summary & History (Show Approved and Paid slips)
+    const salaries = await Payroll.find({ employeeId, status: { $in: ["Approved", "Paid"] } })
       .sort({ createdAt: -1 })
       .limit(6)
       .lean();

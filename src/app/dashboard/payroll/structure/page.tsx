@@ -19,6 +19,8 @@ export default function SalaryStructurePage() {
     hra: 0,
     travelAllowance: 0,
     incentive: 0,
+    teamIncentive: 0,
+    fullBranchIncentive: 0,
     pf: 0,
     esi: 0,
     professionalTax: 0,
@@ -34,7 +36,7 @@ export default function SalaryStructurePage() {
       ]);
       const empData = await empRes.json();
       const structData = await structRes.json();
-      
+
       if (empData.success) setEmployees(empData.data);
       if (structData.success) setStructures(structData.data);
     } catch (e) {
@@ -57,6 +59,8 @@ export default function SalaryStructurePage() {
         hra: existing.hra || 0,
         travelAllowance: existing.travelAllowance ?? existing.metroAllowance ?? existing.specialAllowance ?? 0,
         incentive: existing.incentive || 0,
+        teamIncentive: existing.teamIncentive || 0,
+        fullBranchIncentive: existing.fullBranchIncentive || 0,
         pf: existing.pf || 0,
         esi: existing.esi || 0,
         professionalTax: existing.professionalTax || 0,
@@ -64,7 +68,7 @@ export default function SalaryStructurePage() {
         advanceSalaryDrawn: existing.advanceSalaryDrawn || 0,
       });
     } else {
-      setFormData({ basic: 0, hra: 0, travelAllowance: 0, incentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0, advanceSalaryDrawn: 0 });
+      setFormData({ basic: 0, hra: 0, travelAllowance: 0, incentive: 0, teamIncentive: 0, fullBranchIncentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0, advanceSalaryDrawn: 0 });
     }
   };
 
@@ -74,8 +78,8 @@ export default function SalaryStructurePage() {
       const res = await fetch("/api/payroll/structure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          employeeId: selectedEmp, 
+        body: JSON.stringify({
+          employeeId: selectedEmp,
           ...formData,
           metroAllowance: formData.travelAllowance,
           specialAllowance: formData.travelAllowance // sync back for backward compatibility
@@ -96,6 +100,9 @@ export default function SalaryStructurePage() {
 
   if (loading) return <div className="p-8">Loading...</div>;
 
+  const selectedEmployeeObj = employees.find(e => e._id === selectedEmp);
+  const isBranchHead = selectedEmployeeObj?.designation?.toLowerCase().includes("branch head");
+
   return (
     <div className="space-y-6 w-full pb-10">
       <div>
@@ -113,8 +120,8 @@ export default function SalaryStructurePage() {
               {employees.map(emp => {
                 const hasStruct = structures.some(s => s.employeeId?._id === emp._id || s.employeeId === emp._id);
                 return (
-                  <div 
-                    key={emp._id} 
+                  <div
+                    key={emp._id}
                     className={`p-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 ${selectedEmp === emp._id ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}
                     onClick={() => handleSelect(emp._id)}
                   >
@@ -144,19 +151,28 @@ export default function SalaryStructurePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Basic Salary (₹)</Label>
-                      <Input type="number" required value={formData.basic} onChange={e => setFormData({...formData, basic: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.basic} onChange={e => setFormData({ ...formData, basic: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
                       <Label>HRA (₹)</Label>
-                      <Input type="number" required value={formData.hra} onChange={e => setFormData({...formData, hra: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.hra} onChange={e => setFormData({ ...formData, hra: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
                       <Label>Travel Allowance (₹)</Label>
-                      <Input type="number" required value={formData.travelAllowance} onChange={e => setFormData({...formData, travelAllowance: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.travelAllowance} onChange={e => setFormData({ ...formData, travelAllowance: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Incentive (₹)</Label>
-                      <Input type="number" required value={formData.incentive} onChange={e => setFormData({...formData, incentive: Number(e.target.value)})} />
+                      <Label>Self Incentive (₹)</Label>
+                      <Input type="number" required value={formData.incentive} onChange={e => setFormData({ ...formData, incentive: Number(e.target.value) })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Team Incentive (₹)</Label>
+                      <Input type="number" required value={formData.teamIncentive} onChange={e => setFormData({ ...formData, teamIncentive: Number(e.target.value) })} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Full Branch Incentive (Fixed) (₹)</Label>
+                      <Input type="number" required value={formData.fullBranchIncentive} onChange={e => setFormData({ ...formData, fullBranchIncentive: Number(e.target.value) })} />
                     </div>
                   </div>
                 </div>
@@ -166,23 +182,23 @@ export default function SalaryStructurePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>PF Amount (₹)</Label>
-                      <Input type="number" required value={formData.pf} onChange={e => setFormData({...formData, pf: Number(e.target.value)})} />
+                      <Input type="number" value={formData.pf || ""} onChange={e => setFormData({ ...formData, pf: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
                       <Label>ESI Amount (₹)</Label>
-                      <Input type="number" required value={formData.esi} onChange={e => setFormData({...formData, esi: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.esi} onChange={e => setFormData({ ...formData, esi: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
                       <Label>Professional Tax (₹)</Label>
-                      <Input type="number" required value={formData.professionalTax} onChange={e => setFormData({...formData, professionalTax: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.professionalTax} onChange={e => setFormData({ ...formData, professionalTax: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
                       <Label>Income Tax / TDS (₹)</Label>
-                      <Input type="number" required value={formData.incomeTax} onChange={e => setFormData({...formData, incomeTax: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.incomeTax} onChange={e => setFormData({ ...formData, incomeTax: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
                       <Label>Advance Salary Drawn (₹)</Label>
-                      <Input type="number" required value={formData.advanceSalaryDrawn} onChange={e => setFormData({...formData, advanceSalaryDrawn: Number(e.target.value)})} />
+                      <Input type="number" required value={formData.advanceSalaryDrawn} onChange={e => setFormData({ ...formData, advanceSalaryDrawn: Number(e.target.value) })} />
                     </div>
                   </div>
                 </div>
@@ -192,7 +208,7 @@ export default function SalaryStructurePage() {
                     <span className="font-semibold text-lg">Gross Monthly Salary</span>
                     <span className="font-bold text-2xl flex items-center">
                       <IndianRupee className="mr-1 h-6 w-6" />
-                      {formData.basic + formData.hra + formData.travelAllowance + formData.incentive}
+                      {formData.basic + formData.hra + formData.travelAllowance + formData.incentive + (isBranchHead ? formData.fullBranchIncentive : formData.teamIncentive)}
                     </span>
                   </div>
                 </div>

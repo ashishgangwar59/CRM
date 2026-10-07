@@ -64,6 +64,8 @@ export async function calculatePayrollForEmployee(
 
   // Add any one-time manual ad-hoc incentive provided by the admin this month
   personalIncentive += manualIncentive;
+  // Add fixed self incentive from salary structure
+  personalIncentive += (structure.incentive || 0);
 
   // 5. Calculate Team Business Incentive (If they are a Team Owner)
   let teamBusinessIncentive = 0;
@@ -92,6 +94,13 @@ export async function calculatePayrollForEmployee(
          teamBusinessIncentive = toIncentiveConfig.value;
       }
     }
+  }
+
+  // Add fixed team/branch incentive from salary structure based on designation
+  if (employee.designation && employee.designation.toLowerCase().includes("branch head")) {
+    teamBusinessIncentive += (structure.fullBranchIncentive || 0);
+  } else {
+    teamBusinessIncentive += (structure.teamIncentive || 0);
   }
 
   // 6. Gross Salary

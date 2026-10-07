@@ -105,7 +105,8 @@ export async function GET(req: Request) {
             Gross: p.grossSalary,
             Deductions: p.totalDeductions,
             Net: p.netSalary,
-            Status: p.status
+            Status: p.status,
+            PayrollId: p._id.toString()
           });
         });
         summary = Object.keys(salaryCounts).map(k => ({ name: k, value: salaryCounts[k] }));

@@ -87,7 +87,11 @@ export default function UniversalReportsPage() {
 
   const exportExcel = () => {
     if (rows.length === 0) return alert("No data to export");
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const exportData = rows.map(r => {
+      const { PayrollId, ...rest } = r;
+      return rest;
+    });
+    const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Report");
     XLSX.writeFile(wb, `${type}_Report_${dateFilter === 'month' ? monthYear : year}.xlsx`);
@@ -104,8 +108,8 @@ export default function UniversalReportsPage() {
     doc.setTextColor(100);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
     
-    // Extract headers dynamically from the first row object keys
-    const headers = Object.keys(rows[0]);
+    // Extract headers dynamically from the first row object keys, excluding PayrollId
+    const headers = Object.keys(rows[0]).filter(h => h !== "PayrollId");
     // Extract data arrays
     const data = rows.map(row => headers.map(header => String(row[header])));
 
@@ -217,18 +221,31 @@ export default function UniversalReportsPage() {
                   <TableHeader className="bg-zinc-50 sticky top-0 z-10 shadow-sm">
                     <TableRow>
                       {Object.keys(rows[0]).map(key => (
-                        <TableHead key={key} className="whitespace-nowrap font-bold text-zinc-900">{key}</TableHead>
+                        <TableHead key={key} className="whitespace-nowrap font-bold text-zinc-900">
+                          {key === "PayrollId" ? "Action" : key}
+                        </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rows.map((row, idx) => (
                       <TableRow key={idx}>
-                        {Object.values(row).map((val: any, vIdx) => (
-                          <TableCell key={vIdx} className="whitespace-nowrap">
-                            {val}
-                          </TableCell>
-                        ))}
+                        {Object.entries(row).map(([key, val]: any, vIdx) => {
+                          if (key === "PayrollId") {
+                            return (
+                              <TableCell key={vIdx} className="whitespace-nowrap">
+                                <Button variant="outline" size="sm" onClick={() => window.open(`/dashboard/payroll/${val}`, '_blank')}>
+                                  View Slip
+                                </Button>
+                              </TableCell>
+                            );
+                          }
+                          return (
+                            <TableCell key={vIdx} className="whitespace-nowrap">
+                              {val}
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
                     ))}
                   </TableBody>

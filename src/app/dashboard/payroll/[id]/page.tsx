@@ -21,7 +21,7 @@ function numberToWords(num: number): string {
 }
 
 export default function SalarySlipPage() {
-  const params = useParams();
+  const params: any = useParams();
   const router = useRouter();
   const [payroll, setPayroll] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -348,7 +348,8 @@ export default function SalarySlipPage() {
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Basic Salary</span><span className="font-bold">₹{payroll.earnings.basic.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">House Rent Allowance</span><span className="font-bold">₹{payroll.earnings.hra.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Travel Allowance</span><span className="font-bold">₹{(payroll.earnings.travelAllowance || payroll.earnings.metroAllowance || payroll.earnings.specialAllowance || 0).toLocaleString()}</span></div>
-                {payroll.earnings.incentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Incentive</span><span className="font-bold">₹{payroll.earnings.incentive.toLocaleString()}</span></div>}
+                {payroll.earnings.personalIncentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Self Incentive</span><span className="font-bold">₹{payroll.earnings.personalIncentive.toLocaleString()}</span></div>}
+                {payroll.earnings.teamBusinessIncentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">{emp.designation?.toLowerCase().includes("branch head") ? "Full Branch Incentive" : "Team Incentive"}</span><span className="font-bold">₹{payroll.earnings.teamBusinessIncentive.toLocaleString()}</span></div>}
                 {payroll.earnings.bonus > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Performance Bonus</span><span className="font-bold">₹{payroll.earnings.bonus.toLocaleString()}</span></div>}
               </div>
             </div>
@@ -414,7 +415,7 @@ export default function SalarySlipPage() {
 
             <div className="text-center pb-4">
               <div className="h-16 flex items-center justify-center mb-2">
-                <span className="font-[cursive] text-4xl text-indigo-950 opacity-80" style={{ fontFamily: 'Brush Script MT, cursive' }}>Niventra HR</span>
+                <span className="font-[cursive] text-4xl text-indigo-950 opacity-80" style={{ fontFamily: 'Brush Script MT, cursive' }}>Deepak Dayal</span>
               </div>
               <div className="border-t-2 border-zinc-300 w-56 pt-2">
                 <p className="font-bold text-zinc-800 text-sm">Authorized Signatory</p>

@@ -64,6 +64,8 @@ export default function PayrollDashboardPage() {
         setRole(data.role);
         if (data.role !== "Employee") {
           fetchEmployees();
+        } else {
+          setMonthYear(""); // Show all slips for employee by default
         }
       }
     } catch (e) {
@@ -236,25 +238,27 @@ export default function PayrollDashboardPage() {
               </Link>
             </>
           )}
-          <div className="flex items-center space-x-2">
-            <Input 
-              type="month" 
-              value={monthYear} 
-              onChange={(e) => {
-                setMonthYear(e.target.value);
-                if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", e.target.value);
-              }}
-              className="w-48"
-            />
-            {monthYear && (
-              <Button variant="ghost" size="sm" onClick={() => {
-                setMonthYear("");
-                if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", "");
-              }}>
-                All Slips
-              </Button>
-            )}
-          </div>
+          {!isEmployee && (
+            <div className="flex items-center space-x-2">
+              <Input 
+                type="month" 
+                value={monthYear} 
+                onChange={(e) => {
+                  setMonthYear(e.target.value);
+                  if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", e.target.value);
+                }}
+                className="w-48"
+              />
+              {monthYear && (
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setMonthYear("");
+                  if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", "");
+                }}>
+                  All Slips
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -406,7 +410,7 @@ export default function PayrollDashboardPage() {
                             </span>
                           </TableCell>
                           <TableCell className="flex items-center space-x-2">
-                            {payroll.status === "Draft" && !isEmployee && (
+                            {!isEmployee && (
                                <div className="flex space-x-1 items-center bg-zinc-50 p-1 rounded border">
                                  <Input 
                                     type="number" 

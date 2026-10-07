@@ -5,12 +5,47 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Search, Plus, CheckCircle, XCircle, Clock, ExternalLink, ShieldCheck, Eye, Edit3, UserCheck, TrendingUp, AlertCircle, Trash2, Award, FileText, Download, Loader2, ListFilter, Calendar } from "lucide-react";
 import PaymentBondModal from "./PaymentBondModal";
 import DebentureFormModal from "./DebentureFormModal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getDaysBetweenDates } from "@/lib/dateUtils";
+
+function getInvestorMaturityDates(inv: any): { issueDateObj: Date, matDateObj: Date } {
+  let issueDateObj: Date;
+  if (inv.verifiedAt) {
+    issueDateObj = new Date(inv.verifiedAt);
+  } else if (inv.investmentDate) {
+    if (typeof inv.investmentDate === "string" && inv.investmentDate.includes("-") && inv.investmentDate.length === 10) {
+      const [y, m, d] = inv.investmentDate.split("-").map(Number);
+      issueDateObj = new Date(y, m - 1, d);
+    } else {
+      issueDateObj = new Date(inv.investmentDate);
+    }
+  } else {
+    issueDateObj = inv.createdAt ? new Date(inv.createdAt) : new Date();
+  }
+
+  let matDateObj: Date;
+  if (inv.bondMaturityDate) {
+    matDateObj = new Date(inv.bondMaturityDate);
+  } else {
+    const maturityPeriodMonths = Number(inv.bondMaturityMonths) || 1;
+    matDateObj = new Date(issueDateObj);
+    matDateObj.setMonth(matDateObj.getMonth() + maturityPeriodMonths);
+  }
+  return { issueDateObj, matDateObj };
+}
+
+function calculateInvestorMaturityAmount(inv: any) {
+  const amount = inv.investmentAmount || 0;
+  const rate = inv.monthlyGrowthPercentage || 0;
+  const { issueDateObj, matDateObj } = getInvestorMaturityDates(inv);
+  const days = Math.max(0, Math.round((matDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
+  const totalInterest = (amount * rate * days) / (100 * 30);
+  return Math.round(amount + totalInterest) || 0;
+}
 
 export default function AdminInvestorsPage() {
   const [investors, setInvestors] = useState<any[]>([]);
@@ -388,15 +423,7 @@ export default function AdminInvestorsPage() {
           matDateObj.setMonth(matDateObj.getMonth() + maturityPeriodMonths);
         }
         const matDate = matDateObj.toLocaleDateString("en-GB");
-        const days = getDaysBetweenDates(
-          inv?.investmentDate,
-          inv?.bondMaturityDate,
-          true
-        );
-
-        // const days = Math.max(0, Math.round((matDateObj.getTime() - issueDateObj.getTime()) / (1000 * 60 * 60 * 24) + 1));
-        const totalInterest = (amount * rate * days) / (100 * 30);
-        const maturityAmount = Math.round(amount + totalInterest);
+        const maturityAmount = calculateInvestorMaturityAmount(inv);
 
         const referredBy = `"${(inv.referralEmployeeName || inv.debentureForm?.referralCode || "").replace(/"/g, '""')}"`;
         const created = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-GB") : "";
@@ -546,6 +573,7 @@ export default function AdminInvestorsPage() {
                 <TableHead>Referred By</TableHead>
                 <TableHead>Invest RS Amount</TableHead>
                 <TableHead>Monthly Growth %</TableHead>
+                <TableHead>Maturity Rs</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Bond Agreement</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -554,7 +582,7 @@ export default function AdminInvestorsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-10">
+                  <TableCell colSpan={9} className="text-center py-10">
                     <div className="flex flex-col items-center justify-center text-zinc-500">
                       <Loader2 className="w-6 h-6 animate-spin text-indigo-600 mb-2" />
                       <span>Loading investors...</span>
@@ -563,10 +591,31 @@ export default function AdminInvestorsPage() {
                 </TableRow>
               ) : investors.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-10 text-zinc-500">No investors found.</TableCell>
+                  <TableCell colSpan={9} className="text-center py-10 text-zinc-500">No investors found.</TableCell>
                 </TableRow>
               ) : (
-                investors.map((inv) => (
+                investors.map((inv) => {
+                  const maturityAmount = calculateInvestorMaturityAmount(inv);
+                  const { matDateObj } = getInvestorMaturityDates(inv);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const tempMat = new Date(matDateObj);
+                  tempMat.setHours(0, 0, 0, 0);
+                  const daysToMaturity = Math.round((tempMat.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  let maturityAlert = null;
+                  const dateStr = matDateObj.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+                  if (inv.status === "Verified") {
+                    if (daysToMaturity === 0) {
+                      maturityAlert = { text: `Matures: ${dateStr}`, color: "text-rose-600 bg-rose-50 border-rose-200" };
+                    } else if (daysToMaturity > 0 && daysToMaturity <= 2) {
+                      maturityAlert = { text: `Matures: ${dateStr}`, color: "text-amber-600 bg-amber-50 border-amber-200" };
+                    } else if (daysToMaturity < 0 && daysToMaturity >= -30) {
+                      maturityAlert = { text: `Matured: ${dateStr}`, color: "text-rose-600 bg-rose-50 border-rose-200" };
+                    }
+                  }
+                  
+                  return (
                   <TableRow key={inv._id}>
                     <TableCell>
                       <div>
@@ -588,6 +637,19 @@ export default function AdminInvestorsPage() {
                     </TableCell>
                     <TableCell className="font-bold text-emerald-600 dark:text-emerald-400">
                       {inv.monthlyGrowthPercentage || 1.33}% / mo
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                          ₹{maturityAmount.toLocaleString()}
+                        </span>
+                        {maturityAlert && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1 w-max shadow-sm ${maturityAlert.color} animate-in fade-in zoom-in duration-300`}>
+                            <AlertCircle className={`w-3 h-3 ${daysToMaturity <= 0 ? 'animate-pulse' : ''}`} />
+                            {maturityAlert.text}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -701,9 +763,23 @@ export default function AdminInvestorsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                );
+              })
               )}
             </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={3} className="text-right font-bold text-lg">Total:</TableCell>
+                <TableCell className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
+                  ₹{investors.reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0).toLocaleString()}
+                </TableCell>
+                <TableCell></TableCell>
+                <TableCell className="font-bold text-lg text-indigo-600 dark:text-indigo-400">
+                  ₹{investors.reduce((sum, inv) => sum + calculateInvestorMaturityAmount(inv), 0).toLocaleString()}
+                </TableCell>
+                <TableCell colSpan={3}></TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
 
           {/* Pagination Controls */}
