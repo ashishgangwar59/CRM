@@ -192,8 +192,8 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   };
 
   const days = getDaysBetweenDates(
-    investor?.investmentDate,
-    investor?.bondMaturityDate,
+    editableForm?.investmentDate,
+    editableForm?.bondMaturityDate,
     true
   );
 
