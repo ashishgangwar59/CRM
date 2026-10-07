@@ -348,8 +348,8 @@ export default function SalarySlipPage() {
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Basic Salary</span><span className="font-bold">₹{payroll.earnings.basic.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">House Rent Allowance</span><span className="font-bold">₹{payroll.earnings.hra.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-zinc-700">Travel Allowance</span><span className="font-bold">₹{(payroll.earnings.travelAllowance || payroll.earnings.metroAllowance || payroll.earnings.specialAllowance || 0).toLocaleString()}</span></div>
-                {payroll.earnings.personalIncentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Self Incentive</span><span className="font-bold">₹{payroll.earnings.personalIncentive.toLocaleString()}</span></div>}
-                {payroll.earnings.teamBusinessIncentive > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">{emp.designation?.toLowerCase().includes("branch head") ? "Full Branch Incentive" : "Team Incentive"}</span><span className="font-bold">₹{payroll.earnings.teamBusinessIncentive.toLocaleString()}</span></div>}
+                <div className="flex justify-between text-sm"><span className="text-zinc-700">Self Incentive</span><span className="font-bold">₹{(payroll.earnings.personalIncentive || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-zinc-700">{emp.designation?.toLowerCase().includes("branch head") ? "Full Branch Incentive" : "Team Incentive"}</span><span className="font-bold">₹{(payroll.earnings.teamBusinessIncentive || 0).toLocaleString()}</span></div>
                 {payroll.earnings.bonus > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Performance Bonus</span><span className="font-bold">₹{payroll.earnings.bonus.toLocaleString()}</span></div>}
               </div>
             </div>

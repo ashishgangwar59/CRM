@@ -13,6 +13,7 @@ export default function SalaryStructurePage() {
   const [structures, setStructures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
+  const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
 
   const [formData, setFormData] = useState({
     basic: 0,
@@ -32,7 +33,7 @@ export default function SalaryStructurePage() {
     try {
       const [empRes, structRes] = await Promise.all([
         fetch("/api/employees", { cache: 'no-store' }),
-        fetch("/api/payroll/structure", { cache: 'no-store' })
+        fetch(`/api/payroll/structure?monthYear=${monthYear}`, { cache: 'no-store' })
       ]);
       const empData = await empRes.json();
       const structData = await structRes.json();
@@ -48,7 +49,7 @@ export default function SalaryStructurePage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [monthYear]);
 
   const handleSelect = (empId: string) => {
     setSelectedEmp(empId);
@@ -80,6 +81,7 @@ export default function SalaryStructurePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           employeeId: selectedEmp,
+          monthYear,
           ...formData,
           metroAllowance: formData.travelAllowance,
           specialAllowance: formData.travelAllowance // sync back for backward compatibility
@@ -105,9 +107,23 @@ export default function SalaryStructurePage() {
 
   return (
     <div className="space-y-6 w-full pb-10">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Structures</h1>
-        <p className="text-zinc-500 dark:text-zinc-400">Configure fixed earnings and deductions for employees.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Structures</h1>
+          <p className="text-zinc-500 dark:text-zinc-400">Configure fixed earnings and deductions for employees per month.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-sm text-zinc-500">Month:</Label>
+          <Input 
+            type="month" 
+            className="w-48 bg-white border-zinc-300 font-medium" 
+            value={monthYear}
+            onChange={(e) => {
+              setMonthYear(e.target.value);
+              setSelectedEmp(null); // Reset selection when changing month
+            }}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface ISalaryStructure extends Document {
   employeeId: mongoose.Types.ObjectId;
+  monthYear: string;
   
   // Earnings
   basic: number;
@@ -28,7 +29,8 @@ export interface ISalaryStructure extends Document {
 
 const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
   {
-    employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true, unique: true },
+    employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+    monthYear: { type: String, required: true },
     
     basic: { type: Number, default: 0 },
     hra: { type: Number, default: 0 },
@@ -49,6 +51,8 @@ const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
   },
   { timestamps: true }
 );
+
+SalaryStructureSchema.index({ employeeId: 1, monthYear: 1 }, { unique: true });
 
 if (mongoose.models.SalaryStructure) {
   delete mongoose.models.SalaryStructure;

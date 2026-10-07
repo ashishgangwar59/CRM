@@ -23,7 +23,10 @@ export async function calculatePayrollForEmployee(
   const employee = await Employee.findById(employeeId);
   if (!employee) throw new Error("Employee not found");
   
-  const structure = await SalaryStructure.findOne({ employeeId });
+  let structure = await SalaryStructure.findOne({ employeeId, monthYear });
+  if (!structure) {
+    structure = await SalaryStructure.findOne({ employeeId }).sort({ createdAt: -1 });
+  }
   if (!structure) throw new Error("Salary structure not found for employee");
 
   // 2. Fixed Earnings (Prorated for LOP)
@@ -173,31 +176,31 @@ export async function calculatePayrollForEmployee(
 
   const result = {
     earnings: {
-      basic,
-      hra,
-      specialAllowance,
-      metroAllowance,
-      travelAllowance,
+      basic: Math.round(basic),
+      hra: Math.round(hra),
+      specialAllowance: Math.round(specialAllowance),
+      metroAllowance: Math.round(metroAllowance),
+      travelAllowance: Math.round(travelAllowance),
       bonus: 0,
-      personalIncentive,
-      teamBusinessIncentive,
+      personalIncentive: Math.round(personalIncentive),
+      teamBusinessIncentive: Math.round(teamBusinessIncentive),
       otherEarnings: 0,
       overtimeAmount: 0
     },
     deductions: {
-      pf: pfAmount,
+      pf: Math.round(pfAmount),
       esi: 0,
-      professionalTax: ptax,
-      incomeTax: taxAmount,
+      professionalTax: Math.round(ptax),
+      incomeTax: Math.round(taxAmount),
       loan: 0,
       advance: 0,
-      advanceSalaryDrawn: advanceSalary,
-      unpaidLeaveDeduction: lopAmount,
-      otherDeductions
+      advanceSalaryDrawn: Math.round(advanceSalary),
+      unpaidLeaveDeduction: Math.round(lopAmount),
+      otherDeductions: Math.round(otherDeductions)
     },
-    grossSalary,
-    totalDeductions,
-    netSalary,
+    grossSalary: Math.round(grossSalary),
+    totalDeductions: Math.round(totalDeductions),
+    netSalary: Math.round(netSalary),
     paidDays,
     totalDays,
     monthYear

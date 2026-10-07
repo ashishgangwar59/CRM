@@ -16,13 +16,39 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const employeeId = searchParams.get("employeeId");
+    const monthYear = searchParams.get("monthYear");
 
-    let query = {};
-    if (employeeId) query = { employeeId };
+    let query: any = {};
+    if (employeeId) query.employeeId = employeeId;
 
-    const structures = await SalaryStructure.find(query).populate("employeeId", "firstName lastName employeeCode department").lean();
+    const allStructures = await SalaryStructure.find(query).populate("employeeId", "firstName lastName employeeCode department").lean();
+    
+    // Group by employee and select the correct structure
+    const employeeMap = new Map();
+    
+    allStructures.forEach(struct => {
+      const empIdStr = struct.employeeId?._id?.toString() || struct.employeeId?.toString();
+      if (!empIdStr) return;
+      
+      if (!employeeMap.has(empIdStr)) {
+        employeeMap.set(empIdStr, []);
+      }
+      employeeMap.get(empIdStr).push(struct);
+    });
 
-    return NextResponse.json({ success: true, data: structures });
+    const finalStructures = [];
+    employeeMap.forEach((structs, empIdStr) => {
+      // Sort by latest createdAt
+      structs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      let targetStruct = structs.find(s => s.monthYear === monthYear);
+      if (!targetStruct) {
+        targetStruct = structs[0]; // fallback to latest
+      }
+      finalStructures.push(targetStruct);
+    });
+
+    return NextResponse.json({ success: true, data: finalStructures });
   } catch (error) {
     console.error("Fetch Salary Structure Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -43,7 +69,7 @@ export async function POST(req: Request) {
     const data = await req.json();
 
     const structure = await SalaryStructure.findOneAndUpdate(
-      { employeeId: data.employeeId },
+      { employeeId: data.employeeId, monthYear: data.monthYear },
       { ...data },
       { new: true, upsert: true } // Create if doesn't exist, update if it does
     );
@@ -54,20 +80,20 @@ export async function POST(req: Request) {
       const { Payroll } = await import("@/lib/models/Payroll");
       const { calculatePayrollForEmployee } = await import("@/lib/payrollEngine");
 
-      const currentMonthYear = new Date().toISOString().slice(0, 7);
+      const targetMonthYear = data.monthYear || new Date().toISOString().slice(0, 7);
 
       // We only update if the payroll is still in Draft state (not Locked/Approved/Paid)
-      const existingPayroll = await Payroll.findOne({ employeeId: data.employeeId, monthYear: currentMonthYear });
+      const existingPayroll = await Payroll.findOne({ employeeId: data.employeeId, monthYear: targetMonthYear });
       if (!existingPayroll || existingPayroll.status === "Draft") {
         const result = await calculatePayrollForEmployee(
           data.employeeId,
-          currentMonthYear,
+          targetMonthYear,
           0, 0, 30, 0, true,
           payload.userId
         );
 
         await Payroll.findOneAndUpdate(
-          { employeeId: data.employeeId, monthYear: currentMonthYear },
+          { employeeId: data.employeeId, monthYear: targetMonthYear },
           {
             paidDays: result.paidDays,
             totalDays: result.totalDays,

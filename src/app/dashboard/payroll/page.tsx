@@ -85,9 +85,9 @@ export default function PayrollDashboardPage() {
     }
   }, [monthYear, role]);
 
-  const handleGenerate = async (employeeId: string) => {
+  const handleGenerate = async (employeeId: string, currentPaidDays?: number) => {
     setGenerating(true);
-    const paidDays = selectedDaysMap[employeeId] || 30;
+    const paidDays = selectedDaysMap[employeeId] ?? currentPaidDays ?? 30;
     const manualIncentive = manualIncentivesMap[employeeId] || 0;
     const eligibleRevenue = revenueMap[employeeId] || 0;
     try {
@@ -191,7 +191,7 @@ export default function PayrollDashboardPage() {
     setCurrentPage(1);
   }, [payrolls, employees, monthYear]);
 
-  if (loading || role === null) {
+  if (role === null) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
@@ -393,9 +393,18 @@ export default function PayrollDashboardPage() {
                       {payroll ? (
                         <>
                           <TableCell className="text-center">
-                            <span className="inline-block px-2.5 py-0.5 rounded bg-zinc-100 text-zinc-800 text-xs font-semibold">
-                              {payroll.paidDays || 30} Days
-                            </span>
+                            {payroll.status === "Draft" && !isEmployee ? (
+                              <Input 
+                                type="number"
+                                className="w-20 h-7 text-xs mx-auto"
+                                defaultValue={payroll.paidDays || 30}
+                                onChange={(e) => setSelectedDaysMap({ ...selectedDaysMap, [emp._id]: Number(e.target.value) })}
+                              />
+                            ) : (
+                              <span className="inline-block px-2.5 py-0.5 rounded bg-zinc-100 text-zinc-800 text-xs font-semibold">
+                                {payroll.paidDays || 30} Days
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">₹{payroll.grossSalary.toLocaleString()}</TableCell>
                           <TableCell className="text-right text-rose-600">-₹{payroll.totalDeductions.toLocaleString()}</TableCell>
@@ -420,7 +429,7 @@ export default function PayrollDashboardPage() {
                                     value={manualIncentivesMap[emp._id] || ""}
                                     onChange={(e) => setManualIncentivesMap({ ...manualIncentivesMap, [emp._id]: Number(e.target.value) })}
                                  />
-                                 <Button size="sm" variant="secondary" className="h-7 px-2 text-[10px]" onClick={() => handleGenerate(emp._id)} title="Recalculate Salary">
+                                 <Button size="sm" variant="secondary" className="h-7 px-2 text-[10px]" onClick={() => handleGenerate(emp._id, payroll.paidDays)} title="Recalculate Salary">
                                     ↺ 
                                  </Button>
                                </div>
