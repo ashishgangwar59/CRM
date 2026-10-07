@@ -192,11 +192,10 @@ export default function DebentureFormModal({ investor, onClose, onUpdate }: Debe
   };
 
   const days = getDaysBetweenDates(
-    form?.investmentDate,
-    form?.bondMaturityDate,
+    investor?.investmentDate,
+    investor?.bondMaturityDate,
     true
   );
-  console.log(signatureUrl)
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 print:static print:bg-transparent print:p-0 print:block print:backdrop-blur-none">
