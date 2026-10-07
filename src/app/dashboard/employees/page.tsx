@@ -14,8 +14,8 @@ function TreeNode({ node, router }: { node: any; router: any }) {
   return (
     <div className="pl-6 border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 mt-3 relative">
       <div className="absolute left-0 top-[22px] w-4 border-t-2 border-zinc-200 dark:border-zinc-800" />
-      
-      <div 
+
+      <div
         className="flex items-center space-x-3 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm max-w-sm hover:border-indigo-500 hover:shadow transition-all cursor-pointer"
         onClick={() => router.push(`/dashboard/employees/${node._id}`)}
       >
@@ -43,7 +43,7 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [activeTab, setActiveTab] = useState<"list" | "hierarchy" >("list");
+  const [activeTab, setActiveTab] = useState<"list" | "hierarchy">("list");
   const [allEmployees, setAllEmployees] = useState([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [loadingHierarchy, setLoadingHierarchy] = useState(false);
@@ -151,7 +151,7 @@ export default function EmployeesPage() {
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
+
     const file = e.target.files[0];
     const formData = new FormData();
     formData.append("file", file);
@@ -172,7 +172,7 @@ export default function EmployeesPage() {
       console.error(e);
       alert("Error importing file.");
     }
-    
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -200,11 +200,11 @@ export default function EmployeesPage() {
   // Build Team Hierarchy
   const teamRoots = teams.map((team: any) => {
     const ownerEmail = team.owner?.email;
-    const ownerEmp = ownerEmail ? allEmployees.find((e: any) => e.email === ownerEmail) : null;
-    
+    const ownerEmp: any = ownerEmail ? allEmployees.find((e: any) => e.email === ownerEmail) : null;
+
     const memberEmails = (team.members || []).map((m: any) => m.email);
-    const memberEmps = allEmployees.filter((e: any) => memberEmails.includes(e.email)).map((emp: any) => ({...emp, children: []}));
-    
+    const memberEmps = allEmployees.filter((e: any) => memberEmails.includes(e.email)).map((emp: any) => ({ ...emp, children: [] }));
+
     if (ownerEmp) {
       return {
         ...ownerEmp,
@@ -243,11 +243,11 @@ export default function EmployeesPage() {
         <div className="flex space-x-2">
           {(role === "ADMIN" || role === "KEY_ADMIN") && (
             <>
-              <input 
-                type="file" 
-                accept=".xlsx, .xls" 
-                className="hidden" 
-                ref={fileInputRef} 
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                className="hidden"
+                ref={fileInputRef}
                 onChange={handleImport}
               />
               <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
@@ -275,11 +275,10 @@ export default function EmployeesPage() {
       <div className="flex border-b border-zinc-200 dark:border-zinc-800 space-x-4">
         <button
           onClick={() => setActiveTab("list")}
-          className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-            activeTab === "list" 
-              ? "border-indigo-600 text-indigo-600" 
-              : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-          }`}
+          className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${activeTab === "list"
+            ? "border-indigo-600 text-indigo-600"
+            : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+            }`}
         >
           <List className="h-4 w-4" />
           <span>Directory List</span>
@@ -287,11 +286,10 @@ export default function EmployeesPage() {
         {(role === "ADMIN" || role === "KEY_ADMIN") && (
           <button
             onClick={() => setActiveTab("hierarchy")}
-            className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-              activeTab === "hierarchy" 
-                ? "border-indigo-600 text-indigo-600" 
-                : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-            }`}
+            className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${activeTab === "hierarchy"
+              ? "border-indigo-600 text-indigo-600"
+              : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+              }`}
           >
             <Layers className="h-4 w-4" />
             <span>Team Hierarchy</span>
@@ -305,14 +303,14 @@ export default function EmployeesPage() {
             <div className="flex items-center space-x-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                <Input 
-                  placeholder="Search employees by name, email, or code..." 
+                <Input
+                  placeholder="Search employees by name, email, or code..."
                   className="pl-10"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <select 
+              <select
                 className="flex h-10 w-48 rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -331,8 +329,8 @@ export default function EmployeesPage() {
                 <TableRow>
                   {(role === "ADMIN" || role === "KEY_ADMIN") && (
                     <TableHead className="w-12">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="rounded border-zinc-300"
                         checked={employees.length > 0 && selectedEmployees.length === employees.length}
                         onChange={(e) => {
@@ -369,84 +367,83 @@ export default function EmployeesPage() {
                   </TableRow>
                 ) : (
                   employees.map((emp: any) => (
-                  <TableRow 
-                    key={emp._id} 
-                    className="cursor-pointer"
-                  >
-                    {(role === "ADMIN" || role === "KEY_ADMIN") && (
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <input 
-                          type="checkbox" 
-                          className="rounded border-zinc-300 cursor-pointer"
-                          checked={selectedEmployees.includes(emp._id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedEmployees(prev => [...prev, emp._id]);
-                            else setSelectedEmployees(prev => prev.filter(id => id !== emp._id));
-                          }}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                          {emp.profilePhotoUrl ? (
-                            <img src={emp.profilePhotoUrl} alt="Profile" loading="lazy" className="h-full w-full object-cover" />
-                          ) : (
-                            <User className="h-5 w-5 text-zinc-500" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-zinc-900 dark:text-zinc-100">{emp.firstName} {emp.lastName}</p>
-                          <p className="text-sm text-zinc-500">{emp.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)} className="font-medium">{emp.employeeCode}</TableCell>
-                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>{emp.department || "-"}</TableCell>
-                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>{emp.designation || "-"}</TableCell>
-                    <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        emp.status === "Active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                        emp.status === "Notice Period" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
-                        "bg-rose-100 text-rose-705 dark:bg-rose-900/30 dark:text-rose-400"
-                      }`}>
-                        {emp.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                      <div className="relative group flex items-center justify-center">
-                        <button
-                          onClick={() => {
-                            const refLink = `${window.location.origin}/debenture-application?ref=${emp.employeeCode || emp.email}`;
-                            navigator.clipboard.writeText(refLink);
-                            alert(`Copied Debenture Referral link for ${emp.firstName} (${emp.employeeCode}):\n${refLink}`);
-                          }}
-                          className="cursor-pointer p-1.5 text-zinc-400 hover:text-[#134086] hover:bg-[#134086]/10 dark:hover:bg-[#134086]/20 rounded-full transition-colors"
-                        >
-                          <Link2 className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
-                          Copy Form Link
-                        </div>
-                      </div>
-                    </TableCell>
-                    {(role === "ADMIN" || role === "KEY_ADMIN") && (
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="relative group flex items-center justify-center">
-                          <button
-                            onClick={() => handleDelete(emp._id, `${emp.firstName} ${emp.lastName}`)}
-                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-full transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
-                            Delete Employee
+                    <TableRow
+                      key={emp._id}
+                      className="cursor-pointer"
+                    >
+                      {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="rounded border-zinc-300 cursor-pointer"
+                            checked={selectedEmployees.includes(emp._id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedEmployees(prev => [...prev, emp._id]);
+                              else setSelectedEmployees(prev => prev.filter(id => id !== emp._id));
+                            }}
+                          />
+                        </TableCell>
+                      )}
+                      <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>
+                        <div className="flex items-center space-x-3">
+                          <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                            {emp.profilePhotoUrl ? (
+                              <img src={emp.profilePhotoUrl} alt="Profile" loading="lazy" className="h-full w-full object-cover" />
+                            ) : (
+                              <User className="h-5 w-5 text-zinc-500" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-zinc-900 dark:text-zinc-100">{emp.firstName} {emp.lastName}</p>
+                            <p className="text-sm text-zinc-500">{emp.email}</p>
                           </div>
                         </div>
                       </TableCell>
-                    )}
-                  </TableRow>
-                )))}
+                      <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)} className="font-medium dark:text-zinc-100">{emp.employeeCode}</TableCell>
+                      <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)} className="dark:text-zinc-100">{emp.department || "-"}</TableCell>
+                      <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)} className="dark:text-zinc-100">{emp.designation || "-"}</TableCell>
+                      <TableCell onClick={() => router.push(`/dashboard/employees/${emp._id}`)}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${emp.status === "Active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                          emp.status === "Notice Period" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
+                            "bg-rose-100 text-rose-705 dark:bg-rose-900/30 dark:text-rose-400"
+                          }`}>
+                          {emp.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative group flex items-center justify-center">
+                          <button
+                            onClick={() => {
+                              const refLink = `${window.location.origin}/debenture-application?ref=${emp.employeeCode || emp.email}`;
+                              navigator.clipboard.writeText(refLink);
+                              alert(`Copied Debenture Referral link for ${emp.firstName} (${emp.employeeCode}):\n${refLink}`);
+                            }}
+                            className="cursor-pointer p-1.5 text-zinc-400 hover:text-[#134086] hover:bg-[#134086]/10 dark:hover:bg-[#134086]/20 rounded-full transition-colors"
+                          >
+                            <Link2 className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-zinc-700">
+                            Copy Form Link
+                          </div>
+                        </div>
+                      </TableCell>
+                      {(role === "ADMIN" || role === "KEY_ADMIN") && (
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="relative group flex items-center justify-center">
+                            <button
+                              onClick={() => handleDelete(emp._id, `${emp.firstName} ${emp.lastName}`)}
+                              className="cursor-pointer p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-full transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-rose-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-rose-700">
+                              Delete Employee
+                            </div>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  )))}
               </TableBody>
             </Table>
 
@@ -548,8 +545,8 @@ export default function EmployeesPage() {
                     "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "All Employees", "All Investors", "Self Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Vendor Invoices", "Letter Register", "Certificates"
                   ].map(mod => (
                     <label key={mod} className="flex items-center space-x-2 text-sm cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="rounded border-zinc-300"
                         checked={bulkModules.includes(mod)}
                         onChange={(e) => {
@@ -565,8 +562,8 @@ export default function EmployeesPage() {
             </div>
             <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2 bg-zinc-50 dark:bg-zinc-900/50">
               <Button variant="outline" onClick={() => setShowBulkModal(false)} disabled={savingBulk}>Cancel</Button>
-              <Button 
-                disabled={savingBulk || bulkModules.length === 0} 
+              <Button
+                disabled={savingBulk || bulkModules.length === 0}
                 onClick={async () => {
                   setSavingBulk(true);
                   try {
@@ -584,7 +581,7 @@ export default function EmployeesPage() {
                       const data = await res.json();
                       alert(data.error || "Failed to update permissions");
                     }
-                  } catch(e) {
+                  } catch (e) {
                     alert("Error updating permissions");
                   }
                   setSavingBulk(false);

@@ -247,12 +247,12 @@ export default function IncentiveManagementPage() {
                 ) : (
                   incentives.map((rule) => (
                     <TableRow key={rule._id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
-                      <TableCell>
+                      <TableCell className="dark:text-zinc-100">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${rule.targetType === 'Employee' ? 'bg-[#092b49] text-white' : rule.targetType === 'TeamOwner' ? 'bg-[#bd922d] text-white' : 'bg-gray-200 text-gray-800 dark:bg-zinc-800 dark:text-zinc-200'}`}>
                           {rule.targetType}
                         </span>
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium dark:text-zinc-100">
                         {rule.targetType === "Employee" && rule.targetId
                           ? `${rule.targetId.firstName} ${rule.targetId.lastName} (${rule.targetId.employeeCode})`
                           : rule.targetType === "TeamOwner" && rule.targetId
@@ -261,12 +261,12 @@ export default function IncentiveManagementPage() {
                               ? rule.designationName
                               : "All / Global Default"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:text-zinc-100">
                         <div className="text-lg font-bold text-[#bd922d]">
                           {rule.incentiveType === "Percentage" ? `${rule.value}%` : `₹${rule.value.toLocaleString()}`}
                         </div>
                       </TableCell>
-                      <TableCell>{new Date(rule.effectiveDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="dark:text-zinc-100">{new Date(rule.effectiveDate).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${rule.isActive ? "border-green-500 text-green-500 bg-green-50 dark:bg-green-950/30" : "border-red-500 text-red-500 bg-red-50 dark:bg-red-950/30"}`}>
                           {rule.isActive ? "Active" : "Inactive"}

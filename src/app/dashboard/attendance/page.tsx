@@ -13,7 +13,7 @@ export default function AttendancePage() {
   const [monthlyRecords, setMonthlyRecords] = useState<any[]>([]);
   const [isFieldEmployee, setIsFieldEmployee] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   const fetchStatus = async () => {
@@ -78,7 +78,7 @@ export default function AttendancePage() {
 
   const handlePunch = async (action: "IN" | "OUT") => {
     setPunching(true);
-    
+
     // Get GPS
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -90,7 +90,7 @@ export default function AttendancePage() {
       async (position) => {
         try {
           let livePhotoUrl = undefined;
-          
+
           if (isFieldEmployee && videoRef.current) {
             try {
               const canvas = document.createElement("canvas");
@@ -98,12 +98,12 @@ export default function AttendancePage() {
               canvas.height = videoRef.current.videoHeight || 480;
               canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
               const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-              
+
               const req = await fetch(dataUrl);
               const blob = await req.blob();
               const formData = new FormData();
               formData.append("file", blob, "live_photo.jpg");
-              
+
               const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
               const uploadJson = await uploadRes.json();
               if (uploadJson.success) {
@@ -167,7 +167,7 @@ export default function AttendancePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-              <div className="text-4xl font-bold tracking-tight mb-2">
+              <div className="text-4xl font-bold tracking-tight mb-2 dark:text-zinc-100">
                 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
               <p className="text-sm text-zinc-500 mb-6">{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -180,8 +180,8 @@ export default function AttendancePage() {
               )}
 
               {!hasPunchedIn && (
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                   onClick={() => handlePunch("IN")}
                   disabled={punching}
@@ -190,8 +190,8 @@ export default function AttendancePage() {
                 </Button>
               )}
               {hasPunchedIn && !hasPunchedOut && (
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="w-full bg-rose-600 hover:bg-rose-700 text-white"
                   onClick={() => handlePunch("OUT")}
                   disabled={punching}
@@ -209,12 +209,12 @@ export default function AttendancePage() {
             {hasPunchedIn && (
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                  <span className="text-zinc-500 flex items-center"><MapPin className="h-4 w-4 mr-1"/> Punch In</span>
+                  <span className="text-zinc-500 flex items-center"><MapPin className="h-4 w-4 mr-1" /> Punch In</span>
                   <span className="font-medium">{new Date(todayStatus.punchIn.time).toLocaleTimeString()}</span>
                 </div>
                 {todayStatus.punchOut && (
                   <div className="flex justify-between p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                    <span className="text-zinc-500 flex items-center"><MapPin className="h-4 w-4 mr-1"/> Punch Out</span>
+                    <span className="text-zinc-500 flex items-center"><MapPin className="h-4 w-4 mr-1" /> Punch Out</span>
                     <span className="font-medium">{new Date(todayStatus.punchOut.time).toLocaleTimeString()}</span>
                   </div>
                 )}
@@ -247,18 +247,17 @@ export default function AttendancePage() {
                 {monthlyRecords.map((record) => (
                   <TableRow key={record._id}>
                     <TableCell className="font-medium">{record.date}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        record.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                    <TableCell className="dark:text-zinc-100">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.status === "Present" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
                         "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                      }`}>
+                        }`}>
                         {record.status}
                       </span>
                       {record.metrics.isLate && <span className="ml-2 text-xs text-amber-600">Late</span>}
                     </TableCell>
-                    <TableCell>{record.punchIn ? new Date(record.punchIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</TableCell>
-                    <TableCell>{record.punchOut ? new Date(record.punchOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</TableCell>
-                    <TableCell>{record.metrics.workingHours > 0 ? `${record.metrics.workingHours}h` : "-"}</TableCell>
+                    <TableCell className="dark:text-zinc-100">{record.punchIn ? new Date(record.punchIn.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</TableCell>
+                    <TableCell className="dark:text-zinc-100">{record.punchOut ? new Date(record.punchOut.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</TableCell>
+                    <TableCell className="dark:text-zinc-100">{record.metrics.workingHours > 0 ? `${record.metrics.workingHours}h` : "-"}</TableCell>
                   </TableRow>
                 ))}
                 {monthlyRecords.length === 0 && (

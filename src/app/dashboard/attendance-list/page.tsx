@@ -57,12 +57,12 @@ export default function AttendanceListPage() {
       <Card>
         <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800 flex flex-row items-center justify-between py-4">
           <CardTitle className="text-lg font-medium text-zinc-800 dark:text-zinc-200">Records</CardTitle>
-          <div className="flex space-x-3">
+          <div className="flex space-x-3 dark:text-zinc-100">
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="border border-zinc-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="border border-zinc-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-zinc-100"
             />
             <select
               value={status}
@@ -100,7 +100,7 @@ export default function AttendanceListPage() {
                   {records.length > 0 ? (
                     records.map((record) => (
                       <TableRow key={record._id}>
-                        <TableCell>
+                        <TableCell className="dark:text-zinc-100">
                           <div className="font-medium text-zinc-900 dark:text-zinc-100">
                             {record.employeeId?.firstName} {record.employeeId?.lastName}
                           </div>
@@ -108,8 +108,8 @@ export default function AttendanceListPage() {
                             {record.employeeId?.employeeCode} • {record.employeeId?.department}
                           </div>
                         </TableCell>
-                        <TableCell>{record.date}</TableCell>
-                        <TableCell>
+                        <TableCell className="dark:text-zinc-100">{record.date}</TableCell>
+                        <TableCell className="dark:text-zinc-100">
                           {record.punchIn ? (
                             <div>
                               <div>{new Date(record.punchIn.time).toLocaleTimeString()}</div>
@@ -119,7 +119,7 @@ export default function AttendanceListPage() {
                             <span className="text-zinc-400">-</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:text-zinc-100">
                           {record.punchOut ? (
                             <div>
                               <div>{new Date(record.punchOut.time).toLocaleTimeString()}</div>
@@ -129,14 +129,14 @@ export default function AttendanceListPage() {
                             <span className="text-zinc-400">-</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:text-zinc-100">
                           {record.metrics?.workingHours ? `${record.metrics.workingHours.toFixed(2)} hrs` : "-"}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:text-zinc-100">
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${record.status === "Present" ? "border border-emerald-200 bg-emerald-50 text-emerald-700" :
-                              record.status === "Absent" ? "border border-rose-200 bg-rose-50 text-rose-700" :
-                                record.status === "Half-Day" ? "border border-amber-200 bg-amber-50 text-amber-700" :
-                                  "border border-blue-200 bg-blue-50 text-blue-700"
+                            record.status === "Absent" ? "border border-rose-200 bg-rose-50 text-rose-700" :
+                              record.status === "Half-Day" ? "border border-amber-200 bg-amber-50 text-amber-700" :
+                                "border border-blue-200 bg-blue-50 text-blue-700"
                             }`}>
                             {record.status}
                           </span>
