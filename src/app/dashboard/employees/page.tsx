@@ -545,7 +545,7 @@ export default function EmployeesPage() {
                 <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border rounded bg-zinc-50 dark:bg-zinc-800/50">
                   {[
                     "Overview", "Attendance", "Attendance List", "Leads", "Leads CSV Actions", "Leads Bulk Add", "Leads Distribution", "Reports", "Profile",
-                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "All Employees", "All Investors", "Self Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Letter Register", "Certificates"
+                    "Wallet", "Payroll", "Leave", "Leave Approvals", "Holidays", "All Employees", "All Investors", "Self Investors", "Invoice Form", "Teams", "Debenture Form", "Cash Memo", "Vendor Invoices", "Letter Register", "Certificates"
                   ].map(mod => (
                     <label key={mod} className="flex items-center space-x-2 text-sm cursor-pointer">
                       <input 

@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useTheme } from "../theme-provider";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname: any = usePathname();
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [modules, setModules] = useState<string[]>([]);
@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState<string>("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
-  
+
   useEffect(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     if (saved !== null) {
@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
   const [hoveredTooltip, setHoveredTooltip] = useState<{ name: string, top: number, left: number } | null>(null);
   const { theme, toggleTheme } = useTheme();
-  
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Main": true,
     "HR & Team": true,
@@ -127,6 +127,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         { name: "Payroll Rules", href: "/dashboard/payroll/config", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN"] },
         { name: "Invoice Form", href: "/dashboard/invoice", icon: Receipt, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
         { name: "Cash Memo", href: "/dashboard/expenses", icon: DollarSign, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Vendor Invoices", href: "/dashboard/vendor-invoices", icon: Receipt, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
         { name: "Calculator", href: "/dashboard/calculator", icon: Calculator, roles: ["ADMIN", "KEY_ADMIN", "Employee", "INVESTOR"] },
       ]
     },
