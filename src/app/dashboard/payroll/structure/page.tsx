@@ -32,7 +32,7 @@ export default function SalaryStructurePage() {
   const fetchData = async () => {
     try {
       const [empRes, structRes] = await Promise.all([
-        fetch("/api/employees", { cache: 'no-store' }),
+        fetch("/api/employees?slim=true", { cache: 'no-store' }),
         fetch(`/api/payroll/structure?monthYear=${monthYear}`, { cache: 'no-store' })
       ]);
       const empData = await empRes.json();

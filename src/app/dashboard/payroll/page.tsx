@@ -47,7 +47,7 @@ export default function PayrollDashboardPage() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("/api/employees");
+      const res = await fetch("/api/employees?slim=true");
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);
@@ -191,15 +191,6 @@ export default function PayrollDashboardPage() {
     setCurrentPage(1);
   }, [payrolls, employees, monthYear]);
 
-  if (role === null) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-zinc-500 font-medium">Loading Payroll Data...</p>
-      </div>
-    );
-  }
-
   const isEmployee = role === "Employee";
   const isEmployeeView = isEmployee || !monthYear;
   const currentDataList = isEmployeeView ? payrolls : employees;
@@ -297,7 +288,7 @@ export default function PayrollDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading || role === null ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex items-center justify-center gap-3 text-zinc-500">

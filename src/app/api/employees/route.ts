@@ -201,6 +201,7 @@ export async function GET(req: Request) {
     const search = searchParams.get("search") || "";
     const department = searchParams.get("department") || "";
     const status = searchParams.get("status") || "";
+    const slim = searchParams.get("slim") === "true";
 
     const query: any = {};
 
@@ -264,14 +265,21 @@ export async function GET(req: Request) {
 
     let employees;
     let total = 0;
+    
+    // Select specific fields if slim is true to optimize payload
+    const selectFields = slim ? "firstName lastName employeeCode designation department status email" : "";
+
     if (page > 0 && limit > 0) {
       total = await Employee.countDocuments(query);
       employees = await Employee.find(query)
+        .select(selectFields)
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit);
     } else {
-      employees = await Employee.find(query).sort({ createdAt: -1 });
+      employees = await Employee.find(query)
+        .select(selectFields)
+        .sort({ createdAt: -1 });
     }
 
     return NextResponse.json({ 
