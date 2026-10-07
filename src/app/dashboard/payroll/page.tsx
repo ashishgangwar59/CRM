@@ -31,6 +31,7 @@ export default function PayrollDashboardPage() {
   const [revenueMap, setRevenueMap] = useState<Record<string, number>>({});
 
   const fetchPayrolls = async () => {
+    setLoading(true);
     try {
       const res = await fetch(`/api/payroll?monthYear=${monthYear}`);
       const data = await res.json();
