@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const { searchParams } = new URL(req.url);
@@ -76,11 +76,30 @@ export async function GET(req: Request) {
       const user = await User.findById(payload.userId).lean();
       const hasDistributionAccess = user?.accessibleModules?.includes("Leads Distribution");
 
-      if (!hasDistributionAccess) {
-        const allowedEmployeeIds = await getAllowedEmployeeIds(payload.userId);
-        if (allowedEmployeeIds.length > 0) {
-          query.ownerId = { $in: allowedEmployeeIds };
+      const allowedEmployeeIds = await getAllowedEmployeeIds(payload.userId);
+      const permissionOr: any[] = [];
+
+      if (allowedEmployeeIds.length > 0) {
+        permissionOr.push({ ownerId: { $in: allowedEmployeeIds } });
+      }
+
+      if (hasDistributionAccess) {
+        const currentEmployeeId = await getEmployeeIdFromUserId(payload.userId);
+        const distributedLeadIds = await LeadActivity.distinct("leadId", { createdBy: currentEmployeeId || payload.userId });
+        if (distributedLeadIds.length > 0) {
+          permissionOr.push({ _id: { $in: distributedLeadIds } });
         }
+      }
+
+      if (permissionOr.length > 0) {
+        if (query.$or) {
+          query.$and = [{ $or: query.$or }, { $or: permissionOr }];
+          delete query.$or;
+        } else {
+          query.$or = permissionOr;
+        }
+      } else {
+        query.ownerId = null; // Block access if no permissions match
       }
     } else if (employeeIdFilter) {
       // For Admin/KeyAdmin viewing employee-wise
@@ -107,8 +126,8 @@ export async function GET(req: Request) {
         .lean();
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data: leads,
       pagination: page > 0 && limit > 0 ? {
         total,
@@ -129,7 +148,7 @@ export async function POST(req: Request) {
     const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     let payload;
-    try { payload = verifyAccessToken(token); } 
+    try { payload = verifyAccessToken(token); }
     catch { return NextResponse.json({ error: "Invalid token" }, { status: 401 }); }
 
     const body = await req.json();
