@@ -73,11 +73,15 @@ export async function GET(req: Request) {
     }
 
     if (payload.role !== "ADMIN" && payload.role !== "KEY_ADMIN") {
-      const allowedEmployeeIds = await getAllowedEmployeeIds(payload.userId);
-      if (allowedEmployeeIds.length > 0) {
-        query.ownerId = { $in: allowedEmployeeIds };
-      }
+      const user = await User.findById(payload.userId).lean();
+      const hasDistributionAccess = user?.accessibleModules?.includes("Leads Distribution");
 
+      if (!hasDistributionAccess) {
+        const allowedEmployeeIds = await getAllowedEmployeeIds(payload.userId);
+        if (allowedEmployeeIds.length > 0) {
+          query.ownerId = { $in: allowedEmployeeIds };
+        }
+      }
     } else if (employeeIdFilter) {
       // For Admin/KeyAdmin viewing employee-wise
       query.ownerId = employeeIdFilter;
