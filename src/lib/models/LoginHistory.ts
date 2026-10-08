@@ -18,4 +18,7 @@ const LoginHistorySchema: Schema<ILoginHistory> = new Schema(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
+LoginHistorySchema.index({ userId: 1 });
+LoginHistorySchema.index({ createdAt: -1 });
+
 export const LoginHistory: Model<ILoginHistory> = mongoose.models.LoginHistory || mongoose.model("LoginHistory", LoginHistorySchema);

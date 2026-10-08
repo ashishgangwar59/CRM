@@ -3,7 +3,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, ChevronDown, Calculator, AlertCircle, X, UserCircle, Briefcase, Landmark, Receipt, Mail, Award } from "lucide-react";
+import { LayoutDashboard, Users, Clock, LogOut, Settings, CalendarRange, Umbrella, IndianRupee, Wallet, Target, LineChart, RadioTower, Brain, User as UserIcon, DollarSign, FileText, ChevronLeft, ChevronRight, ChevronDown, Calculator, AlertCircle, X, UserCircle, Briefcase, Landmark, Receipt, Mail, Award, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Image from "next/image";
@@ -140,6 +140,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         { name: "Debenture Form", href: debentureHref, icon: FileText, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
         { name: "Certificates", href: "/dashboard/certificates", icon: Award, roles: ["ADMIN", "KEY_ADMIN"] },
         { name: "Letter Register", href: "/dashboard/letters", icon: Mail, roles: ["ADMIN", "KEY_ADMIN", "Employee"] },
+        { name: "Login History", href: "/dashboard/login-history", icon: History, roles: ["ADMIN", "KEY_ADMIN"] },
         { name: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN", "KEY_ADMIN"] },
       ]
     }

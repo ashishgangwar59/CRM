@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Session } from "@/lib/models/Session";
+import { LoginHistory } from "@/lib/models/LoginHistory";
 import { logAudit } from "@/lib/audit";
 /**
  * @swagger
@@ -26,13 +27,21 @@ import { logAudit } from "@/lib/audit";
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
-    
+
     const refreshTokenCookie = req.headers.get("cookie")?.match(/refreshToken=([^;]+)/)?.[1];
 
     if (refreshTokenCookie) {
       const session = await Session.findOne({ refreshToken: refreshTokenCookie });
       if (session) {
         await logAudit(req, session.userId.toString(), "Logout", "Auth", "User logged out");
+
+        await LoginHistory.create({
+          userId: session.userId,
+          status: "LOGOUT",
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+          userAgent: req.headers.get("user-agent") || "unknown",
+        });
+
         await Session.deleteMany({ refreshToken: refreshTokenCookie });
       }
     }

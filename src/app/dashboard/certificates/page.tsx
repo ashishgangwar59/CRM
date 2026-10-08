@@ -284,14 +284,17 @@ export default function CertificatesPage() {
             .date-box label{white-space:nowrap}
             .date-box span{display:block;flex:1;height:26px;border-bottom:1px solid var(--navy);margin-left:8px;outline:0;text-align:center;    font-family: monospace;    font-size: 15px;}
             .signatory{position:absolute;right:114px;bottom:170px;width:280px;text-align:center}
-            .signature{height:85px;font-family:"Great Vibes","Brush Script MT",cursive;font-size:25px;color:var(--navy);outline:0;;transform-origin:bottom center;display:flex;align-items:end;justify-content:center;padding-bottom:10px;}
+            .signature{height:85px;font-family:"arial";font-size:25px;color:var(--navy);outline:0;;transform-origin:bottom center;display:flex;align-items:end;justify-content:center;padding-bottom:10px;}
             .sig-line{height:1px;background:var(--gold);margin-bottom:12px}
             .signatory b{font-size:17px}
             .signatory small{display:block;margin-top:4px;font-size:13px}
-            .cert-footer{position:absolute;left:263px;right:263px;bottom:42px;height:25px;display:flex;align-items:center;gap:16px;font:12px Arial,Helvetica,sans-serif;letter-spacing:3px;z-index:40;white-space:nowrap}
+            .cert-footer{position:absolute;left:263px;right:263px;bottom:52px;height:25px;display:flex;align-items:center;gap:16px;font:12px Arial,Helvetica,sans-serif;letter-spacing:3px;z-index:40;white-space:nowrap}
             .cert-footer i{height:1px;background:var(--gold);flex:1}
             .cert-footer b{font-size:13px;color:var(--gold);font-weight:400}
             .cert-footer span{color:var(--navy)}
+            .company-info{position:absolute;left:50px;right:50px;bottom:37px;text-align:center;font:11px Arial,Helvetica,sans-serif;letter-spacing:1px;color:var(--navy);opacity:0.9;}
+            .company-info span{margin:0 4px;}
+            .company-info b{color:var(--gold);margin:0 4px;}
             `
           }} />
 
@@ -379,6 +382,15 @@ export default function CertificatesPage() {
                 <span>APPRECIATING COMMITMENT</span><b>•</b>
                 <span>CELEBRATING SUCCESS</span><i></i>
               </div>
+
+              {settings?.companyProfile && (
+                <div className="company-info">
+                  {settings.companyProfile.phone && <span>Phone: {settings.companyProfile.phone}</span>}
+                  {settings.companyProfile.email && <span>Email: {settings.companyProfile.email}</span>}
+                  {settings.companyProfile.website && <span>Website: {settings.companyProfile.website}</span>}
+                  {/* {settings.companyProfile.address && <span>{settings.companyProfile.address}</span>} */}
+                </div>
+              )}
             </div>
           </div>
         </div>

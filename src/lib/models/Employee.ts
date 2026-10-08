@@ -223,6 +223,11 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
   { timestamps: true }
 );
 
+EmployeeSchema.index({ email: 1 });
+EmployeeSchema.index({ officeEmail: 1 });
+EmployeeSchema.index({ employeeCode: 1 });
+EmployeeSchema.index({ phone: 1 });
+
 // Force Mongoose to re-compile the model in development
 if (mongoose.models.Employee) {
   delete mongoose.models.Employee;
