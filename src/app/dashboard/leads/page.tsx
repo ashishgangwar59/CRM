@@ -192,14 +192,10 @@ export default function LeadsDashboardPage() {
         const modules = meData.accessibleModules || [];
         setAccessibleModules(modules);
         if (meData.role === "ADMIN" || meData.role === "KEY_ADMIN" || modules.includes("Leads Distribution")) {
-          const empRes = await fetch("/api/employees");
+          const empRes = await fetch("/api/employees?limit=100000");
           const empData = await empRes.json();
           if (empData.success) {
-            if (meData.role !== "ADMIN" && meData.role !== "KEY_ADMIN" && meData.employee?._id) {
-              setEmployees(empData.data.filter((e: any) => e._id !== meData.employee._id));
-            } else {
-              setEmployees(empData.data);
-            }
+            setEmployees(empData.data);
           }
         }
       }
