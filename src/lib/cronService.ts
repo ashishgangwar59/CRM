@@ -42,84 +42,96 @@ const collections: Record<string, any> = {
   Session, SignatureSession, SystemSettings, User, WalletTransaction
 };
 
-// Singleton check to prevent multiple cron instances in development HMR
+export async function generateAndEmailBackup(targetEmail?: string) {
+  try {
+    console.log("Running Database & KYC Backup...");
+    await connectToDatabase();
+
+    const backupData: Record<string, any[]> = {};
+    for (const [name, model] of Object.entries(collections)) {
+      backupData[name] = await model.find({}).lean();
+    }
+
+    const dateStr = new Date().toISOString().split("T")[0];
+    const AdmZip = require("adm-zip");
+    const zip = new AdmZip();
+    
+    zip.addFile(`database_${dateStr}.json`, Buffer.from(JSON.stringify(backupData), "utf8"));
+
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    if (fs.existsSync(uploadDir)) {
+      zip.addLocalFolder(uploadDir, "uploads");
+    }
+
+    const zipBuffer = zip.toBuffer();
+
+    const settings = await SystemSettings.findOne();
+    const smtp = settings?.integrations?.smtp;
+    
+    const sendTo = targetEmail || settings?.backupConfig?.email || "ak915066@gmail.com";
+
+    if (smtp && smtp.host && smtp.user && smtp.pass) {
+      const port = parseInt(smtp.port || "587");
+      const transporter = nodemailer.createTransport({
+        host: smtp.host,
+        port,
+        secure: port === 465,
+        auth: { user: smtp.user, pass: smtp.pass }
+      });
+
+      const from = smtp.from || `"Niventra CRM Backup" <${smtp.user}>`;
+
+      await transporter.sendMail({
+        from,
+        to: sendTo,
+        subject: `Niventra CRM Backup - ${dateStr}`,
+        text: `Please find attached the complete CRM database and KYC documents backup for ${dateStr}, compressed as a ZIP file.`,
+        attachments: [
+          {
+            filename: `crm_backup_${dateStr}.zip`,
+            content: zipBuffer,
+            contentType: "application/zip"
+          }
+        ]
+      });
+      console.log(`Backup emailed successfully to ${sendTo}!`);
+    } else {
+      console.warn("Backup Failed: SMTP Settings not configured in System Settings.");
+      throw new Error("SMTP settings not configured");
+    }
+  } catch (e) {
+    console.error("Error during Backup:", e);
+    throw e;
+  }
+}
+
 let isCronInitialized = false;
 
 export function initCronJobs() {
   if (isCronInitialized) return;
   isCronInitialized = true;
 
-  // Run at 10:00 AM every day
-  cron.schedule("0 10 * * *", async () => {
+  // Check every minute if it's the configured backup time
+  cron.schedule("* * * * *", async () => {
     try {
-      console.log("Running Daily Database & KYC Backup Cron Job...");
       await connectToDatabase();
-
-      const backupData: Record<string, any[]> = {};
-
-      for (const [name, model] of Object.entries(collections)) {
-        backupData[name] = await model.find({}).lean();
-      }
-
-      const uploadDir = path.join(process.cwd(), "public/uploads");
-      const uploadedFiles: { filename: string; content: string }[] = [];
-      if (fs.existsSync(uploadDir)) {
-        const files = fs.readdirSync(uploadDir);
-        for (const file of files) {
-          const filePath = path.join(uploadDir, file);
-          if (fs.statSync(filePath).isFile()) {
-            const content = fs.readFileSync(filePath).toString("base64");
-            uploadedFiles.push({ filename: file, content });
-          }
-        }
-      }
-      (backupData as any)._uploaded_files = uploadedFiles;
-
-      const dateStr = new Date().toISOString().split("T")[0];
-      const backupString = JSON.stringify(backupData);
-
-      // Create a ZIP archive in memory
-      const AdmZip = require("adm-zip");
-      const zip = new AdmZip();
-      zip.addFile(`crm_backup_${dateStr}.json`, Buffer.from(backupString, "utf8"));
-      const zipBuffer = zip.toBuffer();
-
-      // We have to send this via email to ak915066@gmail.com
       const settings = await SystemSettings.findOne();
-      const smtp = settings?.integrations?.smtp;
+      const backupTime = settings?.backupConfig?.backupTime || "10:00"; // default 10:00 AM
+      
+      const now = new Date();
+      // Format current time to HH:MM to compare
+      const hours = now.getHours().toString().padStart(2, '0');
+      const mins = now.getMinutes().toString().padStart(2, '0');
+      const currentTime = `${hours}:${mins}`;
 
-      if (smtp && smtp.host && smtp.user && smtp.pass) {
-        const port = parseInt(smtp.port || "587");
-        const transporter = nodemailer.createTransport({
-          host: smtp.host,
-          port,
-          secure: port === 465,
-          auth: { user: smtp.user, pass: smtp.pass }
-        });
-
-        const from = smtp.from || `"Niventra CRM Backup" <${smtp.user}>`;
-
-        await transporter.sendMail({
-          from,
-          to: "ak915066@gmail.com",
-          subject: `Niventra CRM Daily Backup - ${dateStr}`,
-          text: `Please find attached the complete CRM database and KYC documents backup for ${dateStr}, compressed as a ZIP file.`,
-          attachments: [
-            {
-              filename: `crm_backup_${dateStr}.zip`,
-              content: zipBuffer,
-              contentType: "application/zip"
-            }
-          ]
-        });
-        console.log("Daily Backup emailed successfully!");
-      } else {
-        console.warn("Daily Backup Failed: SMTP Settings not configured in System Settings.");
+      if (currentTime === backupTime) {
+        console.log(`Matched configured backup time (${backupTime}). Triggering backup...`);
+        await generateAndEmailBackup();
       }
     } catch (e) {
-      console.error("Error during Daily Backup Cron Job:", e);
+      console.error("Error checking cron schedule:", e);
     }
   });
 
-  console.log("CRON jobs initialized! Scheduled Daily Backup at 10 AM.");
+  console.log("CRON jobs initialized! Scheduled to check for daily backup time every minute.");
 }

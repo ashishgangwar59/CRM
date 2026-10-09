@@ -129,18 +129,14 @@ export async function GET(req: Request) {
 
     const dateStr = new Date().toISOString().split("T")[0];
     const filename = `crm_backup_${dateStr}_${Date.now()}.zip`;
-    const backupsDir = path.join(process.cwd(), "backups");
-    
-    if (!fs.existsSync(backupsDir)) {
-      fs.mkdirSync(backupsDir, { recursive: true });
-    }
-    
-    const tempPath = path.join(backupsDir, filename);
-    fs.writeFileSync(tempPath, zipBuffer);
 
-    // Redirect to the dedicated download API
-    const redirectUrl = new URL(`/api/settings/backup/download?file=${filename}`, req.url);
-    return NextResponse.redirect(redirectUrl);
+    return new NextResponse(zipBuffer as any, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    });
   } catch (error) {
     console.error("Backup Export Error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -84,6 +84,10 @@ export interface ISystemSettings extends Document {
       msg91SenderId: string;
     };
   };
+  backupConfig: {
+    email: string;
+    backupTime: string; // e.g. "10:00"
+  };
 }
 
 const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
@@ -195,6 +199,10 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
         msg91AuthKey: { type: String, default: "" },
         msg91SenderId: { type: String, default: "" },
       }
+    },
+    backupConfig: {
+      email: { type: String, default: "admin@example.com" },
+      backupTime: { type: String, default: "10:00" }
     },
     letterTemplates: {
       offerLetter: {

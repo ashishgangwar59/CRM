@@ -39,6 +39,7 @@ export default function SettingsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [backupMsg, setBackupMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [backupStats, setBackupStats] = useState<{ collections: number; files: number; sizeMb: string } | null>(null);
 
@@ -164,6 +165,24 @@ export default function SettingsPage() {
     } catch (e: any) {
       setBackupMsg({ type: "error", text: e.message || "Failed to download backup" });
       setExportLoading(false);
+    }
+  };
+
+  const handleSendBackupEmail = async () => {
+    setSendingEmail(true);
+    setBackupMsg(null);
+    try {
+      const res = await fetch("/api/settings/backup/send", { method: "POST" });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setBackupMsg({ type: "success", text: "Backup generated and emailed successfully!" });
+      } else {
+        setBackupMsg({ type: "error", text: json.error || "Failed to send backup email" });
+      }
+    } catch (e: any) {
+      setBackupMsg({ type: "error", text: "Network error while sending email" });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -736,6 +755,44 @@ export default function SettingsPage() {
                       className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
                     >
                       {exportLoading ? "Generating..." : "Download Backup (.zip)"}
+                    </Button>
+                  </div>
+
+                  {/* Automated Backup Config Card */}
+                  <div className="p-5 border rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                    <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-2 mb-2">
+                      <Mail className="w-5 h-5 text-purple-600" /> Automated Email Backup
+                    </h3>
+                    <p className="text-xs text-zinc-500 mb-4">
+                      Configure the daily scheduled time and recipient email for the automated ZIP backup.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-white dark:bg-zinc-950 p-4 rounded-lg border border-zinc-150 dark:border-zinc-850">
+                      <div className="space-y-2">
+                        <Label>Recipient Email Address</Label>
+                        <Input 
+                          type="email" 
+                          value={settings.backupConfig?.email || ""} 
+                          onChange={e => setSettings({ ...settings, backupConfig: { ...settings.backupConfig, email: e.target.value } })} 
+                          placeholder="admin@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Daily Schedule Time</Label>
+                        <Input 
+                          type="time" 
+                          value={settings.backupConfig?.backupTime || "10:00"} 
+                          onChange={e => setSettings({ ...settings, backupConfig: { ...settings.backupConfig, backupTime: e.target.value } })} 
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleSendBackupEmail}
+                      disabled={sendingEmail}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                    >
+                      {sendingEmail ? "Generating & Sending..." : "Send Backup to Email Now"}
                     </Button>
                   </div>
 

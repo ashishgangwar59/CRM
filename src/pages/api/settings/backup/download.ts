@@ -8,7 +8,7 @@ function checkAuth(req: NextApiRequest) {
   if (!token) return null;
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any;
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "super-secret-key-for-development-only-change-in-prod") as any;
     if (!payload || !payload.userId) return null;
 
     const role = (payload.role || "").toUpperCase().replace("_", "");
