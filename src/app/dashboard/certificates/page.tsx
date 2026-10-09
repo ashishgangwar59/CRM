@@ -9,9 +9,7 @@ export default function CertificatesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [certType, setCertType] = useState<string>("Employee of the Month");
-  const [certPeriod, setCertPeriod] = useState<string>(
-    new Date().toLocaleString("default", { month: "long", year: "numeric" })
-  );
+  const [certPeriod, setCertPeriod] = useState<string>("");
   const [customMessage, setCustomMessage] = useState<string>(
     "In recognition and appreciation of your dedication, commitment, disciplineand valuable contribution towards the organization.Your consistent efforts, positive attitude and professional approach havecontributed meaningfully to the growth and success of the team.We sincerely appreciate your contribution and encourage you to continueachieving excellence in your professional journey."
   );
@@ -21,6 +19,22 @@ export default function CertificatesPage() {
   const [loading, setLoading] = useState(true);
 
   const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    if (certType === "Employee of the Month") {
+      const currentMonth = d.toLocaleString('default', { month: 'short' });
+      const prevDate = new Date();
+      prevDate.setMonth(d.getMonth() - 1);
+      const prevMonth = prevDate.toLocaleString('default', { month: 'short' });
+      setCertPeriod(`${prevMonth}-${currentMonth} ${year}`);
+    } else if (certType === "Employee of the Year") {
+      setCertPeriod(`${year - 1}-${year}`);
+    } else {
+      setCertPeriod(d.toLocaleString("default", { month: "long", year: "numeric" }));
+    }
+  }, [certType]);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -106,7 +120,7 @@ export default function CertificatesPage() {
                   <option value="Employee of the Month">Employee of the Month</option>
                   <option value="Employee of the Year">Employee of the Year</option>
                   <option value="Outstanding Performance Award">Outstanding Performance Award</option>
-                  <option value="Certificate of Appreciation">Certificate of Appreciation</option>
+                  {/* <option value="Certificate of Appreciation">Certificate of Appreciation</option> */}
                 </select>
               </div>
 
@@ -183,11 +197,17 @@ export default function CertificatesPage() {
             }
             
             @media print {
-              @page { size: 15.36in 10.24in; margin: 0; }
-              html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding:0; background:#fff; margin:0; overflow: hidden !important; width: 100%; height: 100%; }
+              @page { size: A4 landscape; margin: 0; }
+              html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding:0; background:#fff; margin:0; width: 100%; height: 100%; }
               #header, #sidebar, .sidebar { display: none !important; }
-              .certificate { width: 15.36in !important; height: 10.24in !important; box-shadow: none !important; transform: none !important; zoom: 1 !important; margin: 0 !important; }
-              .certificate-container { overflow: hidden !important; padding: 0 !important; margin: 0 !important; }
+              .certificate { 
+              margin-top:3px !important;
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                transform: none !important;
+                zoom:0.73;
+              }
+              .certificate-container { padding: 0 !important; margin: 0 !important; justify-content: center !important; }
               *::-webkit-scrollbar { display: none !important; }
             }
             
@@ -202,7 +222,7 @@ export default function CertificatesPage() {
             .certificate {
               position:relative;
               width:1536px;
-              height:1024px;
+              height:1086px;
               overflow:hidden;
               background: radial-gradient(ellipse at 52% 45%,rgba(255,255,255,.72),transparent 65%), linear-gradient(110deg,#f6f5ee,#fbfaf5 47%,#f6f5ee);
               box-shadow:0 8px 30px rgba(0,0,0,.15);
@@ -243,19 +263,20 @@ export default function CertificatesPage() {
             .corner-mark.bottom-left:before{left:0;bottom:0;width:3px;height:27px}
             .corner-mark.bottom-left:after{left:0;bottom:0;width:27px;height:3px}
             .corner-mark.bottom-left i{position:absolute;left:5px;bottom:5px;width:18px;height:18px;background:var(--navy);clip-path:polygon(0 0,100% 100%,0 100%)}
-            .logo{position:absolute;left:296px;top:52px;height:105px;display:flex;z-index:40}
+            .logo{position:absolute;left:186px;top:52px;height:105px;display:flex;z-index:40}
            
             .logo-name{font-family:Arial,Helvetica,sans-serif;font-size:53px;letter-spacing:5px;font-weight:500;line-height:48px}
             .logo-name sup{font-size:13px;vertical-align:top;position:relative;top:-8px;letter-spacing:0}
             .logo-title{font-family:Arial,Helvetica,sans-serif;font-size:20px;letter-spacing:7px;margin-top:9px;text-transform:uppercase}
             .logo-india{font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:4px;text-align:center;margin-top:6px;display:flex;justify-content:center;gap:12px;align-items:center}
             .logo-india em{display:block;width:40px;height:1px;background:var(--gold)}
-            .tagline{position:absolute;right:139px;top:88px;text-align:center;font-family:"Cormorant Garamond",Georgia,serif;font-size:25px;font-style:italic;line-height:1.25;z-index:40;}
+            .tagline{position:absolute;right:139px;top:52px;text-align:center;font-family:"Cormorant Garamond",Georgia,serif;font-size:25px;font-style:italic;line-height:1.25;z-index:40;}
             .tagline span{display:block;height:2px;background:var(--gold);width:233px;margin:16px auto 0}
             .cert-main{position:absolute;inset:0;z-index:35;margin:0!important;padding:177px 0 282px 0!important;display:flex;flex-direction:column;align-items:center;}
             .small-title{width:100%;text-align:center;font-size:40px;font-weight:600;letter-spacing:6px;text-transform:uppercase;}
             .main-title{width:100%;text-align:center;font-family:"Cormorant Garamond",Georgia,serif;color:var(--gold);font-size:80px;font-weight:700;letter-spacing:4px;line-height:1;text-transform:uppercase;margin-top:8px;}
-            .title-ornament{width:666px;display:flex;align-items:center;gap:14px;margin-top:8px;}
+            .period-title{width:100%;text-align:center;font-family:"Cormorant Garamond",Georgia,serif;color:var(--navy);font-size:26px;font-style:italic;letter-spacing:2px;margin-top:8px;}
+            .title-ornament{width:666px;display:flex;align-items:center;gap:14px;margin-top:12px;}
             .title-ornament span{height:1px;background:var(--gold);flex:1}
             .title-ornament b{color:var(--gold);font-size:28px;font-family:serif;transform:scaleX(2)}
             .presented{width:100%;text-align:center;font-size:24px;font-weight:700;letter-spacing:2.3px;margin-top:10px;}
@@ -281,18 +302,18 @@ export default function CertificatesPage() {
             .right-laurel{right:17px;transform:rotate(-28deg)}
             .date-box{position:absolute;left:114px;bottom:130px;width:300px;font-size:19px;text-align:left;}
             .date-box>div{display:flex;align-items:end;height:38px}
-            .date-box label{white-space:nowrap}
-            .date-box span{display:block;flex:1;height:26px;border-bottom:1px solid var(--navy);margin-left:8px;outline:0;text-align:center;    font-family: monospace;    font-size: 15px;}
-            .signatory{position:absolute;right:114px;bottom:170px;width:280px;text-align:center}
+            .date-box label{white-space:nowrap; width: 145px;}
+            .date-box span{display:block;height:26px;border-bottom:1px solid var(--navy);margin-left:8px;outline:0;text-align:center;    font-family: monospace;    font-size: 15px;}
+            .signatory{position:absolute;right:75px;bottom:130px;width:280px;text-align:center}
             .signature{height:85px;font-family:"arial";font-size:25px;color:var(--navy);outline:0;;transform-origin:bottom center;display:flex;align-items:end;justify-content:center;padding-bottom:10px;}
             .sig-line{height:1px;background:var(--gold);margin-bottom:12px}
             .signatory b{font-size:17px}
             .signatory small{display:block;margin-top:4px;font-size:13px}
-            .cert-footer{position:absolute;left:263px;right:263px;bottom:52px;height:25px;display:flex;align-items:center;gap:16px;font:12px Arial,Helvetica,sans-serif;letter-spacing:3px;z-index:40;white-space:nowrap}
+            .cert-footer{position:absolute;left:263px;right:263px;bottom:62px;height:25px;display:flex;align-items:center;gap:16px;font:12px Arial,Helvetica,sans-serif;letter-spacing:3px;z-index:40;white-space:nowrap}
             .cert-footer i{height:1px;background:var(--gold);flex:1}
             .cert-footer b{font-size:13px;color:var(--gold);font-weight:400}
             .cert-footer span{color:var(--navy)}
-            .company-info{position:absolute;left:50px;right:50px;bottom:37px;text-align:center;font:11px Arial,Helvetica,sans-serif;letter-spacing:1px;color:var(--navy);opacity:0.9;}
+            .company-info{position:absolute;left:50px;right:50px;bottom:47px;text-align:center;font:11px Arial,Helvetica,sans-serif;letter-spacing:1px;color:var(--navy);opacity:0.9;}
             .company-info span{margin:0 4px;}
             .company-info b{color:var(--gold);margin:0 4px;}
             `
@@ -334,8 +355,19 @@ export default function CertificatesPage() {
               </div>
 
               <div className="cert-main">
-                <div className="small-title">CERTIFICATE OF</div>
-                <div className="main-title">{certType.replace("Employee of the ", "").replace("Certificate of ", "")}</div>
+                <div className="small-title">
+                  {certType.includes("Employee of the") ? "EMPLOYEE OF THE" :
+                    certType.includes("Outstanding Performance") ? "OUTSTANDING PERFORMANCE" :
+                      "CERTIFICATE OF"}
+                </div>
+                <div className="main-title">
+                  {certType.includes("Employee of the") ? certType.replace("Employee of the ", "") :
+                    certType.includes("Outstanding Performance") ? "AWARD" :
+                      certType}
+                </div>
+                {certPeriod && (
+                  <div className="period-title">{certPeriod}</div>
+                )}
                 <div className="title-ornament">
                   <span></span><b>⌁</b><span></span>
                 </div>
@@ -366,7 +398,7 @@ export default function CertificatesPage() {
 
                 <div className="date-box">
                   <div><label>Date:</label><span>{new Date(issueDate).toLocaleDateString("en-GB")}</span></div>
-                  <div><label>Certificate No.:</label><span>CERT-{new Date().getFullYear()}-{Math.floor(Math.random() * 1000).toString().padStart(3, '0')}</span></div>
+                  <div><label>Certificate No.:</label><span className="crt">CERT-{new Date().getFullYear()}-{Math.floor(Math.random() * 1000).toString().padStart(3, '0')}</span></div>
                 </div>
 
                 <div className="signatory">

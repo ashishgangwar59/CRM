@@ -313,13 +313,15 @@ export async function PUT(req: Request) {
       if (nomineeRelation !== undefined) updateFields.nomineeRelation = nomineeRelation;
       if (nomineeAge !== undefined) updateFields.nomineeAge = nomineeAge;
 
-      if (status === "Verified") {
-        updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
-        updateFields.verifiedAt = new Date();
-      }
-
       const currentInv = await Investor.findById(targetId).lean();
       if (!currentInv) return NextResponse.json({ error: "Investor not found" }, { status: 404 });
+
+      if (status === "Verified") {
+        if (!currentInv.verifiedAt) {
+          updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
+          updateFields.verifiedAt = new Date();
+        }
+      }
 
       if (docVerifications) {
         const currentDocVerifications = currentInv.docVerifications || {};
@@ -344,8 +346,10 @@ export async function PUT(req: Request) {
           updateFields.status = "Rejected";
         } else if (allApproved && currentInv.bondAgreement?.accepted) {
           updateFields.status = "Verified";
-          updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
-          updateFields.verifiedAt = new Date();
+          if (!currentInv.verifiedAt) {
+            updateFields.verifiedBy = new mongoose.Types.ObjectId(payload.userId);
+            updateFields.verifiedAt = new Date();
+          }
         }
       }
 

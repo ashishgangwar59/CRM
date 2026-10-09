@@ -34,6 +34,7 @@ const bondStyles = `
         .bond-meta { padding: 8px 10px; border: 1px solid #c9ad6c; border-radius: 8px; background: rgba(255, 248, 218, .55); font-family: Arial, sans-serif; font-size: 11px; }
         .bond-meta div { display: grid; grid-template-columns: 76px 1fr; gap: 3px; margin: 4px 0; }
         .bond-meta b { font-weight: 700; }
+        .bond-meta .maturity-highlight { background: linear-gradient(135deg, #134086, #092940); color: #f5e5af; padding: 4px 6px; margin: 4px -6px -2px -6px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); border: 1px solid #c9ad6c; }
         .ribbon { position: relative; z-index: 2; display: grid; grid-template-columns: 45px 1fr 45px; align-items: center; margin: 4px 20px 9px; padding: 8px 12px 7px; border: 2px solid var(--gold); border-radius: 35px; background: linear-gradient(#0b3d5e, #042c49); box-shadow: inset 0 0 0 2px #092940; text-align: center; color: #f5e5af; }
         .ribbon h2 { margin: 0; font-size: 25px; line-height: 1; letter-spacing: .5px; }
         .ribbon h3 { margin: 5px 0 0; font-size: 16px; line-height: 1; letter-spacing: 6px; }
@@ -378,7 +379,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                   <section className="bond-meta">
                     <div><b>Bond No.</b><span>{bondNo}</span></div>
                     <div><b>Issue Date</b><span>{issueDateStr}</span></div>
-                    <div><b>Maturity Date</b><span>{maturityDateStr}</span></div>
+                    <div className="maturity-highlight"><b>Maturity Date</b><span>{maturityDateStr}</span></div>
                   </section>
                 </header>
 
