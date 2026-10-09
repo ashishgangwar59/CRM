@@ -68,6 +68,20 @@ const LeadSchema: Schema<ILead> = new Schema(
   { timestamps: true }
 );
 
+LeadSchema.index({ createdAt: -1 });
+LeadSchema.index({ ownerId: 1 });
+LeadSchema.index({ status: 1 });
+LeadSchema.index({ stage: 1 });
+
+// High-performance text index for massive scalability search queries
+LeadSchema.index({
+  firstName: "text",
+  lastName: "text",
+  email: "text",
+  phone: "text",
+  company: "text"
+});
+
 if (mongoose.models.Lead) {
   delete mongoose.models.Lead;
 }

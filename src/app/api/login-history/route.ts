@@ -41,8 +41,8 @@ export async function GET(req: Request) {
     let userIdsToFilter = null;
     if (search) {
       // Find users matching search
-      const userSearchQuery = { $regex: search, $options: "i" };
-      const matchedUsers = await User.find({ email: userSearchQuery }).select("_id");
+      const userSearchQuery = { $text: { $search: search } };
+      const matchedUsers = await User.find(userSearchQuery).select("_id");
       userIdsToFilter = matchedUsers.map(u => u._id);
     }
 

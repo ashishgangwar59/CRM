@@ -40,13 +40,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const user = await User.findById(payload.userId).lean();
+    const user: any = await User.findById(payload.userId).lean();
     const userRole = (user?.role || payload?.role || "").toUpperCase().replace(/_/g, "");
 
     // If Admin / KeyAdmin / SuperAdmin / Manager / Employee: Return all investors list with search
     if (userRole !== "INVESTOR") {
       const { searchParams } = new URL(req.url);
-      
+
       const specificId = searchParams.get("id");
       if (specificId) {
         const inv = await Investor.findById(specificId).lean();
@@ -59,13 +59,7 @@ export async function GET(req: Request) {
 
       const query: any = {};
       if (search) {
-        query.$or = [
-          { fullName: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-          { phone: { $regex: search, $options: "i" } },
-          { investorCode: { $regex: search, $options: "i" } },
-          { "debentureForm.applicationNo": { $regex: search, $options: "i" } },
-        ];
+        query.$text = { $search: search };
       }
       if (status && status !== "ALL") {
         if (status === "DebentureForms") {
@@ -103,7 +97,7 @@ export async function GET(req: Request) {
         } else if (filterDays === "last30") {
           startDate.setDate(now.getDate() - 30);
         }
-        
+
         if (filterDays !== "yesterday") {
           query.createdAt = { $gte: startDate };
         }
@@ -392,7 +386,7 @@ export async function PUT(req: Request) {
     } else {
       investor = await Investor.findOne({ userId: user._id }).sort({ createdAt: -1 });
     }
-    
+
     if (!investor) {
       investor = await Investor.findOne({ email: { $regex: `^${user.email}$`, $options: "i" } }).sort({ createdAt: -1 });
     }

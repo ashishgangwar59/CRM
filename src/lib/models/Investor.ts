@@ -225,6 +225,15 @@ InvestorSchema.index({ investorCode: 1 });
 InvestorSchema.index({ phone: 1 });
 InvestorSchema.index({ status: 1 });
 
+// High-performance text index for massive scalability search queries
+InvestorSchema.index({
+  fullName: "text",
+  email: "text",
+  phone: "text",
+  investorCode: "text",
+  "debentureForm.applicationNo": "text"
+});
+
 // Clear the mongoose model cache for Investor so Next.js HMR picks up schema changes
 if (mongoose.models.Investor) {
   delete mongoose.models.Investor;

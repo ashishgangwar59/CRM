@@ -15,12 +15,7 @@ export async function GET(req: Request) {
 
     const query: any = {};
     if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { employeeCode: { $regex: search, $options: "i" } },
-      ];
+      query.$text = { $search: search };
     }
     if (department) query.department = department;
     if (status) query.status = status;

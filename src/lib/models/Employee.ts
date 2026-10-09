@@ -228,6 +228,13 @@ EmployeeSchema.index({ officeEmail: 1 });
 EmployeeSchema.index({ employeeCode: 1 });
 EmployeeSchema.index({ phone: 1 });
 
+EmployeeSchema.index({
+  firstName: "text",
+  lastName: "text",
+  email: "text",
+  employeeCode: "text"
+});
+
 // Force Mongoose to re-compile the model in development
 if (mongoose.models.Employee) {
   delete mongoose.models.Employee;

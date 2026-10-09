@@ -104,5 +104,7 @@ const AttendanceSchema: Schema<IAttendance> = new Schema(
 
 // Ensure only one attendance record per employee per day
 AttendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
+AttendanceSchema.index({ date: -1 });
+AttendanceSchema.index({ status: 1 });
 
 export const Attendance: Model<IAttendance> = mongoose.models.Attendance || mongoose.model("Attendance", AttendanceSchema);

@@ -35,13 +35,7 @@ export async function GET(req: Request) {
 
     let query: any = {};
     if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: "i" } },
-        { lastName: { $regex: search, $options: "i" } },
-        { company: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } }
-      ];
+      query.$text = { $search: search };
     }
     if (status) query.status = status;
     if (stage) query.stage = stage;
