@@ -300,7 +300,7 @@ export default function CertificatesPage() {
             .laurel{position:absolute;z-index:3;top:22px;width:20px;height:39px;border-left:2px solid var(--gold);border-radius:50%}
             .left-laurel{left:17px;transform:rotate(28deg)}
             .right-laurel{right:17px;transform:rotate(-28deg)}
-            .date-box{position:absolute;left:114px;bottom:130px;width:300px;font-size:19px;text-align:left;}
+            .date-box{position:absolute;left:75px;bottom:130px;width:300px;font-size:19px;text-align:left;}
             .date-box>div{display:flex;align-items:end;height:38px}
             .date-box label{white-space:nowrap; width: 145px;}
             .date-box span{display:block;height:26px;border-bottom:1px solid var(--navy);margin-left:8px;outline:0;text-align:center;    font-family: monospace;    font-size: 15px;}
@@ -314,8 +314,11 @@ export default function CertificatesPage() {
             .cert-footer b{font-size:13px;color:var(--gold);font-weight:400}
             .cert-footer span{color:var(--navy)}
             .company-info{position:absolute;left:50px;right:50px;bottom:47px;text-align:center;font:11px Arial,Helvetica,sans-serif;letter-spacing:1px;color:var(--navy);opacity:0.9;}
-            .company-info span{margin:0 4px;}
+            .company-info span{margin:0 15px;}
             .company-info b{color:var(--gold);margin:0 4px;}
+            .company-info span:last-child {
+              margin-left: 5px;
+              }
             `
           }} />
 
