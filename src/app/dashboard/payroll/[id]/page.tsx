@@ -197,7 +197,7 @@ export default function SalarySlipPage() {
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
-            zoom: 0.89;
+            zoom: 0.85;
           }
           @page {
             size: A4 portrait;
