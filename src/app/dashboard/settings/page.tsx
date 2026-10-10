@@ -20,7 +20,7 @@ const RichEditor = ({ defaultValue, onChange }: { defaultValue: string, onChange
         contentEditable
         suppressContentEditableWarning
         dangerouslySetInnerHTML={{ __html: defaultValue }}
-        onInput={(e) => onChange(e.currentTarget.innerHTML)}
+        onBlur={(e) => onChange(e.currentTarget.innerHTML)}
       />
     </div>
   );
@@ -597,27 +597,43 @@ export default function SettingsPage() {
                   <div>
                     <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Offer Letter Templates</h3>
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Page 1 (Offer Details)</Label>
-                        <RichEditor
-                          defaultValue={settings.letterTemplates?.offerLetter?.page1 || ""}
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page1: v } } })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Page 2 (Confidentiality & Compliance)</Label>
-                        <RichEditor
-                          defaultValue={settings.letterTemplates?.offerLetter?.page2 || ""}
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page2: v } } })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Page 3 (Intellectual Property & Separation)</Label>
-                        <RichEditor
-                          defaultValue={settings.letterTemplates?.offerLetter?.page3 || ""}
-                          onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, page3: v } } })}
-                        />
-                      </div>
+                      {Object.keys(settings.letterTemplates?.offerLetter || {})
+                        .filter(key => key.startsWith('page'))
+                        .sort()
+                        .map((pageKey, index) => (
+                        <div key={pageKey} className="space-y-2 p-4 border border-zinc-200 rounded-lg bg-zinc-50">
+                          <div className="flex justify-between items-center mb-2">
+                            <Label className="text-base font-semibold">Page {index + 1}</Label>
+                          </div>
+                          <RichEditor
+                            defaultValue={settings.letterTemplates?.offerLetter?.[pageKey] || ""}
+                            onChange={v => setSettings({ ...settings, letterTemplates: { ...settings.letterTemplates, offerLetter: { ...settings.letterTemplates?.offerLetter, [pageKey]: v } } })}
+                          />
+                        </div>
+                      ))}
+                      
+                      <Button 
+                        onClick={() => {
+                          const currentKeys = Object.keys(settings.letterTemplates?.offerLetter || {}).filter(k => k.startsWith('page'));
+                          const nextNum = currentKeys.length > 0 
+                            ? Math.max(...currentKeys.map(k => parseInt(k.replace('page', '')) || 0)) + 1 
+                            : 1;
+                          setSettings({ 
+                            ...settings, 
+                            letterTemplates: { 
+                              ...settings.letterTemplates, 
+                              offerLetter: { 
+                                ...settings.letterTemplates?.offerLetter, 
+                                [`page${nextNum}`]: "" 
+                              } 
+                            } 
+                          });
+                        }}
+                        className="w-full"
+                        variant="outline"
+                      >
+                        + Add New Page
+                      </Button>
                     </div>
                   </div>
 

@@ -199,7 +199,7 @@ export async function PUT(req: Request) {
     const updatedSettings = await SystemSettings.findOneAndUpdate(
       {},
       { $set: updates },
-      { new: true, upsert: true }
+      { new: true, upsert: true, strict: false }
     );
 
     return NextResponse.json({ success: true, message: "Settings updated successfully", data: updatedSettings });

@@ -51,11 +51,7 @@ export interface ISystemSettings extends Document {
     type: "Earning" | "Deduction";
   }[];
   letterTemplates: {
-    offerLetter: {
-      page1: string;
-      page2: string;
-      page3: string;
-    };
+    offerLetter: Record<string, string>;
     joiningLetter: {
       page1: string;
     };
@@ -206,7 +202,9 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
     },
     letterTemplates: {
       offerLetter: {
-        page1: { type: String, default: `<h3 class="font-bold underline uppercase mb-1">REPORTING LOCATION</h3>
+        type: Schema.Types.Mixed,
+        default: {
+          page1: `<h3 class="font-bold underline uppercase mb-1">REPORTING LOCATION</h3>
 <p class="mb-3">The Nukleus Center, Mezzanine Level, Shivaji Stadium Metro Station, Airport Express Line, Connaught Place, New Delhi 110001</p>
 
 <h3 class="font-bold underline uppercase mb-1">PROBATION & CONFIRMATION</h3>
@@ -223,8 +221,8 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
 <h3 class="font-bold underline uppercase mb-1">PERFORMANCE & INCENTIVES</h3>
 <p class="mb-5">
   Performance may be reviewed periodically on business/operational performance, quality of work, attendance, customer handling, reporting discipline, compliance and teamwork. Incentives, where applicable, are subject to the relevant policy, eligibility, verification and approval.
-</p>` },
-        page2: { type: String, default: `<h3 class="font-bold underline uppercase mb-1">ATTENDANCE & WORKING HOURS</h3>
+</p>`,
+          page2: `<h3 class="font-bold underline uppercase mb-1">ATTENDANCE & WORKING HOURS</h3>
 <p class="mb-5">
   You shall follow the working hours and attendance system communicated by HR. Repeated late attendance, unauthorised absence or failure to follow attendance procedures may result in action under applicable policy and law.
 </p>
@@ -258,8 +256,8 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
 </ul>
 <p class="mb-5">
   You need to carry the abovementioned documents in original with you on the day of joining for the cross verification. Employment is subject to verification of submitted information and documents. Materially false, misleading or incomplete information may result in appropriate action under applicable law and Company policy.
-</p>` },
-        page3: { type: String, default: `<h3 class="font-bold underline uppercase mb-1">INTELLECTUAL PROPERTY</h3>
+</p>`,
+          page3: `<h3 class="font-bold underline uppercase mb-1">INTELLECTUAL PROPERTY</h3>
 <p class="mb-3">
   Work product and business materials created in the course of employment for Company business shall be handled in accordance with applicable Company policies and law.
 </p>
@@ -272,7 +270,8 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
 <h3 class="font-bold underline uppercase mb-1">ACCEPTANCE</h3>
 <p class="mb-10">
   By signing below, you confirm that you have read and understood this Offer Letter, the information provided by you is accurate to the best of your knowledge, and you agree to comply with applicable Company policies and procedures.
-</p>` }
+</p>`
+        }
       },
       joiningLetter: {
         page1: { type: String, default: `<p class="mb-4">
@@ -298,4 +297,7 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
   { timestamps: true }
 );
 
-export const SystemSettings: Model<ISystemSettings> = mongoose.models.SystemSettings || mongoose.model("SystemSettings", SystemSettingsSchema);
+if (mongoose.models.SystemSettings) {
+  delete mongoose.models.SystemSettings;
+}
+export const SystemSettings: Model<ISystemSettings> = mongoose.model("SystemSettings", SystemSettingsSchema);

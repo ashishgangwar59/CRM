@@ -63,7 +63,8 @@ const Watermark = () => (
 );
 
 export default function OfferLetterPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const [employee, setEmployee] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -124,117 +125,88 @@ export default function OfferLetterPage() {
           </button>
         </div>
 
-        {/* PAGE 1: Offer & Appointment Part 1 */}
-        <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-lg print:shadow-none print:w-[210mm] print:h-[297mm] text-zinc-900 text-[13px] leading-relaxed font-sans relative flex flex-col mb-8 print:mb-0 overflow-hidden box-border pt-0">
-          <Watermark />
-          <Header />
+        {/* DYNAMIC OFFER LETTER PAGES */}
+        {Object.keys(settings?.letterTemplates?.offerLetter || {})
+          .filter(k => k.startsWith('page'))
+          .sort((a, b) => (parseInt(a.replace('page', '')) || 0) - (parseInt(b.replace('page', '')) || 0))
+          .map((pageKey, index, array) => {
+            const isFirstPage = index === 0;
+            const isLastPage = index === array.length - 1;
 
-          <div className="px-10 flex-1 z-10">
-            {/* METADATA BLOCK */}
-            <div className="mb-6 space-y-1">
-              <div className="flex"><span className="w-48 font-bold">OFFER LETTER NO.</span><span>: NIV/HR/{new Date().getFullYear()}/OL-{employee.employeeCode || "NEW"}</span></div>
-              <div className="flex"><span className="w-48 font-bold">EMPLOYEE ID</span><span>: {employee.employeeCode || `NIV/EMP/${new Date().getFullYear()}/NEW`}</span></div>
-              <div className="flex"><span className="w-48 font-bold">DATE</span><span>: {today}</span></div>
-              <div className="flex"><span className="w-48 font-bold">DESIGNATION</span><span>: {employee.designation || "__________________"}</span></div>
-            </div>
+            return (
+              <div key={pageKey}>
+                {index > 0 && <div className="page-break print:break-before-page" />}
+                <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-lg print:shadow-none print:w-[210mm] print:h-[297mm] text-zinc-900 text-[13px] leading-relaxed font-sans relative flex flex-col mb-8 print:mb-0 overflow-hidden box-border pt-0">
+                  <Watermark />
+                  <Header />
 
-            <h2 className="text-center font-bold underline uppercase text-lg mb-4">OFFER LETTER</h2>
+                  <div className="px-10 flex-1 z-10">
+                    {isFirstPage && (
+                      <>
+                        <div className="mb-6 space-y-1">
+                          <div className="flex"><span className="w-48 font-bold">OFFER LETTER NO.</span><span>: NIV/HR/{new Date().getFullYear()}/OL-{employee.employeeCode || "NEW"}</span></div>
+                          <div className="flex"><span className="w-48 font-bold">EMPLOYEE ID</span><span>: {employee.employeeCode || `NIV/EMP/${new Date().getFullYear()}/NEW`}</span></div>
+                          <div className="flex"><span className="w-48 font-bold">DATE</span><span>: {today}</span></div>
+                          <div className="flex"><span className="w-48 font-bold">DESIGNATION</span><span>: {employee.designation || "__________________"}</span></div>
+                        </div>
 
-            <p className="mb-2">
-              Dear Mr./Ms. <strong>{employee.firstName} {employee.lastName}</strong>,
-            </p>
-            <p className="mb-4">
-              We are pleased to offer you the position of <strong>{employee.designation || "__________________"}</strong> with {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}, subject to this Offer Letter, applicable employment terms, Company policies and applicable law.
-            </p>
+                        <h2 className="text-center font-bold underline uppercase text-lg mb-4">OFFER LETTER</h2>
 
-            <h3 className="font-bold underline uppercase mb-2">EMPLOYEE DETAILS</h3>
-            <table className="w-full mb-4">
-              <tbody>
-                <tr><td className="w-48 py-0.5">Candidate Name</td><td>: <strong>{employee.firstName} {employee.lastName}</strong></td></tr>
-                <tr><td className="w-48 py-0.5">Father/Mother Name</td><td>: <strong>{employee.fatherOrMotherName || "__________________"}</strong></td></tr>
-                <tr><td className="w-48 py-0.5">Designation</td><td>: <strong>{employee.designation || "__________________"}</strong></td></tr>
-                <tr><td className="w-48 py-0.5">Date of Joining</td><td>: <strong>{joiningDate || "___ / ___ / 2026"}</strong></td></tr>
-                {/* <tr><td className="w-48 py-0.5">Reporting Manager</td><td>: <strong>{employee.reportingManager || "__________________"}</strong></td></tr> */}
-              </tbody>
-            </table>
+                        <p className="mb-2">
+                          Dear Mr./Ms. <strong>{employee.firstName} {employee.lastName}</strong>,
+                        </p>
+                        <p className="mb-4">
+                          We are pleased to offer you the position of <strong>{employee.designation || "__________________"}</strong> with {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}, subject to this Offer Letter, applicable employment terms, Company policies and applicable law.
+                        </p>
 
-            <div
-              dangerouslySetInnerHTML={{
-                __html: (settings?.letterTemplates?.offerLetter?.page1 || "")
-                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
-              }}
-            />
+                        <h3 className="font-bold underline uppercase mb-2">EMPLOYEE DETAILS</h3>
+                        <table className="w-full mb-4">
+                          <tbody>
+                            <tr><td className="w-48 py-0.5">Candidate Name</td><td>: <strong>{employee.firstName} {employee.lastName}</strong></td></tr>
+                            <tr><td className="w-48 py-0.5">Father/Mother Name</td><td>: <strong>{employee.fatherOrMotherName || "__________________"}</strong></td></tr>
+                            <tr><td className="w-48 py-0.5">Designation</td><td>: <strong>{employee.designation || "__________________"}</strong></td></tr>
+                            <tr><td className="w-48 py-0.5">Date of Joining</td><td>: <strong>{joiningDate || "___ / ___ / 2026"}</strong></td></tr>
+                          </tbody>
+                        </table>
+                      </>
+                    )}
 
-          </div>
-          <Footer
-            address={settings?.companyProfile?.address}
-            phone={settings?.companyProfile?.phone}
-            email={settings?.companyProfile?.email}
-            website={settings?.companyProfile?.website}
-          />
-        </div>
+                    <div
+                      className="text-justify"
+                      dangerouslySetInnerHTML={{
+                        __html: (settings?.letterTemplates?.offerLetter?.[pageKey] || "")
+                          .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
+                      }}
+                    />
 
-        {/* PAGE BREAK 1 */}
-        <div className="page-break print:break-before-page" />
-
-        {/* PAGE 2: Offer & Appointment Part 2 */}
-        <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-lg print:shadow-none print:w-[210mm] print:h-[297mm] text-zinc-900 text-[13px] leading-relaxed font-sans relative flex flex-col mb-8 print:mb-0 overflow-hidden box-border">
-          <Watermark />
-          <Header />
-
-          <div className="px-10 flex-1 z-10">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: (settings?.letterTemplates?.offerLetter?.page2 || "")
-                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
-              }}
-            />
-
-          </div>
-          <Footer
-            address={settings?.companyProfile?.address}
-            phone={settings?.companyProfile?.phone}
-            email={settings?.companyProfile?.email}
-            website={settings?.companyProfile?.website}
-          />
-        </div>
-
-        {/* PAGE 2: Offer & Appointment Part 2 */}
-        <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-lg print:shadow-none print:w-[210mm] print:h-[297mm] text-zinc-900 text-[13px] leading-relaxed font-sans relative flex flex-col mb-8 print:mb-0 overflow-hidden box-border">
-          <Watermark />
-          <Header />
-
-          <div className="px-10 flex-1 z-10">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: (settings?.letterTemplates?.offerLetter?.page3 || "")
-                  .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
-              }}
-            />
-
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="font-bold mb-4">AUTHORISED SIGNATORY</p>
-                <p>Name: CS KATARIA</p>
-                <p>Date: {today}</p>
-                <p>Designation: HR HEAD</p>
+                    {isLastPage && (
+                      <div className="flex justify-between items-end mt-4">
+                        <div>
+                          <p className="font-bold mb-4">AUTHORISED SIGNATORY</p>
+                          <p>Name: CS KATARIA</p>
+                          <p>Date: {today}</p>
+                          <p>Designation: HR HEAD</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-bold mb-8">EMPLOYEE ACCEPTANCE</p>
+                          <p>___________________________</p>
+                          <p className="text-sm mt-1">{employee.firstName} {employee.lastName}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Footer
+                    address={settings?.companyProfile?.address}
+                    phone={settings?.companyProfile?.phone}
+                    email={settings?.companyProfile?.email}
+                    website={settings?.companyProfile?.website}
+                  />
+                </div>
               </div>
-              <div className="text-center">
-                <p className="font-bold mb-8">EMPLOYEE ACCEPTANCE</p>
-                <p>___________________________</p>
-                <p className="text-sm mt-1">{employee.firstName} {employee.lastName}</p>
-              </div>
-            </div>
-          </div>
-          <Footer
-            address={settings?.companyProfile?.address}
-            phone={settings?.companyProfile?.phone}
-            email={settings?.companyProfile?.email}
-            website={settings?.companyProfile?.website}
-          />
-        </div>
+            );
+          })}
 
-        {/* PAGE BREAK 2 */}
+        {/* PAGE BREAK TO SALARY STRUCTURE */}
         <div className="page-break print:break-before-page" />
 
         {/* PAGE 3: Salary Structure */}
