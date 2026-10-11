@@ -14,9 +14,7 @@ import { getDaysBetweenDates } from "@/lib/dateUtils";
 
 function getInvestorMaturityDates(inv: any): { issueDateObj: Date, matDateObj: Date } {
   let issueDateObj: Date;
-  if (inv.verifiedAt) {
-    issueDateObj = new Date(inv.verifiedAt);
-  } else if (inv.investmentDate) {
+  if (inv.investmentDate) {
     if (typeof inv.investmentDate === "string" && inv.investmentDate.includes("-") && inv.investmentDate.length === 10) {
       const [y, m, d] = inv.investmentDate.split("-").map(Number);
       issueDateObj = new Date(y, m - 1, d);
@@ -24,7 +22,7 @@ function getInvestorMaturityDates(inv: any): { issueDateObj: Date, matDateObj: D
       issueDateObj = new Date(inv.investmentDate);
     }
   } else {
-    issueDateObj = inv.createdAt ? new Date(inv.createdAt) : new Date();
+    issueDateObj = inv.investmentDate ? new Date(inv.investmentDate) : new Date();
   }
 
   let matDateObj: Date;
@@ -601,6 +599,7 @@ export default function AdminInvestorsPage() {
                 </TableRow>
               ) : (
                 investors.map((inv) => {
+                  console.log(inv)
                   const maturityAmount = calculateInvestorMaturityAmount(inv);
                   const { issueDateObj, matDateObj } = getInvestorMaturityDates(inv);
                   const formatDateFormatted = (d: Date) => {
