@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plane, Plus, XCircle } from "lucide-react";
+import { Plane, Plus, XCircle, Check, X } from "lucide-react";
 import Link from "next/link";
 
 export default function LeaveDashboardPage() {
@@ -15,6 +15,8 @@ export default function LeaveDashboardPage() {
   const [balances, setBalances] = useState<any>(null);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [viewMode, setViewMode] = useState<"my" | "all">("my");
   
   const [showApply, setShowApply] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,17 +27,20 @@ export default function LeaveDashboardPage() {
     reason: ""
   });
 
-  const fetchData = async () => {
+  const isAdminOrKeyAdmin = role === "ADMIN" || role === "KEY_ADMIN";
+
+  const fetchData = async (currentMode?: "my" | "all") => {
     try {
+      const mode = currentMode || viewMode;
       const [balRes, leavesRes] = await Promise.all([
         fetch("/api/leave/balances"),
-        fetch("/api/leave")
+        fetch(`/api/leave${mode === "all" ? "?all=true" : ""}`)
       ]);
       const balData = await balRes.json();
       const leavesData = await leavesRes.json();
       
-      if (balData.success) setBalances(balData.data.balances);
-      if (leavesData.success) setLeaves(leavesData.data);
+      if (balData.success) setBalances(balData.data?.balances || null);
+      if (leavesData.success) setLeaves(leavesData.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -50,14 +55,19 @@ export default function LeaveDashboardPage() {
       if (data.success) {
         setRole(data.role);
         setModules(data.accessibleModules || []);
+        if (data.role === "ADMIN" || data.role === "KEY_ADMIN") {
+          setViewMode("all");
+          fetchData("all");
+          return;
+        }
       }
     } catch (e) {
       console.error(e);
     }
+    fetchData("my");
   };
 
   useEffect(() => {
-    fetchData();
     fetchRole();
   }, []);
 
@@ -79,6 +89,27 @@ export default function LeaveDashboardPage() {
       }
     } catch (e) {
       alert("Error applying for leave.");
+    }
+  };
+
+  const handleAction = async (leaveId: string, action: "Approve" | "Reject") => {
+    const notes = prompt(`Enter optional notes for ${action}ing this leave:`);
+    if (notes === null) return; // User cancelled prompt
+
+    try {
+      const res = await fetch("/api/leave/manager", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leaveId, action, managerNotes: notes })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert(`Error ${action.toLowerCase()}ing leave.`);
     }
   };
 
@@ -184,16 +215,52 @@ export default function LeaveDashboardPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>My Leave History</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardTitle>
+            {viewMode === "all" ? "All Employees' Leave Records" : "My Leave History"}
+          </CardTitle>
+          {isAdminOrKeyAdmin && (
+            <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("all");
+                  fetchData("all");
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  viewMode === "all"
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+              >
+                All Employee Leaves
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("my");
+                  fetchData("my");
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  viewMode === "my"
+                    ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+              >
+                My Leaves
+              </button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                {viewMode === "all" && <TableHead>Employee</TableHead>}
                 <TableHead>Type</TableHead>
                 <TableHead>Dates</TableHead>
                 <TableHead>Duration</TableHead>
+                <TableHead>Reason</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
@@ -205,11 +272,24 @@ export default function LeaveDashboardPage() {
                 
                 return (
                   <TableRow key={leave._id}>
+                    {viewMode === "all" && (
+                      <TableCell>
+                        <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {leave.employeeId?.firstName || "Unknown"} {leave.employeeId?.lastName || ""}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {leave.employeeId?.employeeCode || "N/A"} {leave.employeeId?.department ? `• ${leave.employeeId.department}` : ""}
+                        </p>
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{leave.leaveType}</TableCell>
                     <TableCell>
                       {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{leave.isHalfDay ? "Half Day" : "Full Day(s)"}</TableCell>
+                    <TableCell className="max-w-[200px] truncate" title={leave.reason}>
+                      {leave.reason || "-"}
+                    </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         leave.status === "Approved" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
@@ -221,10 +301,30 @@ export default function LeaveDashboardPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {isPending && !isPast && (
+                      {isAdminOrKeyAdmin && isPending ? (
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-2.5"
+                            onClick={() => handleAction(leave._id, "Approve")}
+                          >
+                            <Check className="mr-1 h-3.5 w-3.5" /> Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 px-2.5"
+                            onClick={() => handleAction(leave._id, "Reject")}
+                          >
+                            <X className="mr-1 h-3.5 w-3.5" /> Reject
+                          </Button>
+                        </div>
+                      ) : isPending && !isPast ? (
                         <Button variant="ghost" size="sm" onClick={() => handleCancel(leave._id)} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50">
                           <XCircle className="mr-2 h-4 w-4" /> Cancel
                         </Button>
+                      ) : (
+                        <span className="text-xs text-zinc-400 italic">No action</span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -232,7 +332,9 @@ export default function LeaveDashboardPage() {
               })}
               {leaves.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-zinc-500 py-8">No leaves requested yet.</TableCell>
+                  <TableCell colSpan={viewMode === "all" ? 7 : 6} className="text-center text-zinc-500 py-8">
+                    No leaves requested yet.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>

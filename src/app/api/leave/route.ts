@@ -20,10 +20,32 @@ export async function GET(req: Request) {
     const user = await User.findById(payload.userId);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const employee = await Employee.findOne({ email: user.email });
-    if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+    const userRole = (user.role || payload.role || "").toUpperCase().replace(/_/g, "");
+    const isAdminOrKeyAdmin = userRole === "ADMIN" || userRole === "KEYADMIN";
 
-    const leaves = await Leave.find({ employeeId: employee._id }).sort({ createdAt: -1 }).lean();
+    const { searchParams } = new URL(req.url);
+    const viewAll = searchParams.get("all") === "true";
+
+    const employee = await Employee.findOne({ email: user.email });
+
+    let query: any = {};
+    if (isAdminOrKeyAdmin && viewAll) {
+      // Admin / Key Admin requesting all leaves across all employees
+      query = {};
+    } else if (employee) {
+      // Standard employee or admin requesting their own leaves
+      query = { employeeId: employee._id };
+    } else if (isAdminOrKeyAdmin) {
+      // Admin without an employee profile viewing leaves
+      query = {};
+    } else {
+      return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
+    }
+
+    const leaves = await Leave.find(query)
+      .populate("employeeId", "firstName lastName employeeCode department")
+      .sort({ createdAt: -1 })
+      .lean();
     return NextResponse.json({ success: true, data: leaves });
   } catch (error) {
     console.error("Fetch Leaves Error:", error);

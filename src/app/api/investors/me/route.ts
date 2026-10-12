@@ -110,28 +110,60 @@ export async function GET(req: Request) {
       // Restrict visibility for employees
       if (userRole !== "ADMIN" && userRole !== "KEYADMIN" && userRole !== "SUPERADMIN") {
         if (!user?.accessibleModules?.includes("All Investors")) {
-          // Check if user is a team owner
-          const team = await Team.findOne({ owner: user._id });
-          let allowedEmployeeIds = [];
+          // Check all teams where user is owner or member
+          const teamsOwned = await Team.find({ owner: user._id }).lean();
+          const teamsMember = await Team.find({ members: user._id }).lean();
+          
+          let allowedEmployeeIds: any[] = [];
+          let allowedEmployeeCodes: string[] = [];
+          let allowedEmployeeNames: string[] = [];
 
-          if (team) {
-            // Include owner and all team members
-            const memberUserIds = team.members || [];
-            const userIdsToFetch = [user._id, ...memberUserIds];
-            const usersInTeam = await User.find({ _id: { $in: userIdsToFetch } });
-            const userEmails = usersInTeam.map(u => u.email);
-            const teamEmployees = await Employee.find({ email: { $in: userEmails } });
-            allowedEmployeeIds = teamEmployees.map(e => e._id);
-          } else {
-            // Not a team owner, only self
-            const currentEmp = await Employee.findOne({ email: user?.email });
-            if (currentEmp) {
-              allowedEmployeeIds.push(currentEmp._id);
+          // Self employee info
+          const currentEmp = await Employee.findOne({ email: user?.email }).lean();
+          if (currentEmp) {
+            allowedEmployeeIds.push(currentEmp._id);
+            if (currentEmp.employeeCode) allowedEmployeeCodes.push(currentEmp.employeeCode);
+            const selfName = `${currentEmp.firstName || ""} ${currentEmp.lastName || ""}`.trim();
+            if (selfName) allowedEmployeeNames.push(selfName);
+          }
+
+          if (teamsOwned.length > 0) {
+            // Team Owner: sees self investors + all team members' investors
+            const memberUserIds = new Set<string>();
+            teamsOwned.forEach(t => {
+              if (Array.isArray(t.members)) {
+                t.members.forEach((m: any) => memberUserIds.add(m.toString()));
+              }
+            });
+
+            if (memberUserIds.size > 0) {
+              const memberUsers = await User.find({ _id: { $in: Array.from(memberUserIds) } }).select("email").lean();
+              const memberEmails = memberUsers.map(u => u.email).filter(Boolean);
+              const teamEmployees = await Employee.find({ email: { $in: memberEmails } }).lean();
+
+              teamEmployees.forEach(emp => {
+                allowedEmployeeIds.push(emp._id);
+                if (emp.employeeCode) allowedEmployeeCodes.push(emp.employeeCode);
+                const name = `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
+                if (name) allowedEmployeeNames.push(name);
+              });
             }
           }
 
+          // Build flexible query matching either referralEmployeeId OR referralEmployeeName / referralCode
+          const orConditions: any[] = [];
           if (allowedEmployeeIds.length > 0) {
-            query.referralEmployeeId = { $in: allowedEmployeeIds };
+            orConditions.push({ referralEmployeeId: { $in: allowedEmployeeIds } });
+          }
+          if (allowedEmployeeCodes.length > 0) {
+            orConditions.push({ "debentureForm.referralCode": { $in: allowedEmployeeCodes } });
+          }
+          if (allowedEmployeeNames.length > 0) {
+            orConditions.push({ referralEmployeeName: { $in: allowedEmployeeNames } });
+          }
+
+          if (orConditions.length > 0) {
+            query.$or = orConditions;
           } else {
             // If no employee profile exists, return nothing
             query.referralEmployeeId = "000000000000000000000000";

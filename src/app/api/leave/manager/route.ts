@@ -22,7 +22,8 @@ export async function GET(req: Request) {
 
     let query: any = {};
 
-    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
+    const userRole = (payload.role || "").toUpperCase().replace(/_/g, "");
+    if (userRole !== "KEYADMIN" && userRole !== "ADMIN") {
       const user = await User.findById(payload.userId);
       if (!user || !user.accessibleModules.includes("Leave Approvals")) {
         return NextResponse.json({ error: "Forbidden: You do not have the Leave Approvals module access." }, { status: 403 });
@@ -61,8 +62,8 @@ export async function POST(req: Request) {
     if (!leave) return NextResponse.json({ error: "Leave not found" }, { status: 404 });
     if (leave.status !== "Pending") return NextResponse.json({ error: "Leave is not pending" }, { status: 400 });
 
-    // Verify department constraints if regular manager (excluding KEY_ADMIN and ADMIN)
-    if (payload.role !== "KEY_ADMIN" && payload.role !== "ADMIN") {
+    const userRole = (payload.role || "").toUpperCase().replace(/_/g, "");
+    if (userRole !== "KEYADMIN" && userRole !== "ADMIN") {
       const user = await User.findById(payload.userId);
       if (!user || !user.accessibleModules.includes("Leave Approvals")) {
         return NextResponse.json({ error: "Forbidden: You do not have the Leave Approvals module access." }, { status: 403 });

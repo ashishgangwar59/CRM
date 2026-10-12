@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Employee } from "@/lib/models/Employee";
 import { User } from "@/lib/models/User";
+import { Team } from "@/lib/models/Team";
 import { Counter } from "@/lib/models/Counter";
 import bcrypt from "bcryptjs";
 import { verifyAccessToken } from "@/lib/auth";
@@ -227,12 +228,39 @@ export async function GET(req: Request) {
         // Admin and Key Admin see all employees
         if (userRole !== "ADMIN" && userRole !== "KEYADMIN") {
           const user = await User.findById(payload.userId).lean();
-          if (!user?.accessibleModules?.includes("All Employees") && !user?.accessibleModules?.includes("Employees") && !user?.accessibleModules?.includes("Leads Distribution")) {
-            if (user && user.email) {
-              query.email = user.email; // restrict to their own email
+          if (user?.accessibleModules?.includes("All Employees")) {
+            // Can see all employees
+          } else {
+            // Check if user is an owner or member of any team(s)
+            const teams = await Team.find({
+              $or: [{ owner: user?._id }, { members: user?._id }]
+            }).lean();
+
+            if (teams && teams.length > 0) {
+              // Collect user IDs for team owner and all team members
+              const userIdsInTeams = new Set<string>();
+              teams.forEach(t => {
+                if (t.owner) userIdsInTeams.add(t.owner.toString());
+                if (Array.isArray(t.members)) {
+                  t.members.forEach((m: any) => userIdsInTeams.add(m.toString()));
+                }
+              });
+
+              const usersInTeams = await User.find({ _id: { $in: Array.from(userIdsInTeams) } }).select("email").lean();
+              const emails = usersInTeams.map(u => u.email).filter(Boolean);
+
+              if (user && user.email && !emails.includes(user.email)) {
+                emails.push(user.email);
+              }
+
+              query.email = { $in: emails };
             } else {
-               // Fallback if email is somehow missing, effectively returns empty
-              query.email = "unauthorized-no-email"; 
+              // Not in any team: only see self
+              if (user && user.email) {
+                query.email = user.email;
+              } else {
+                query.email = "unauthorized-no-email";
+              }
             }
           }
         }
