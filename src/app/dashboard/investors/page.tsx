@@ -53,6 +53,7 @@ export default function AdminInvestorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [maturityFilter, setMaturityFilter] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
   const [filterDays, setFilterDays] = useState("");
@@ -202,7 +203,7 @@ export default function AdminInvestorsPage() {
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
+      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}${maturityFilter ? `&maturityStatus=${maturityFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -232,11 +233,11 @@ export default function AdminInvestorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
+  }, [debouncedSearch, statusFilter, maturityFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
 
   useEffect(() => {
     fetchInvestors();
-  }, [debouncedSearch, statusFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
+  }, [debouncedSearch, statusFilter, maturityFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -538,6 +539,32 @@ export default function AdminInvestorsPage() {
                 Debenture Forms
               </div>
             </div>
+
+            {/* Maturity Done filter */}
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setMaturityFilter(maturityFilter === "done" ? "" : "done")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${maturityFilter === "done" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" : "text-zinc-400 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"}`}
+              >
+                <CheckCircle className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-emerald-700 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-emerald-800">
+                Maturity Done
+              </div>
+            </div>
+
+            {/* Due Soon (within 7 days) filter */}
+            <div className="relative group flex items-center justify-center">
+              <button
+                onClick={() => setMaturityFilter(maturityFilter === "due_soon" ? "" : "due_soon")}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${maturityFilter === "due_soon" ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400" : "text-zinc-400 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"}`}
+              >
+                <AlertCircle className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-amber-600 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 font-medium tracking-wide shadow-xl border border-amber-700">
+                Due in 7 Days
+              </div>
+            </div>
             <div className="relative group flex items-center justify-center">
               <button
                 onClick={() => setShowDateFilterModal(true)}
@@ -599,7 +626,6 @@ export default function AdminInvestorsPage() {
                 </TableRow>
               ) : (
                 investors.map((inv) => {
-                  console.log(inv)
                   const maturityAmount = calculateInvestorMaturityAmount(inv);
                   const { issueDateObj, matDateObj } = getInvestorMaturityDates(inv);
                   const formatDateFormatted = (d: Date) => {
@@ -617,16 +643,17 @@ export default function AdminInvestorsPage() {
                   const tempMat = new Date(matDateObj);
                   tempMat.setHours(0, 0, 0, 0);
                   const daysToMaturity = Math.round((tempMat.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                  // console.log(daysToMaturity)
 
-                  let maturityAlert = null;
-                  const dateStr = formatDateFormatted(matDateObj);
+                  // Maturity status badge logic
+                  let maturityBadge: { text: string; cls: string; pulse?: boolean } | null = null;
                   if (inv.status === "Verified") {
-                    if (daysToMaturity === 0) {
-                      maturityAlert = { text: `Matures: ${dateStr}`, color: "text-rose-600 bg-rose-50 border-rose-200" };
-                    } else if (daysToMaturity > 0 && daysToMaturity <= 2) {
-                      maturityAlert = { text: `Matures: ${dateStr}`, color: "text-amber-600 bg-amber-50 border-amber-200" };
-                    } else if (daysToMaturity < 0 && daysToMaturity >= -30) {
-                      maturityAlert = { text: `Matured: ${dateStr}`, color: "text-rose-600 bg-rose-50 border-rose-200" };
+                    if (daysToMaturity < 0) {
+                      maturityBadge = { text: "Done", cls: "bg-emerald-50 text-emerald-700 border-emerald-300" };
+                    } else if (daysToMaturity == 0) {
+                      maturityBadge = { text: "Matures Today", cls: "bg-rose-50 text-rose-600 border-rose-300", pulse: true };
+                    } else if (daysToMaturity <= 7) {
+                      maturityBadge = { text: `Due in ${daysToMaturity}d`, cls: "bg-amber-50 text-amber-700 border-amber-300" };
                     }
                   }
 
@@ -657,19 +684,21 @@ export default function AdminInvestorsPage() {
                         {inv.monthlyGrowthPercentage || 1.33}% / mo
                       </TableCell>
                       <TableCell className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 min-w-[140px] whitespace-nowrap">
-                        {formattedMaturityDate}
+                        <div className="flex flex-col gap-1">
+                          <span>{formattedMaturityDate}</span>
+                          {maturityBadge && (
+                            <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border font-bold w-max shadow-sm ${maturityBadge.cls} ${maturityBadge.pulse ? 'animate-pulse' : ''}`}>
+                              {daysToMaturity < 0 ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                              {maturityBadge.text}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1.5">
                           <span className="font-bold text-indigo-600 dark:text-indigo-400">
                             ₹{maturityAmount.toLocaleString()}
                           </span>
-                          {maturityAlert && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-1 w-max shadow-sm ${maturityAlert.color} animate-in fade-in zoom-in duration-300`}>
-                              <AlertCircle className={`w-3 h-3 ${daysToMaturity <= 0 ? 'animate-pulse' : ''}`} />
-                              {maturityAlert.text}
-                            </span>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell>

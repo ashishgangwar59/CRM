@@ -56,6 +56,7 @@ export async function GET(req: Request) {
 
       const search = searchParams.get("search") || "";
       const status = searchParams.get("status") || "";
+      const maturityStatus = searchParams.get("maturityStatus") || "";
 
       const query: any = {};
       if (search) {
@@ -67,6 +68,22 @@ export async function GET(req: Request) {
         } else {
           query.status = status;
         }
+      }
+
+      // Maturity status filter based on bondMaturityDate
+      const nowDate = new Date();
+      nowDate.setHours(0, 0, 0, 0);
+      if (maturityStatus === "done") {
+        // Maturity date has already passed
+        query.bondMaturityDate = { $lt: nowDate.toISOString().split("T")[0] };
+      } else if (maturityStatus === "due_soon") {
+        // Maturity date is within the next 7 days (today inclusive)
+        const in7Days = new Date(nowDate);
+        in7Days.setDate(in7Days.getDate() + 7);
+        query.bondMaturityDate = {
+          $gte: nowDate.toISOString().split("T")[0],
+          $lte: in7Days.toISOString().split("T")[0],
+        };
       }
 
       const filterDate = searchParams.get("date") || "";
