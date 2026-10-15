@@ -118,23 +118,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
     }
 
-    const verifiedEmail = await DebentureContactOtp.findOne({
-      channel: "email",
-      target: cleanEmail,
-      verifiedAt: { $ne: null },
-      expiresAt: { $gt: new Date() },
-    });
-    if (!verifiedEmail) {
-      return NextResponse.json({ error: "Please verify your email address before submitting." }, { status: 403 });
-    }
-    const verifiedPhone = await DebentureContactOtp.findOne({
-      channel: "phone",
-      target: cleanPhone,
-      verifiedAt: { $ne: null },
-      expiresAt: { $gt: new Date() },
-    });
-    if (!verifiedPhone) {
-      return NextResponse.json({ error: "Please verify your mobile number before submitting." }, { status: 403 });
+    if (data.skipContactVerification !== true) {
+      const now = new Date();
+      const [verifiedEmail, verifiedPhone] = await Promise.all([
+        DebentureContactOtp.findOne({
+          channel: "email",
+          target: cleanEmail,
+          verifiedAt: { $ne: null },
+          expiresAt: { $gt: now },
+        }),
+        DebentureContactOtp.findOne({
+          channel: "phone",
+          target: cleanPhone,
+          verifiedAt: { $ne: null },
+          expiresAt: { $gt: now },
+        }),
+      ]);
+      if (!verifiedEmail || !verifiedPhone) {
+        return NextResponse.json(
+          { error: "Verify your email and mobile number, or select direct submission." },
+          { status: 403 }
+        );
+      }
     }
 
     if (panNumber && panNumber.trim().length > 0 && panNumber.trim().length !== 10) {

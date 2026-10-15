@@ -37,6 +37,7 @@ function DebentureFormContent() {
     type: "success" | "error";
   } | null>(null);
   const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File }>({});
+  const [skipContactVerification, setSkipContactVerification] = useState(false);
   const [emailOtp, setEmailOtp] = useState({
     code: "",
     sentTo: "",
@@ -819,21 +820,16 @@ function DebentureFormContent() {
       showError("Mobile Number must be at least 10 digits.");
       return;
     }
-    if (
-      !emailIsVerified ||
-      emailOtp.verifiedFor !== form.email.trim().toLowerCase()
-    ) {
-      showError("Please verify your Email ID before submitting.");
-      return;
+    if (!skipContactVerification) {
+      if (!emailIsVerified || emailOtp.verifiedFor !== form.email.trim().toLowerCase()) {
+        showError("Please verify your Email ID or select direct submission.");
+        return;
+      }
+      if (!phoneIsVerified || phoneOtp.verifiedFor !== form.phone.replace(/\D/g, "")) {
+        showError("Please verify your Mobile No. or select direct submission.");
+        return;
+      }
     }
-    if (
-      !phoneIsVerified ||
-      phoneOtp.verifiedFor !== form.phone.replace(/\D/g, "")
-    ) {
-      showError("Please verify your Mobile No. before submitting.");
-      return;
-    }
-
     if (
       form.panNumber &&
       form.panNumber.trim().length > 0 &&
@@ -927,7 +923,7 @@ function DebentureFormContent() {
       const res = await fetch("/api/debenture-application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(finalForm),
+        body: JSON.stringify({ ...finalForm, skipContactVerification }),
       });
 
       const json = await res.json();
@@ -1731,7 +1727,8 @@ function DebentureFormContent() {
           }
           .sheet .contact-otp-button,
           .sheet .otp-entry,
-          .sheet .otp-status {
+          .sheet .otp-status,
+          .sheet .skip-contact-option {
             display: none !important;
           }
           .sheet .office-wrap {
@@ -2387,6 +2384,21 @@ function DebentureFormContent() {
                 </div>
               </div>
             </div>
+          </div>
+          <div
+            className="field-row verification-controls skip-contact-option"
+            style={{ alignItems: "center", gap: "8px" }}
+          >
+            <input
+              id="skipContactVerification"
+              type="checkbox"
+              checked={skipContactVerification}
+              onChange={(e) => setSkipContactVerification(e.target.checked)}
+              style={{ width: "16px", height: "16px", accentColor: "#0c1c3d" }}
+            />
+            <label htmlFor="skipContactVerification" style={{ cursor: "pointer" }}>
+              Submit directly without email and mobile OTP verification
+            </label>
           </div>
           <div className="field-row">
             <div className="field-icon">&#128188;</div>
@@ -3566,6 +3578,7 @@ function DebentureFormContent() {
               resendIn: 0,
               busy: false,
             });
+            setSkipContactVerification(false);
             clearSignature();
             setError(null);
           }}
@@ -3586,22 +3599,24 @@ function DebentureFormContent() {
         <button
           type="button"
           id="submitBtn"
-          disabled={loading || !emailIsVerified || !phoneIsVerified}
+          disabled={loading || (!skipContactVerification && (!emailIsVerified || !phoneIsVerified))}
           onClick={(e) => {
             const hiddenBtn = document.getElementById("hiddenSubmitBtn");
             if (hiddenBtn) hiddenBtn.click();
           }}
           className={`rounded-md px-6 py-2 font-medium transition-colors ${
-            !emailIsVerified || !phoneIsVerified
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
-              : "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+            skipContactVerification || (emailIsVerified && phoneIsVerified)
+              ? "bg-[#0c1c3d] text-white hover:bg-[#132a5c]"
+              : "cursor-not-allowed bg-gray-300 text-gray-500"
           }`}
         >
           {loading
             ? "Submitting..."
-            : !emailIsVerified || !phoneIsVerified
-              ? "Verify Email & Mobile to Submit"
-              : "Submit"}
+            : skipContactVerification
+              ? "Submit Directly"
+              : emailIsVerified && phoneIsVerified
+                ? "Submit"
+                : "Verify Email & Mobile or Choose Direct Submit"}
         </button>
       </div>
 
