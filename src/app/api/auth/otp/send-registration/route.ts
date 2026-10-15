@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Otp } from "@/lib/models/Otp";
@@ -61,16 +62,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const isDev = process.env.NODE_ENV !== "production";
+    const isDev = process.env.NODE_ENV === "development";
 
-    // In development (without Twilio Verify), use a fixed OTP '123456' — no SMS needed
-    let otpCode: string;
-    if (isDev) {
-      otpCode = "123456";
-      console.log(`[DEV MODE] Fixed Registration OTP for ${cleanPhone}: 123456`);
-    } else {
-      otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    }
+    const otpCode = randomInt(100000, 1000000).toString();
+    if (isDev) console.log(`[DEV MODE] Registration OTP for ${cleanPhone}: ${otpCode}`);
 
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 10 minutes
 
@@ -89,7 +84,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: isDev ? "[DEV] OTP is 123456 (fixed dev code)" : "Verification OTP sent successfully",
+      message: isDev ? "[DEV] Random OTP generated" : "Verification OTP sent successfully",
       debugOtp: isDev ? otpCode : undefined
     });
   } catch (error) {

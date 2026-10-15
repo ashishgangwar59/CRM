@@ -52,8 +52,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Verification OTP not found or expired. Please request a new code." }, { status: 400 });
       }
 
-      const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
-      if (otpRecord.otp !== otp.trim() && !isMockBypass) {
+      if (otpRecord.otp !== otp.trim()) {
         return NextResponse.json({ error: "Incorrect verification code. Please check your phone." }, { status: 400 });
       }
 

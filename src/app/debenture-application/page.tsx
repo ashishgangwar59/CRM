@@ -3,7 +3,23 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, UserCheck, QrCode, Smartphone, RefreshCw, X, Copy, Check, PenTool, Upload, RotateCcw, RotateCw, Loader2, Eye, Printer } from "lucide-react";
+import {
+  CheckCircle2,
+  UserCheck,
+  QrCode,
+  Smartphone,
+  RefreshCw,
+  X,
+  Copy,
+  Check,
+  PenTool,
+  Upload,
+  RotateCcw,
+  RotateCw,
+  Loader2,
+  Eye,
+  Printer,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/cropImage";
@@ -16,8 +32,27 @@ function DebentureFormContent() {
   const [submitted, setSubmitted] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
-  const [toastMsg, setToastMsg] = useState<{ message: string, type: "success" | "error" } | null>(null);
+  const [toastMsg, setToastMsg] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
   const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File }>({});
+  const [emailOtp, setEmailOtp] = useState({
+    code: "",
+    sentTo: "",
+    verifiedFor: "",
+    expiresAt: 0,
+    resendIn: 0,
+    busy: false,
+  });
+  const [phoneOtp, setPhoneOtp] = useState({
+    code: "",
+    sentTo: "",
+    verifiedFor: "",
+    expiresAt: 0,
+    resendIn: 0,
+    busy: false,
+  });
 
   const [form, setForm] = useState({
     applicationNo: "",
@@ -69,6 +104,58 @@ function DebentureFormContent() {
     declMonth: (new Date().getMonth() + 1).toString().padStart(2, "0"),
     declYear: new Date().getFullYear().toString(),
   });
+  const emailTarget = form.email.trim().toLowerCase();
+  const phoneTarget = form.phone.replace(/\D/g, "");
+  const emailIsVerified = Boolean(
+    emailTarget &&
+    emailOtp.verifiedFor === emailTarget &&
+    emailOtp.expiresAt > Date.now(),
+  );
+  const phoneIsVerified = Boolean(
+    phoneTarget &&
+    phoneOtp.verifiedFor === phoneTarget &&
+    phoneOtp.expiresAt > Date.now(),
+  );
+
+  useEffect(() => {
+    const expiryTimes = [emailOtp.expiresAt, phoneOtp.expiresAt].filter(
+      (time) => time > Date.now(),
+    );
+    if (expiryTimes.length === 0) return;
+
+    const timer = setTimeout(
+      () => {
+        const now = Date.now();
+        setEmailOtp((prev) =>
+          prev.expiresAt <= now
+            ? { ...prev, code: "", sentTo: "", verifiedFor: "" }
+            : prev,
+        );
+        setPhoneOtp((prev) =>
+          prev.expiresAt <= now
+            ? { ...prev, code: "", sentTo: "", verifiedFor: "" }
+            : prev,
+        );
+      },
+      Math.min(...expiryTimes) - Date.now(),
+    );
+    return () => clearTimeout(timer);
+  }, [emailOtp.expiresAt, phoneOtp.expiresAt]);
+
+  useEffect(() => {
+    if (emailOtp.resendIn === 0 && phoneOtp.resendIn === 0) return;
+    const timer = setInterval(() => {
+      setEmailOtp((prev) => ({
+        ...prev,
+        resendIn: Math.max(0, prev.resendIn - 1),
+      }));
+      setPhoneOtp((prev) => ({
+        ...prev,
+        resendIn: Math.max(0, prev.resendIn - 1),
+      }));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [emailOtp.resendIn > 0, phoneOtp.resendIn > 0]);
 
   const [settings, setSettings] = useState<any>(null);
 
@@ -99,14 +186,20 @@ function DebentureFormContent() {
     setCameraLoading(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: "user" }
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 640 },
+          facingMode: "user",
+        },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
     } catch (err) {
-      alert("Could not access camera. Please make sure camera permissions are enabled in your browser.");
+      alert(
+        "Could not access camera. Please make sure camera permissions are enabled in your browser.",
+      );
       setCameraActive(false);
     } finally {
       setCameraLoading(false);
@@ -123,7 +216,10 @@ function DebentureFormContent() {
   };
 
   // Document Preview Modal State
-  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{
+    title: string;
+    url: string;
+  } | null>(null);
 
   // Mobile QR Code Signature States
   const [showQrModal, setShowQrModal] = useState(false);
@@ -138,11 +234,15 @@ function DebentureFormContent() {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [cropTargetField, setCropTargetField] = useState<"signatureUrl" | "passportPhotoUrl">("signatureUrl");
+  const [cropTargetField, setCropTargetField] = useState<
+    "signatureUrl" | "passportPhotoUrl"
+  >("signatureUrl");
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const startQrSignature = async () => {
     try {
-      const res = await fetch("/api/signature-session/create", { method: "POST" });
+      const res = await fetch("/api/signature-session/create", {
+        method: "POST",
+      });
       const data = await res.json();
       if (data.success && data.sessionToken) {
         const fullQrUrl = `${window.location.origin}/signature-pad/${data.sessionToken}`;
@@ -229,7 +329,10 @@ function DebentureFormContent() {
       .then((data) => {
         if (data.success && data.employee) {
           const empCode = data.employee.employeeCode || data.employee.email;
-          setForm((prev) => ({ ...prev, refEmpCode: prev.refEmpCode || empCode }));
+          setForm((prev) => ({
+            ...prev,
+            refEmpCode: prev.refEmpCode || empCode,
+          }));
         } else if (!refCodeParam && !data.success) {
           setUnauthorized(true);
         }
@@ -241,14 +344,19 @@ function DebentureFormContent() {
       fetch("/api/investors/me")
         .then((res) => res.json())
         .then((data) => {
-          if (data.success && data.allInvestments && data.allInvestments.length > 0) {
+          if (
+            data.success &&
+            data.allInvestments &&
+            data.allInvestments.length > 0
+          ) {
             const inv = data.allInvestments[0];
             setForm((prev) => ({
               ...prev,
               fullName: inv.fullName || prev.fullName,
               email: inv.email || prev.email,
               phone: inv.phone || prev.phone,
-              fatherSpouseName: inv.debentureForm?.fatherSpouseName || prev.fatherSpouseName,
+              fatherSpouseName:
+                inv.debentureForm?.fatherSpouseName || prev.fatherSpouseName,
               dob: inv.debentureForm?.dob || prev.dob,
               address: inv.debentureForm?.address || prev.address,
               city: inv.debentureForm?.city || prev.city,
@@ -261,13 +369,22 @@ function DebentureFormContent() {
               ifscCode: inv.kycDocs?.ifscCode || prev.ifscCode,
               panDocUrl: inv.kycDocs?.panDocUrl || prev.panDocUrl,
               aadharDocUrl: inv.kycDocs?.aadharDocUrl || prev.aadharDocUrl,
-              bankPassbookUrl: inv.kycDocs?.bankPassbookUrl || prev.bankPassbookUrl,
+              bankPassbookUrl:
+                inv.kycDocs?.bankPassbookUrl || prev.bankPassbookUrl,
               nomineeName: inv.nomineeName || prev.nomineeName,
               nomineeRelation: inv.nomineeRelation || prev.nomineeRelation,
               nomineeAge: inv.nomineeAge || prev.nomineeAge,
               nomineeDocUrl: inv.nomineeDocUrl || prev.nomineeDocUrl,
-              signatureUrl: inv.debentureForm?.signatureUrl || inv.kycDocs?.signatureUrl || inv.signatureUrl || prev.signatureUrl,
-              passportPhotoUrl: inv.debentureForm?.passportPhotoUrl || inv.kycDocs?.passportPhotoUrl || inv.passportPhotoUrl || prev.passportPhotoUrl,
+              signatureUrl:
+                inv.debentureForm?.signatureUrl ||
+                inv.kycDocs?.signatureUrl ||
+                inv.signatureUrl ||
+                prev.signatureUrl,
+              passportPhotoUrl:
+                inv.debentureForm?.passportPhotoUrl ||
+                inv.kycDocs?.passportPhotoUrl ||
+                inv.passportPhotoUrl ||
+                prev.passportPhotoUrl,
             }));
           }
         })
@@ -341,10 +458,39 @@ function DebentureFormContent() {
     if (isNaN(num) || num < 0) return "";
 
     const ones = [
-      "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-      "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"
+      "",
+      "One",
+      "Two",
+      "Three",
+      "Four",
+      "Five",
+      "Six",
+      "Seven",
+      "Eight",
+      "Nine",
+      "Ten",
+      "Eleven",
+      "Twelve",
+      "Thirteen",
+      "Fourteen",
+      "Fifteen",
+      "Sixteen",
+      "Seventeen",
+      "Eighteen",
+      "Nineteen",
     ];
-    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+    const tens = [
+      "",
+      "",
+      "Twenty",
+      "Thirty",
+      "Forty",
+      "Fifty",
+      "Sixty",
+      "Seventy",
+      "Eighty",
+      "Ninety",
+    ];
 
     const convertLessThanOneThousand = (n: number): string => {
       if (n === 0) return "";
@@ -366,15 +512,18 @@ function DebentureFormContent() {
     let str = "";
     let n = Math.floor(num);
 
-    if (n >= 10000000) { // Crore
+    if (n >= 10000000) {
+      // Crore
       str += convertLessThanOneThousand(Math.floor(n / 10000000)) + " Crore ";
       n %= 10000000;
     }
-    if (n >= 100000) { // Lakh
+    if (n >= 100000) {
+      // Lakh
       str += convertLessThanOneThousand(Math.floor(n / 100000)) + " Lakh ";
       n %= 100000;
     }
-    if (n >= 1000) { // Thousand
+    if (n >= 1000) {
+      // Thousand
       str += convertLessThanOneThousand(Math.floor(n / 1000)) + " Thousand ";
       n %= 1000;
     }
@@ -398,27 +547,36 @@ function DebentureFormContent() {
     }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: string,
+  ) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
     // Check file type
     const validTypes = ["application/pdf", "image/jpeg", "image/png"];
     if (!validTypes.includes(file.type)) {
-      setToastMsg({ message: "Only PDF, JPG, and PNG files are allowed", type: "error" });
-      e.target.value = '';
+      setToastMsg({
+        message: "Only PDF, JPG, and PNG files are allowed",
+        type: "error",
+      });
+      e.target.value = "";
       return;
     }
 
     // Check file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
-      setToastMsg({ message: "File size must be less than 2MB", type: "error" });
-      e.target.value = '';
+      setToastMsg({
+        message: "File size must be less than 2MB",
+        type: "error",
+      });
+      e.target.value = "";
       return;
     }
 
     // Store file in pending state
-    setPendingFiles(prev => ({ ...prev, [field]: file }));
+    setPendingFiles((prev) => ({ ...prev, [field]: file }));
 
     // Set local preview URL or filename so UI shows it's attached
     const localUrl = URL.createObjectURL(file);
@@ -426,7 +584,10 @@ function DebentureFormContent() {
     setToastMsg({ message: "Successfully uploaded", type: "success" });
   };
 
-  const handleCropUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "signatureUrl" | "passportPhotoUrl") => {
+  const handleCropUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "signatureUrl" | "passportPhotoUrl",
+  ) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
@@ -447,31 +608,44 @@ function DebentureFormContent() {
       setCropModalOpen(true);
     });
     reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input
+    e.target.value = ""; // Reset input
   };
 
   const handleCropConfirm = async () => {
     if (!cropImageSrc || !croppedAreaPixels) return;
 
     try {
-      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels, rotation);
+      const croppedBlob = await getCroppedImg(
+        cropImageSrc,
+        croppedAreaPixels,
+        rotation,
+      );
       if (!croppedBlob) {
         alert("Crop failed. Please try again.");
         return;
       }
 
-      const file = new File([croppedBlob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
+      const file = new File([croppedBlob], `photo_${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
 
       // Check file size (1MB max)
       if (file.size > 1 * 1024 * 1024) {
-        setToastMsg({ message: "Cropped image size must be less than 1MB. Try zooming in to reduce size.", type: "error" });
+        setToastMsg({
+          message:
+            "Cropped image size must be less than 1MB. Try zooming in to reduce size.",
+          type: "error",
+        });
         return;
       }
 
       // Immediately upload file to server to guarantee valid signatureUrl is saved
       const formData = new FormData();
       formData.append("file", file);
-      const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
+      const uploadRes = await fetch("/api/employees/upload", {
+        method: "POST",
+        body: formData,
+      });
       const uploadJson = await uploadRes.json();
 
       if (uploadJson.success && uploadJson.url) {
@@ -495,7 +669,7 @@ function DebentureFormContent() {
       } else {
         // Fallback to local preview URL if upload fails
         const localUrl = URL.createObjectURL(file);
-        setPendingFiles(prev => ({ ...prev, [cropTargetField]: file }));
+        setPendingFiles((prev) => ({ ...prev, [cropTargetField]: file }));
         setForm((prev) => ({ ...prev, [cropTargetField]: localUrl }));
       }
 
@@ -505,6 +679,107 @@ function DebentureFormContent() {
       setRotation(0);
     } catch (e) {
       alert("Error processing image crop.");
+    }
+  };
+
+  const sendContactOtp = async (channel: "email" | "phone") => {
+    const target = channel === "email" ? emailTarget : phoneTarget;
+    const validTarget =
+      channel === "email"
+        ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)
+        : /^\d{10}$/.test(target);
+    if (!validTarget) {
+      setToastMsg({
+        message:
+          channel === "email"
+            ? "Enter a valid email address first."
+            : "Enter a valid 10-digit mobile number first.",
+        type: "error",
+      });
+      return;
+    }
+
+    const updateOtp = channel === "email" ? setEmailOtp : setPhoneOtp;
+    updateOtp((prev) => ({ ...prev, busy: true }));
+    try {
+      const response = await fetch("/api/debenture-application/otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", channel, target }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Could not send verification code.");
+      }
+      updateOtp((prev) => ({
+        ...prev,
+        code: "",
+        sentTo: target,
+        verifiedFor: "",
+        expiresAt: Date.now() + 10 * 60 * 1000,
+        resendIn: 10,
+        busy: false,
+      }));
+      setToastMsg({
+        message: result.debugOtp
+          ? `Development verification code: ${result.debugOtp}`
+          : result.message || `Verification code sent to your ${channel}.`,
+        type: "success",
+      });
+    } catch (otpError) {
+      updateOtp((prev) => ({ ...prev, busy: false }));
+      setToastMsg({
+        message:
+          otpError instanceof Error
+            ? otpError.message
+            : "Could not send verification code.",
+        type: "error",
+      });
+    }
+  };
+
+  const verifyContactOtp = async (channel: "email" | "phone") => {
+    const currentOtp = channel === "email" ? emailOtp : phoneOtp;
+    const target = channel === "email" ? emailTarget : phoneTarget;
+    if (currentOtp.sentTo !== target || !currentOtp.code) {
+      setToastMsg({
+        message: "Request a verification code and enter it first.",
+        type: "error",
+      });
+      return;
+    }
+
+    const updateOtp = channel === "email" ? setEmailOtp : setPhoneOtp;
+    updateOtp((prev) => ({ ...prev, busy: true }));
+    try {
+      const response = await fetch("/api/debenture-application/otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify",
+          channel,
+          target,
+          code: currentOtp.code,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Could not verify code.");
+      }
+      updateOtp((prev) => ({ ...prev, verifiedFor: target, busy: false }));
+      setToastMsg({
+        message: result.message || `${channel} verified successfully.`,
+        type: "success",
+      });
+    } catch (otpError) {
+      updateOtp((prev) => ({ ...prev, busy: false }));
+      setToastMsg({
+        message:
+          otpError instanceof Error
+            ? otpError.message
+            : "Could not verify code.",
+        type: "error",
+      });
     }
   };
 
@@ -544,13 +819,35 @@ function DebentureFormContent() {
       showError("Mobile Number must be at least 10 digits.");
       return;
     }
+    if (
+      !emailIsVerified ||
+      emailOtp.verifiedFor !== form.email.trim().toLowerCase()
+    ) {
+      showError("Please verify your Email ID before submitting.");
+      return;
+    }
+    if (
+      !phoneIsVerified ||
+      phoneOtp.verifiedFor !== form.phone.replace(/\D/g, "")
+    ) {
+      showError("Please verify your Mobile No. before submitting.");
+      return;
+    }
 
-    if (form.panNumber && form.panNumber.trim().length > 0 && form.panNumber.trim().length !== 10) {
+    if (
+      form.panNumber &&
+      form.panNumber.trim().length > 0 &&
+      form.panNumber.trim().length !== 10
+    ) {
       showError("PAN Number must be exactly 10 characters.");
       return;
     }
 
-    if (form.aadharNumber && form.aadharNumber.trim().length > 0 && form.aadharNumber.trim().length !== 12) {
+    if (
+      form.aadharNumber &&
+      form.aadharNumber.trim().length > 0 &&
+      form.aadharNumber.trim().length !== 12
+    ) {
       showError("Aadhaar Number must be exactly 12 digits.");
       return;
     }
@@ -560,8 +857,13 @@ function DebentureFormContent() {
       return;
     }
 
-    if (!form.totalApplicationAmount || Number(form.totalApplicationAmount) <= 0) {
-      showError("Total Application Amount is required and must be greater than 0.");
+    if (
+      !form.totalApplicationAmount ||
+      Number(form.totalApplicationAmount) <= 0
+    ) {
+      showError(
+        "Total Application Amount is required and must be greater than 0.",
+      );
       return;
     }
 
@@ -590,7 +892,9 @@ function DebentureFormContent() {
         // Convert base64 data URL to File object for upload
         try {
           const blob = dataURItoBlob(signatureDataUrl);
-          const sigFile = new File([blob], `signature_${Date.now()}.png`, { type: "image/png" });
+          const sigFile = new File([blob], `signature_${Date.now()}.png`, {
+            type: "image/png",
+          });
           filesToUpload.signatureUrl = sigFile;
         } catch (err) {
           finalForm.signatureUrl = signatureDataUrl;
@@ -601,13 +905,19 @@ function DebentureFormContent() {
       for (const [field, file] of Object.entries(filesToUpload)) {
         const formData = new FormData();
         formData.append("file", file);
-        const uploadRes = await fetch("/api/employees/upload", { method: "POST", body: formData });
+        const uploadRes = await fetch("/api/employees/upload", {
+          method: "POST",
+          body: formData,
+        });
         const uploadJson = await uploadRes.json();
 
         if (uploadJson.success) {
           finalForm = { ...finalForm, [field]: uploadJson.url };
         } else {
-          setToastMsg({ message: `Failed to upload document for ${field}`, type: "error" });
+          setToastMsg({
+            message: `Failed to upload document for ${field}`,
+            type: "error",
+          });
           setLoading(false);
           return;
         }
@@ -622,19 +932,28 @@ function DebentureFormContent() {
 
       const json = await res.json();
       if (json.success) {
-        setToastMsg({ message: "Application submitted successfully!", type: "success" });
+        setToastMsg({
+          message: "Application submitted successfully!",
+          type: "success",
+        });
         setTimeout(() => {
           setSubmitted(json.data);
           setLoading(false);
         }, 1500); // Let the user see the toast before showing the success screen
       } else {
-        setToastMsg({ message: json.error || "Failed to submit Debenture Application.", type: "error" });
+        setToastMsg({
+          message: json.error || "Failed to submit Debenture Application.",
+          type: "error",
+        });
         setError(json.error || "Failed to submit Debenture Application.");
         setTimeout(() => setToastMsg(null), 3000);
         setLoading(false);
       }
     } catch (e) {
-      setToastMsg({ message: "An error occurred while submitting the form.", type: "error" });
+      setToastMsg({
+        message: "An error occurred while submitting the form.",
+        type: "error",
+      });
       setError("An error occurred while submitting the form.");
       setTimeout(() => setToastMsg(null), 3000);
       setLoading(false);
@@ -644,21 +963,31 @@ function DebentureFormContent() {
 
   if (unauthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#e7e7e7" }}>
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ background: "#e7e7e7" }}
+      >
         <Card
           className="max-w-md w-full shadow-xl text-center p-8 space-y-4"
           style={{ background: "#fffdf8", border: "2px solid #0c1c3d" }}
         >
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl"
-            style={{ background: "#fdecea", border: "1px solid #f3b9b0", color: "#b3261e" }}
+            style={{
+              background: "#fdecea",
+              border: "1px solid #f3b9b0",
+              color: "#b3261e",
+            }}
           >
             🔒
           </div>
-          <h2 className="text-2xl font-black" style={{ color: "#0c1c3d" }}>Access Denied</h2>
+          <h2 className="text-2xl font-black" style={{ color: "#0c1c3d" }}>
+            Access Denied
+          </h2>
           <p className="text-sm text-zinc-600">
-            Direct access to the Debenture Application Form is restricted. Please log in to your
-            employee account or access the form using a valid Employee Referral link.
+            Direct access to the Debenture Application Form is restricted.
+            Please log in to your employee account or access the form using a
+            valid Employee Referral link.
           </p>
           <div className="pt-4">
             <a
@@ -676,7 +1005,10 @@ function DebentureFormContent() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#e7e7e7" }}>
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ background: "#e7e7e7" }}
+      >
         <Card
           className="max-w-lg w-full shadow-xl text-center p-8 space-y-4"
           style={{ background: "#fffdf8", border: "2px solid #0c1c3d" }}
@@ -687,19 +1019,27 @@ function DebentureFormContent() {
           >
             <CheckCircle2 className="w-10 h-10" style={{ color: "#0c1c3d" }} />
           </div>
-          <h2 className="text-2xl font-black" style={{ color: "#0c1c3d" }}>Application Submitted!</h2>
+          <h2 className="text-2xl font-black" style={{ color: "#0c1c3d" }}>
+            Application Submitted!
+          </h2>
           <p className="text-sm text-zinc-600">
-            Your Debenture Application has been successfully registered under Application No:
+            Your Debenture Application has been successfully registered under
+            Application No:
           </p>
           <div
             className="p-3 rounded-sm font-mono font-bold text-lg"
-            style={{ background: "#fbf6e8", border: "1px solid #c9972f", color: "#0c1c3d" }}
+            style={{
+              background: "#fbf6e8",
+              border: "1px solid #c9972f",
+              color: "#0c1c3d",
+            }}
           >
             {submitted.applicationNo}
           </div>
           <p className="text-xs text-zinc-500">
-            Our team will review your application and documents. Check your registered email for
-            instructions on setting up your account password.
+            Our team will review your application and documents. Check your
+            registered email for instructions on setting up your account
+            password.
           </p>
           <div className="pt-4">
             <a
@@ -719,19 +1059,28 @@ function DebentureFormContent() {
   const days = getDaysBetweenDates(
     form?.investmentDate,
     form?.bondMaturityDate,
-    true
+    true,
   );
 
   return (
-    <div className="py-6 px-4 relative" style={{ background: "#e7e7e7", fontFamily: "'Segoe UI', Arial, sans-serif" }}>
-
+    <div
+      className="py-6 px-4 relative"
+      style={{
+        background: "#e7e7e7",
+        fontFamily: "'Segoe UI', Arial, sans-serif",
+      }}
+    >
       {/* Full Page Loader Overlay */}
       {loading && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center">
             <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mb-4" />
-            <p className="font-bold text-lg text-zinc-900">Submitting Application...</p>
-            <p className="text-sm text-zinc-500 mt-2">Please do not close this window.</p>
+            <p className="font-bold text-lg text-zinc-900">
+              Submitting Application...
+            </p>
+            <p className="text-sm text-zinc-500 mt-2">
+              Please do not close this window.
+            </p>
           </div>
         </div>
       )}
@@ -739,10 +1088,19 @@ function DebentureFormContent() {
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed top-6 right-6 z-[110] animate-in slide-in-from-top-5">
-          <div className={`px-5 py-4 rounded-lg shadow-2xl flex items-center gap-3 border ${toastMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
-            {toastMsg.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <X className="w-6 h-6" />}
+          <div
+            className={`px-5 py-4 rounded-lg shadow-2xl flex items-center gap-3 border ${toastMsg.type === "success" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}
+          >
+            {toastMsg.type === "success" ? (
+              <CheckCircle2 className="w-6 h-6" />
+            ) : (
+              <X className="w-6 h-6" />
+            )}
             <span className="font-bold">{toastMsg.message}</span>
-            <button onClick={() => setToastMsg(null)} className="ml-4 p-1 rounded-full hover:bg-black/5 opacity-70 hover:opacity-100 transition-all">
+            <button
+              onClick={() => setToastMsg(null)}
+              className="ml-4 p-1 rounded-full hover:bg-black/5 opacity-70 hover:opacity-100 transition-all"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -1173,7 +1531,7 @@ function DebentureFormContent() {
           line-height: 1.2;
         }
         .sheet .sign-name {
-          font-family: 'Brush Script MT', cursive;
+          font-family: "Brush Script MT", cursive;
           font-size: 20px;
           color: #1a2c56;
           margin: 6px 0 0;
@@ -1234,11 +1592,14 @@ function DebentureFormContent() {
             size: A4 portrait;
             margin: 4mm;
           }
-          *, *:before, *:after {
+          *,
+          *:before,
+          *:after {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          html, body {
+          html,
+          body {
             background: #fff !important;
             padding: 0 !important;
             margin: 0 !important;
@@ -1368,6 +1729,11 @@ function DebentureFormContent() {
             padding: 2px 0 !important;
             font-size: 11px !important;
           }
+          .sheet .contact-otp-button,
+          .sheet .otp-entry,
+          .sheet .otp-status {
+            display: none !important;
+          }
           .sheet .office-wrap {
             margin: 6px 12px 8px !important;
             padding: 0 !important;
@@ -1389,7 +1755,8 @@ function DebentureFormContent() {
             height: 55px !important;
             margin-top: 2px !important;
           }
-          .sheet .decl-flex, .sheet .docs-grid {
+          .sheet .decl-flex,
+          .sheet .docs-grid {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
@@ -1412,42 +1779,92 @@ function DebentureFormContent() {
       <form className="sheet" id="debentureForm" onSubmit={handleSubmit}>
         {/* HEADER */}
         <div className="header">
-          <div className="logo-badge" style={{ position: "absolute", left: "18px", top: "14px", width: "70px", height: "70px", borderRadius: "50%", background: "radial-gradient(circle, #12224e 60%, #0c1c3d 100%)", border: "3px solid #b89547", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-
+          <div
+            className="logo-badge"
+            style={{
+              position: "absolute",
+              left: "18px",
+              top: "14px",
+              width: "70px",
+              height: "70px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, #12224e 60%, #0c1c3d 100%)",
+              border: "3px solid #b89547",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
             <img
               src="/logo.png"
               alt="Company Logo"
-              style={{ width: "100%", maxWidth: "100%", height: "100%", objectFit: "contain", padding: "3px", borderRadius: "50%", background: "#fff" }}
-              onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+              style={{
+                width: "100%",
+                maxWidth: "100%",
+                height: "100%",
+                objectFit: "contain",
+                padding: "3px",
+                borderRadius: "50%",
+                background: "#fff",
+              }}
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+              }}
             />
           </div>
 
-
           <div className="crest">
             <span className="crown">&#9819;</span>
-            INVEST TODAY<br />PROSPER<br />TOMORROW
+            INVEST TODAY
+            <br />
+            PROSPER
+            <br />
+            TOMORROW
           </div>
-          <div className="company-name">{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
+          <div className="company-name">
+            {settings?.companyProfile?.name ||
+              "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}
+          </div>
           <div className="addr" style={{ whiteSpace: "pre-wrap" }}>
-            {settings?.companyProfile?.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
+            {settings?.companyProfile?.address ||
+              "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001"}
           </div>
           <div className="contact-row">
-            <span>&#128222; {settings?.companyProfile?.phone || "18008900818"}</span>
-            <span>&#9993; {settings?.companyProfile?.email || "info@niventracapitaladvisory.com"}</span>
-            <span>&#127760; {settings?.companyProfile?.website || "www.niventracapitaladvisory.com"}</span>
+            <span>
+              &#128222; {settings?.companyProfile?.phone || "18008900818"}
+            </span>
+            <span>
+              &#9993;{" "}
+              {settings?.companyProfile?.email ||
+                "info@niventracapitaladvisory.com"}
+            </span>
+            <span>
+              &#127760;{" "}
+              {settings?.companyProfile?.website ||
+                "www.niventracapitaladvisory.com"}
+            </span>
           </div>
         </div>
 
-        <div className="divider">&#10022; &mdash;&mdash;&mdash;&mdash;&mdash; &#10022; &mdash;&mdash;&mdash;&mdash;&mdash; &#10022;</div>
+        <div className="divider">
+          &#10022; &mdash;&mdash;&mdash;&mdash;&mdash; &#10022;
+          &mdash;&mdash;&mdash;&mdash;&mdash; &#10022;
+        </div>
 
         {/* TITLE */}
         <div className="title-block">
           <h1>DEBENTURE APPLICATION FORM</h1>
           <h2>(FOR SECURED DEBENTURES)</h2>
-          <div className="notice">PLEASE READ THE INSTRUCTIONS CAREFULLY BEFORE FILLING THE FORM</div>
+          <div className="notice">
+            PLEASE READ THE INSTRUCTIONS CAREFULLY BEFORE FILLING THE FORM
+          </div>
         </div>
 
-        <div className="app-no-box" title={`Application No: ${form.applicationNo || "APP-AUTO"}`}>
+        <div
+          className="app-no-box"
+          title={`Application No: ${form.applicationNo || "APP-AUTO"}`}
+        >
           <div title={`Application No: ${form.applicationNo || "APP-AUTO"}`}>
             Application No.{" "}
             <input
@@ -1462,48 +1879,106 @@ function DebentureFormContent() {
                 cursor: "not-allowed",
                 fontWeight: "bold",
                 color: "#0c1c3d",
-                letterSpacing: "0.5px"
+                letterSpacing: "0.5px",
               }}
             />
           </div>
           <div>
             Date :
             <span className="date-trio">
-              <input type="text" maxLength={2} placeholder="DD" name="declDay" value={form.declDay} onChange={(e) => setForm({ ...form, declDay: e.target.value })} />/
-              <input type="text" maxLength={2} placeholder="MM" name="declMonth" value={form.declMonth} onChange={(e) => setForm({ ...form, declMonth: e.target.value })} />/
-              <input type="text" maxLength={4} placeholder="YYYY" style={{ width: "44px" }} name="declYear" value={form.declYear} onChange={(e) => setForm({ ...form, declYear: e.target.value })} />
+              <input
+                type="text"
+                maxLength={2}
+                placeholder="DD"
+                name="declDay"
+                value={form.declDay}
+                onChange={(e) => setForm({ ...form, declDay: e.target.value })}
+              />
+              /
+              <input
+                type="text"
+                maxLength={2}
+                placeholder="MM"
+                name="declMonth"
+                value={form.declMonth}
+                onChange={(e) =>
+                  setForm({ ...form, declMonth: e.target.value })
+                }
+              />
+              /
+              <input
+                type="text"
+                maxLength={4}
+                placeholder="YYYY"
+                style={{ width: "44px" }}
+                name="declYear"
+                value={form.declYear}
+                onChange={(e) => setForm({ ...form, declYear: e.target.value })}
+              />
             </span>
           </div>
         </div>
 
         <div className="top-info">
           <p>
-            To,<br />
-            The Board of Directors,<br />
-            <b>{settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</b>
+            To,
+            <br />
+            The Board of Directors,
+            <br />
+            <b>
+              {settings?.companyProfile?.name ||
+                "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}
+            </b>
           </p>
           <p>
-            I/We hereby apply for the allotment of Secured, Rated, Listed/Unlisted, Redeemable, Non-Convertible Debentures of
-            your Company on the terms and conditions as mentioned in the Information Memorandum / Debenture Trust Deed
-            and other related documents.
+            I/We hereby apply for the allotment of Secured, Rated,
+            Listed/Unlisted, Redeemable, Non-Convertible Debentures of your
+            Company on the terms and conditions as mentioned in the Information
+            Memorandum / Debenture Trust Deed and other related documents.
           </p>
         </div>
 
         {/* Employee Referral Code Info */}
-        <div style={{ margin: "10px 24px", padding: "8px 14px", background: "#fbf6e8", border: "1px solid #c9972f", fontSize: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            margin: "10px 24px",
+            padding: "8px 14px",
+            background: "#fbf6e8",
+            border: "1px solid #c9972f",
+            fontSize: "12px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <span style={{ fontWeight: 600, color: "#0c1c3d" }}>
-            <UserCheck className="inline-block w-4 h-4 mr-1 text-[#0c1c3d]" /> Submitting via Employee / Agent Referral Code:
+            <UserCheck className="inline-block w-4 h-4 mr-1 text-[#0c1c3d]" />{" "}
+            Submitting via Employee / Agent Referral Code:
           </span>
           <input
             type="text"
             disabled
             value={form.refEmpCode}
-            style={{ width: "160px", fontWeight: "bold", textTransform: "uppercase" }}
+            style={{
+              width: "160px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+            }}
           />
         </div>
 
         {error && (
-          <div style={{ margin: "10px 24px", padding: "10px", background: "#fdecea", border: "1px solid #f3b9b0", color: "#b3261e", fontSize: "13px", fontWeight: "bold" }}>
+          <div
+            style={{
+              margin: "10px 24px",
+              padding: "10px",
+              background: "#fdecea",
+              border: "1px solid #f3b9b0",
+              color: "#b3261e",
+              fontSize: "13px",
+              fontWeight: "bold",
+            }}
+          >
             ⚠️ {error}
           </div>
         )}
@@ -1534,7 +2009,9 @@ function DebentureFormContent() {
                 type="text"
                 name="parentSpouseName"
                 value={form.fatherSpouseName}
-                onChange={(e) => setForm({ ...form, fatherSpouseName: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, fatherSpouseName: e.target.value })
+                }
               />
             </div>
           </div>
@@ -1542,7 +2019,15 @@ function DebentureFormContent() {
             <div className="field-icon">&#128197;</div>
             <div className="field-label">Date of Birth / Incorporation</div>
             <div className="field-colon">:</div>
-            <div className="field-fill" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+            <div
+              className="field-fill"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
               <input
                 type="date"
                 name="dob"
@@ -1550,27 +2035,52 @@ function DebentureFormContent() {
                 value={form.dob}
                 onChange={(e) => setForm({ ...form, dob: e.target.value })}
               />
-              <span style={{ marginLeft: "10px", whiteSpace: "nowrap" }}>PAN No. &nbsp;:</span>
+              <span style={{ marginLeft: "10px", whiteSpace: "nowrap" }}>
+                PAN No. &nbsp;:
+              </span>
               <div className="pan-boxes">
                 <input
                   type="text"
                   name="panNumber"
                   maxLength={10}
-                  style={{ width: "140px", letterSpacing: "3px", fontWeight: "bold", textTransform: "uppercase", textAlign: "center" }}
+                  style={{
+                    width: "140px",
+                    letterSpacing: "3px",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    textAlign: "center",
+                  }}
                   value={form.panNumber}
-                  onChange={(e) => setForm({ ...form, panNumber: e.target.value.toUpperCase() })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      panNumber: e.target.value.toUpperCase(),
+                    })
+                  }
                   placeholder="PAN NO."
                 />
               </div>
-              <span style={{ marginLeft: "10px", whiteSpace: "nowrap" }}>Aadhaar No. &nbsp;:</span>
+              <span style={{ marginLeft: "10px", whiteSpace: "nowrap" }}>
+                Aadhaar No. &nbsp;:
+              </span>
               <div className="pan-boxes">
                 <input
                   type="text"
                   name="aadharNumber"
                   maxLength={12}
-                  style={{ width: "160px", letterSpacing: "3px", fontWeight: "bold", textAlign: "center" }}
+                  style={{
+                    width: "160px",
+                    letterSpacing: "3px",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
                   value={form.aadharNumber}
-                  onChange={(e) => setForm({ ...form, aadharNumber: e.target.value.replace(/\D/g, "") })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      aadharNumber: e.target.value.replace(/\D/g, ""),
+                    })
+                  }
                   placeholder="AADHAAR NO."
                 />
               </div>
@@ -1618,38 +2128,264 @@ function DebentureFormContent() {
                 type="text"
                 name="pinCode"
                 maxLength={6}
-                style={{ width: "80px", letterSpacing: "2px", fontWeight: "bold", textAlign: "center" }}
+                style={{
+                  width: "80px",
+                  letterSpacing: "2px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                }}
                 value={form.pinCode}
                 onChange={(e) => setForm({ ...form, pinCode: e.target.value })}
                 placeholder="PIN"
               />
             </div>
           </div>
-          <div className="field-row">
+          <div
+            className="field-row verification-controls"
+            style={{ alignItems: "flex-start", gap: "12px" }}
+          >
             <div className="field-icon">&#128241;</div>
-            <div className="field-label">Mobile No.</div>
-            <div className="field-colon">:</div>
-            <div className="field-fill" style={{ maxWidth: "220px" }}>
-              <input
-                type="tel"
-                name="mobile"
-                pattern="[0-9]{10}"
-                maxLength={10}
-                required
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </div>
-            <div style={{ width: "70px", textAlign: "right" }}>Email ID</div>
-            <div style={{ width: "10px" }}>:</div>
-            <div className="field-fill">
-              <input
-                type="email"
-                name="email"
-                required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
+            <div
+              style={{
+                display: "flex",
+                flex: 1,
+                gap: "14px",
+                minWidth: 0,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ flex: "1 1 280px", minWidth: 0 }}>
+                <label
+                  htmlFor="debenture-mobile"
+                  style={{
+                    display: "block",
+                    fontWeight: 700,
+                    marginBottom: "4px",
+                  }}
+                >
+                  Mobile No.
+                </label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <input
+                    id="debenture-mobile"
+                    type="tel"
+                    name="mobile"
+                    pattern="[0-9]{10}"
+                    maxLength={10}
+                    required
+                    value={form.phone}
+                    onChange={(e) => {
+                      setForm({ ...form, phone: e.target.value });
+                      setPhoneOtp({
+                        code: "",
+                        sentTo: "",
+                        verifiedFor: "",
+                        expiresAt: 0,
+                        resendIn: 0,
+                        busy: false,
+                      });
+                    }}
+                    style={{ flex: 1, minWidth: 0, width: "auto" }}
+                  />
+                  <button
+                    type="button"
+                    className="contact-otp-button"
+                    onClick={() => sendContactOtp("phone")}
+                    disabled={
+                      phoneOtp.busy ||
+                      phoneIsVerified ||
+                      phoneOtp.resendIn > 0 ||
+                      !/^\d{10}$/.test(phoneTarget)
+                    }
+                    style={{
+                      whiteSpace: "nowrap",
+                      padding: "5px 10px",
+                      border: "1px solid #0c1c3d",
+                      borderRadius: "4px",
+                      background: "#0c1c3d",
+                      color: "#fff",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {phoneOtp.busy
+                      ? "Sending..."
+                      : phoneOtp.resendIn > 0
+                        ? `Resend in ${phoneOtp.resendIn}s`
+                        : phoneOtp.sentTo === phoneTarget
+                          ? "Send code"
+                          : "Resend code"}
+                  </button>
+                </div>
+                {phoneOtp.sentTo === phoneTarget && !phoneIsVerified && (
+                  <div
+                    className="otp-entry"
+                    style={{ display: "flex", gap: "6px", marginTop: "6px" }}
+                  >
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      aria-label="Mobile verification code"
+                      placeholder="6-digit code"
+                      maxLength={6}
+                      value={phoneOtp.code}
+                      onChange={(e) =>
+                        setPhoneOtp((prev) => ({
+                          ...prev,
+                          code: e.target.value.replace(/\D/g, ""),
+                        }))
+                      }
+                      style={{ flex: 1, minWidth: 0, width: "auto" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => verifyContactOtp("phone")}
+                      disabled={phoneOtp.busy || phoneOtp.code.length !== 6}
+                      style={{
+                        whiteSpace: "nowrap",
+                        padding: "5px 12px",
+                        border: "1px solid #0c1c3d",
+                        borderRadius: "4px",
+                        background: "#0c1c3d",
+                        color: "#fff",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {phoneOtp.busy ? "Verifying..." : "Verify"}
+                    </button>
+                  </div>
+                )}
+                <div
+                  className="otp-status"
+                  aria-live="polite"
+                  style={{
+                    marginTop: "3px",
+                    color: phoneIsVerified ? "#047857" : "#7c2d12",
+                    fontSize: "11px",
+                  }}
+                >
+                  {phoneIsVerified
+                    ? "Mobile number verified"
+                    : phoneOtp.sentTo === phoneTarget
+                      ? "Enter the code sent to your mobile"
+                      : "Verify your mobile number to submit"}
+                </div>
+              </div>
+              <div style={{ flex: "1 1 280px", minWidth: 0 }}>
+                <label
+                  htmlFor="debenture-email"
+                  style={{
+                    display: "block",
+                    fontWeight: 700,
+                    marginBottom: "4px",
+                  }}
+                >
+                  Email ID
+                </label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <input
+                    id="debenture-email"
+                    type="email"
+                    name="email"
+                    required
+                    value={form.email}
+                    onChange={(e) => {
+                      setForm({ ...form, email: e.target.value });
+                      setEmailOtp({
+                        code: "",
+                        sentTo: "",
+                        verifiedFor: "",
+                        expiresAt: 0,
+                        resendIn: 0,
+                        busy: false,
+                      });
+                    }}
+                    style={{ flex: 1, minWidth: 0, width: "auto" }}
+                  />
+                  <button
+                    type="button"
+                    className="contact-otp-button"
+                    onClick={() => sendContactOtp("email")}
+                    disabled={
+                      emailOtp.busy ||
+                      emailIsVerified ||
+                      emailOtp.resendIn > 0 ||
+                      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTarget)
+                    }
+                    style={{
+                      whiteSpace: "nowrap",
+                      padding: "5px 10px",
+                      border: "1px solid #0c1c3d",
+                      borderRadius: "4px",
+                      background: "#0c1c3d",
+                      color: "#fff",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {emailOtp.busy
+                      ? "Sending..."
+                      : emailOtp.resendIn > 0
+                        ? `Resend in ${emailOtp.resendIn}s`
+                        : emailOtp.sentTo === emailTarget
+                          ? "Send code"
+                          : "Resend code"}
+                  </button>
+                </div>
+                {emailOtp.sentTo === emailTarget && !emailIsVerified && (
+                  <div
+                    className="otp-entry"
+                    style={{ display: "flex", gap: "6px", marginTop: "6px" }}
+                  >
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      aria-label="Email verification code"
+                      placeholder="6-digit code"
+                      maxLength={6}
+                      value={emailOtp.code}
+                      onChange={(e) =>
+                        setEmailOtp((prev) => ({
+                          ...prev,
+                          code: e.target.value.replace(/\D/g, ""),
+                        }))
+                      }
+                      style={{ flex: 1, minWidth: 0, width: "auto" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => verifyContactOtp("email")}
+                      disabled={emailOtp.busy || emailOtp.code.length !== 6}
+                      style={{
+                        whiteSpace: "nowrap",
+                        padding: "5px 12px",
+                        border: "1px solid #0c1c3d",
+                        borderRadius: "4px",
+                        background: "#0c1c3d",
+                        color: "#fff",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {emailOtp.busy ? "Verifying..." : "Verify"}
+                    </button>
+                  </div>
+                )}
+                <div
+                  className="otp-status"
+                  aria-live="polite"
+                  style={{
+                    marginTop: "3px",
+                    color: emailIsVerified ? "#047857" : "#7c2d12",
+                    fontSize: "11px",
+                  }}
+                >
+                  {emailIsVerified
+                    ? "Email address verified"
+                    : emailOtp.sentTo === emailTarget
+                      ? "Enter the code sent to your email"
+                      : "Verify your email address to submit"}
+                </div>
+              </div>
             </div>
           </div>
           <div className="field-row">
@@ -1661,7 +2397,9 @@ function DebentureFormContent() {
                 type="text"
                 name="occupation"
                 value={form.occupation}
-                onChange={(e) => setForm({ ...form, occupation: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, occupation: e.target.value })
+                }
               />
             </div>
           </div>
@@ -1687,7 +2425,9 @@ function DebentureFormContent() {
                 type="text"
                 name="accountNo"
                 value={form.accountNo}
-                onChange={(e) => setForm({ ...form, accountNo: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, accountNo: e.target.value })
+                }
               />
             </div>
           </div>
@@ -1710,7 +2450,9 @@ function DebentureFormContent() {
         <div className="section-header">2. INVESTMENT DETAILS</div>
         <div className="box">
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Type of Debenture</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Type of Debenture
+            </div>
             <div className="field-colon">:</div>
             <div className="checkbox-group">
               <label>
@@ -1718,7 +2460,9 @@ function DebentureFormContent() {
                   type="checkbox"
                   name="typeSecured"
                   checked={form.typeSecured}
-                  onChange={(e) => setForm({ ...form, typeSecured: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, typeSecured: e.target.checked })
+                  }
                 />
                 Secured
               </label>
@@ -1727,7 +2471,9 @@ function DebentureFormContent() {
                   type="checkbox"
                   name="typeNonConvertible"
                   checked={form.typeNonConvertible}
-                  onChange={(e) => setForm({ ...form, typeNonConvertible: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, typeNonConvertible: e.target.checked })
+                  }
                 />
                 Non-Convertible
               </label>
@@ -1736,14 +2482,18 @@ function DebentureFormContent() {
                   type="checkbox"
                   name="typeRedeemable"
                   checked={form.typeRedeemable}
-                  onChange={(e) => setForm({ ...form, typeRedeemable: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, typeRedeemable: e.target.checked })
+                  }
                 />
                 Redeemable
               </label>
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Face Value (Per Debenture)</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Face Value (Per Debenture)
+            </div>
             <div className="field-colon">:</div>
             <div className="field-fill">
               &#8377;{" "}
@@ -1753,21 +2503,33 @@ function DebentureFormContent() {
                 style={{ width: "200px", display: "inline-block" }}
                 min="0"
                 value={form.faceValue}
-                onChange={(e) => handleDebentureCalc(form.noOfDebentures, Number(e.target.value))}
+                onChange={(e) =>
+                  handleDebentureCalc(
+                    form.noOfDebentures,
+                    Number(e.target.value),
+                  )
+                }
               />
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>No. of Debentures Applied</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              No. of Debentures Applied
+            </div>
             <div className="field-colon">:</div>
-            <div className="field-fill" style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+            <div
+              className="field-fill"
+              style={{ display: "flex", gap: "20px", alignItems: "center" }}
+            >
               <input
                 type="number"
                 name="numDebenturesFigures"
                 style={{ maxWidth: "150px" }}
                 min="0"
                 value={form.noOfDebentures}
-                onChange={(e) => handleDebentureCalc(Number(e.target.value), form.faceValue)}
+                onChange={(e) =>
+                  handleDebentureCalc(Number(e.target.value), form.faceValue)
+                }
               />
               <small className="faded">(In Figures)</small>
               <input
@@ -1780,9 +2542,14 @@ function DebentureFormContent() {
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Total Application Amount</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Total Application Amount
+            </div>
             <div className="field-colon">:</div>
-            <div className="field-fill" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              className="field-fill"
+              style={{ display: "flex", alignItems: "center", gap: "10px" }}
+            >
               &#8377;{" "}
               <input
                 type="number"
@@ -1804,34 +2571,65 @@ function DebentureFormContent() {
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Investment Details</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Investment Details
+            </div>
             <div className="field-colon">:</div>
-            <div className="field-fill" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "bold" }}>Date:</span>
+            <div
+              className="field-fill"
+              style={{
+                display: "flex",
+                gap: "15px",
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "5px" }}
+              >
+                <span style={{ fontSize: "12px", fontWeight: "bold" }}>
+                  Date:
+                </span>
                 <input
                   type="date"
                   value={form.investmentDate}
-                  onChange={(e) => setForm({ ...form, investmentDate: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, investmentDate: e.target.value })
+                  }
                   style={{ maxWidth: "130px" }}
                 />
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "bold" }}>Maturity:</span>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "5px" }}
+              >
+                <span style={{ fontSize: "12px", fontWeight: "bold" }}>
+                  Maturity:
+                </span>
                 <input
                   type="date"
                   value={form.bondMaturityDate}
-                  onChange={(e) => setForm({ ...form, bondMaturityDate: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, bondMaturityDate: e.target.value })
+                  }
                   style={{ maxWidth: "130px" }}
                 />
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "bold" }}>Growth (%):</span>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "5px" }}
+              >
+                <span style={{ fontSize: "12px", fontWeight: "bold" }}>
+                  Growth (%):
+                </span>
                 <input
                   type="number"
                   step="0.001"
                   value={form.monthlyGrowthPercentage}
-                  onChange={(e) => setForm({ ...form, monthlyGrowthPercentage: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      monthlyGrowthPercentage: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   style={{ maxWidth: "80px" }}
                 />
               </div>
@@ -1850,7 +2648,9 @@ function DebentureFormContent() {
               const invDate = new Date(form.investmentDate);
               const matDate = new Date(form.bondMaturityDate);
 
-              let months = (matDate.getFullYear() - invDate.getFullYear()) * 12 + (matDate.getMonth() - invDate.getMonth());
+              let months =
+                (matDate.getFullYear() - invDate.getFullYear()) * 12 +
+                (matDate.getMonth() - invDate.getMonth());
               let tempDate = new Date(invDate);
               tempDate.setMonth(tempDate.getMonth() + months);
               if (tempDate.getTime() > matDate.getTime()) {
@@ -1859,34 +2659,101 @@ function DebentureFormContent() {
                 tempDate.setMonth(tempDate.getMonth() + months);
               }
 
-              totalInterest = (principal * rate * days / (100 * 30));
+              totalInterest = (principal * rate * days) / (100 * 30);
 
-              matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+              matDateStr = matDate.toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              });
             } else if (form.investmentDate) {
               const invDate = new Date(form.investmentDate);
               const months = 1;
               const matDate = new Date(invDate);
               matDate.setMonth(matDate.getMonth() + months);
 
-              const monthlyInterest = (principal * rate * days / (100 * 30));
+              const monthlyInterest = (principal * rate * days) / (100 * 30);
               totalInterest = monthlyInterest * 1;
 
-              matDateStr = matDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+              matDateStr = matDate.toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              });
             }
 
             if (days > 0) {
               const totalMaturityAmount = principal + totalInterest;
 
               return (
-                <div style={{ margin: "10px 0", padding: "10px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "8px", fontSize: "12px", color: "#78350f" }}>
-                  <p style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "10px", letterSpacing: "1px", color: "#d97706", margin: "0 0 5px 0" }}>✦ Bond Maturity Auto-Calculation Preview ✦</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span>Total Interest ({days} days @ {rate}%/mo):</span>
-                    <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#059669" }}>₹{Math.round(totalInterest)}</span>
+                <div
+                  style={{
+                    margin: "10px 0",
+                    padding: "10px",
+                    background: "rgba(245, 158, 11, 0.1)",
+                    border: "1px solid rgba(245, 158, 11, 0.3)",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    color: "#78350f",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontWeight: "bold",
+                      textTransform: "uppercase",
+                      fontSize: "10px",
+                      letterSpacing: "1px",
+                      color: "#d97706",
+                      margin: "0 0 5px 0",
+                    }}
+                  >
+                    ✦ Bond Maturity Auto-Calculation Preview ✦
+                  </p>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <span>
+                      Total Interest ({days} days @ {rate}%/mo):
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "monospace",
+                        fontWeight: "bold",
+                        color: "#059669",
+                      }}
+                    >
+                      ₹{Math.round(totalInterest)}
+                    </span>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(245, 158, 11, 0.2)", paddingTop: "5px", fontWeight: "bold" }}>
-                    <span>Auto Maturity Date: <span style={{ color: "#4f46e5", fontFamily: "monospace" }}>{matDateStr}</span></span>
-                    <span>Payable: <span style={{ color: "#e11d48", fontFamily: "monospace" }}>₹{Math.round(totalMaturityAmount)}/-</span></span>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      borderTop: "1px solid rgba(245, 158, 11, 0.2)",
+                      paddingTop: "5px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    <span>
+                      Auto Maturity Date:{" "}
+                      <span
+                        style={{ color: "#4f46e5", fontFamily: "monospace" }}
+                      >
+                        {matDateStr}
+                      </span>
+                    </span>
+                    <span>
+                      Payable:{" "}
+                      <span
+                        style={{ color: "#e11d48", fontFamily: "monospace" }}
+                      >
+                        ₹{Math.round(totalMaturityAmount)}/-
+                      </span>
+                    </span>
                   </div>
                 </div>
               );
@@ -1895,7 +2762,9 @@ function DebentureFormContent() {
           })()}
 
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Mode of Payment</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Mode of Payment
+            </div>
             <div className="field-colon">:</div>
             <div className="checkbox-group">
               <label>
@@ -1904,7 +2773,9 @@ function DebentureFormContent() {
                   name="paymentMode"
                   value="NEFT/RTGS"
                   checked={form.modeOfPayment === "NEFT/RTGS"}
-                  onChange={(e) => setForm({ ...form, modeOfPayment: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, modeOfPayment: e.target.value })
+                  }
                 />
                 NEFT / RTGS
               </label>
@@ -1914,7 +2785,9 @@ function DebentureFormContent() {
                   name="paymentMode"
                   value="Cheque"
                   checked={form.modeOfPayment === "Cheque"}
-                  onChange={(e) => setForm({ ...form, modeOfPayment: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, modeOfPayment: e.target.value })
+                  }
                 />
                 Cheque
               </label>
@@ -1924,7 +2797,9 @@ function DebentureFormContent() {
                   name="paymentMode"
                   value="DD"
                   checked={form.modeOfPayment === "DD"}
-                  onChange={(e) => setForm({ ...form, modeOfPayment: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, modeOfPayment: e.target.value })
+                  }
                 />
                 DD
               </label>
@@ -1934,7 +2809,9 @@ function DebentureFormContent() {
                   name="paymentMode"
                   value="Other"
                   checked={form.modeOfPayment === "Other"}
-                  onChange={(e) => setForm({ ...form, modeOfPayment: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, modeOfPayment: e.target.value })
+                  }
                 />
                 Other{" "}
                 <input
@@ -1942,42 +2819,56 @@ function DebentureFormContent() {
                   name="paymentModeOther"
                   style={{ width: "70px" }}
                   value={form.paymentModeOther}
-                  onChange={(e) => setForm({ ...form, paymentModeOther: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, paymentModeOther: e.target.value })
+                  }
                 />
               </label>
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Bank Name (Payment)</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Bank Name (Payment)
+            </div>
             <div className="field-colon">:</div>
             <div className="field-fill" style={{ maxWidth: "220px" }}>
               <input
                 type="text"
                 name="drawnOnBankMain"
                 value={form.drawnOnBank}
-                onChange={(e) => setForm({ ...form, drawnOnBank: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, drawnOnBank: e.target.value })
+                }
               />
             </div>
-            <div style={{ width: "150px", textAlign: "right" }}>Transaction / UTR No.</div>
+            <div style={{ width: "150px", textAlign: "right" }}>
+              Transaction / UTR No.
+            </div>
             <div style={{ width: "10px" }}>:</div>
             <div className="field-fill">
               <input
                 type="text"
                 name="utrNo"
                 value={form.transactionUtrNo}
-                onChange={(e) => setForm({ ...form, transactionUtrNo: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, transactionUtrNo: e.target.value })
+                }
               />
             </div>
           </div>
           <div className="field-row">
-            <div className="field-label" style={{ width: "170px" }}>Cheque / DD No.</div>
+            <div className="field-label" style={{ width: "170px" }}>
+              Cheque / DD No.
+            </div>
             <div className="field-colon">:</div>
             <div className="field-fill" style={{ maxWidth: "180px" }}>
               <input
                 type="text"
                 name="chequeDdNo"
                 value={form.chequeDdNo}
-                onChange={(e) => setForm({ ...form, chequeDdNo: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, chequeDdNo: e.target.value })
+                }
               />
             </div>
             <div style={{ width: "50px", textAlign: "right" }}>Date</div>
@@ -1987,17 +2878,23 @@ function DebentureFormContent() {
                 type="date"
                 name="chequeDate"
                 value={form.chequeDdDate}
-                onChange={(e) => setForm({ ...form, chequeDdDate: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, chequeDdDate: e.target.value })
+                }
               />
             </div>
-            <div style={{ width: "100px", textAlign: "right" }}>Drawn On Bank</div>
+            <div style={{ width: "100px", textAlign: "right" }}>
+              Drawn On Bank
+            </div>
             <div style={{ width: "10px" }}>:</div>
             <div className="field-fill">
               <input
                 type="text"
                 name="drawnOnBank"
                 value={form.drawnOnBank}
-                onChange={(e) => setForm({ ...form, drawnOnBank: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, drawnOnBank: e.target.value })
+                }
               />
             </div>
           </div>
@@ -2015,7 +2912,9 @@ function DebentureFormContent() {
                 type="text"
                 name="nomineeName"
                 value={form.nomineeName}
-                onChange={(e) => setForm({ ...form, nomineeName: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, nomineeName: e.target.value })
+                }
                 placeholder="Name of Nominee"
               />
             </div>
@@ -2029,7 +2928,9 @@ function DebentureFormContent() {
                 type="text"
                 name="nomineeRelation"
                 value={form.nomineeRelation}
-                onChange={(e) => setForm({ ...form, nomineeRelation: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, nomineeRelation: e.target.value })
+                }
                 placeholder="e.g. Spouse / Son / Father"
               />
             </div>
@@ -2040,7 +2941,9 @@ function DebentureFormContent() {
                 type="text"
                 name="nomineeAge"
                 value={form.nomineeAge}
-                onChange={(e) => setForm({ ...form, nomineeAge: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, nomineeAge: e.target.value })
+                }
                 placeholder="e.g. 32 Yrs / 15-08-1992"
               />
             </div>
@@ -2054,10 +2957,23 @@ function DebentureFormContent() {
             <div className="left decl-text">
               I/We hereby declare and confirm that:
               <ol>
-                <li>I/We have read and understood the terms and conditions of the Information Memorandum, Debenture Trust Deed and related documents.</li>
-                <li>The information provided by me/us in this application is true, correct and complete.</li>
-                <li>I/We agree to be bound by the terms and conditions governing the issue of Secured Debentures.</li>
-                <li>I/We authorize the Company to verify any or all of the above information, as it may deem fit.</li>
+                <li>
+                  I/We have read and understood the terms and conditions of the
+                  Information Memorandum, Debenture Trust Deed and related
+                  documents.
+                </li>
+                <li>
+                  The information provided by me/us in this application is true,
+                  correct and complete.
+                </li>
+                <li>
+                  I/We agree to be bound by the terms and conditions governing
+                  the issue of Secured Debentures.
+                </li>
+                <li>
+                  I/We authorize the Company to verify any or all of the above
+                  information, as it may deem fit.
+                </li>
               </ol>
             </div>
             <div className="flex flex-col items-center gap-2">
@@ -2066,7 +2982,11 @@ function DebentureFormContent() {
                   <img src={form.passportPhotoUrl} alt="Passport Photo" />
                 ) : (
                   <span id="photoPlaceholder">
-                    Affix<br />Recent Passport<br />Size Photograph
+                    Affix
+                    <br />
+                    Recent Passport
+                    <br />
+                    Size Photograph
                   </span>
                 )}
               </div>
@@ -2098,7 +3018,9 @@ function DebentureFormContent() {
                 {form.passportPhotoUrl && (
                   <button
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, passportPhotoUrl: "" }))}
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, passportPhotoUrl: "" }))
+                    }
                     className="text-[10px] text-rose-600 hover:underline text-center"
                   >
                     Remove Photo
@@ -2121,26 +3043,71 @@ function DebentureFormContent() {
               <div style={{ fontSize: "12px" }}>
                 Date :
                 <span className="date-trio ml-1">
-                  <input type="text" maxLength={2} placeholder="DD" name="declDay" value={form.declDay} onChange={(e) => setForm({ ...form, declDay: e.target.value })} />/
-                  <input type="text" maxLength={2} placeholder="MM" name="declMonth" value={form.declMonth} onChange={(e) => setForm({ ...form, declMonth: e.target.value })} />/
-                  <input type="text" maxLength={4} placeholder="YYYY" style={{ width: "44px" }} name="declYear" value={form.declYear} onChange={(e) => setForm({ ...form, declYear: e.target.value })} />
+                  <input
+                    type="text"
+                    maxLength={2}
+                    placeholder="DD"
+                    name="declDay"
+                    value={form.declDay}
+                    onChange={(e) =>
+                      setForm({ ...form, declDay: e.target.value })
+                    }
+                  />
+                  /
+                  <input
+                    type="text"
+                    maxLength={2}
+                    placeholder="MM"
+                    name="declMonth"
+                    value={form.declMonth}
+                    onChange={(e) =>
+                      setForm({ ...form, declMonth: e.target.value })
+                    }
+                  />
+                  /
+                  <input
+                    type="text"
+                    maxLength={4}
+                    placeholder="YYYY"
+                    style={{ width: "44px" }}
+                    name="declYear"
+                    value={form.declYear}
+                    onChange={(e) =>
+                      setForm({ ...form, declYear: e.target.value })
+                    }
+                  />
                 </span>
               </div>
             </div>
             <div className="sig-pad-wrap" style={{ position: "relative" }}>
               {form.signatureUrl ? (
                 <div className="relative w-[220px] h-[60px] bg-white border border-slate-300 rounded flex items-center justify-center overflow-hidden">
-                  <img src={form.signatureUrl} alt="Applicant Signature" className="w-full h-full object-contain p-1" />
+                  <img
+                    src={form.signatureUrl}
+                    alt="Applicant Signature"
+                    className="w-full h-full object-contain p-1"
+                  />
                 </div>
               ) : (
-                <canvas className="sig-pad" ref={canvasRef} width={220} height={60}></canvas>
+                <canvas
+                  className="sig-pad"
+                  ref={canvasRef}
+                  width={220}
+                  height={60}
+                ></canvas>
               )}
-              <div style={{ fontWeight: 600, marginTop: "2px" }}>Signature of Applicant</div>
+              <div style={{ fontWeight: 600, marginTop: "2px" }}>
+                Signature of Applicant
+              </div>
               <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
-                <button type="button" className="sig-clear" onClick={() => {
-                  clearSignature();
-                  setForm(prev => ({ ...prev, signatureUrl: "" }));
-                }}>
+                <button
+                  type="button"
+                  className="sig-clear"
+                  onClick={() => {
+                    clearSignature();
+                    setForm((prev) => ({ ...prev, signatureUrl: "" }));
+                  }}
+                >
                   Clear signature
                 </button>
                 <button
@@ -2166,7 +3133,12 @@ function DebentureFormContent() {
                 {form.signatureUrl && (
                   <button
                     type="button"
-                    onClick={() => setPreviewDoc({ title: "Applicant Signature", url: form.signatureUrl })}
+                    onClick={() =>
+                      setPreviewDoc({
+                        title: "Applicant Signature",
+                        url: form.signatureUrl,
+                      })
+                    }
                     className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition-colors"
                   >
                     <Eye className="w-3 h-3 mr-1 text-sky-600" /> View Large
@@ -2178,46 +3150,100 @@ function DebentureFormContent() {
         </div>
 
         {/* SECTION 5 */}
-        <div className="section-header">5. DOCUMENTS TO BE ENCLOSED (SELF ATTESTED)</div>
+        <div className="section-header">
+          5. DOCUMENTS TO BE ENCLOSED (SELF ATTESTED)
+        </div>
         <div className="box">
           <div className="docs-grid">
             <div className="col">
               <label>
-                <input type="checkbox" name="docPan" defaultChecked /> 1. PAN Card Copy
+                <input type="checkbox" name="docPan" defaultChecked /> 1. PAN
+                Card Copy
               </label>
               <label>
-                <input type="checkbox" name="docAddress" defaultChecked /> 2. Address Proof (Aadhaar / Voter ID / Passport / Driving Licence)
+                <input type="checkbox" name="docAddress" defaultChecked /> 2.
+                Address Proof (Aadhaar / Voter ID / Passport / Driving Licence)
               </label>
               <label>
-                <input type="checkbox" name="docIdentity" defaultChecked /> 3. Identity Proof (Aadhaar / Passport / Driving Licence)
+                <input type="checkbox" name="docIdentity" defaultChecked /> 3.
+                Identity Proof (Aadhaar / Passport / Driving Licence)
               </label>
             </div>
             <div className="col">
               <label>
-                <input type="checkbox" name="docPhoto" defaultChecked /> 4. Photograph
+                <input type="checkbox" name="docPhoto" defaultChecked /> 4.
+                Photograph
               </label>
               <label>
-                <input type="checkbox" name="docCheque" /> 5. Cancelled Cheque / Bank Details Proof
+                <input type="checkbox" name="docCheque" /> 5. Cancelled Cheque /
+                Bank Details Proof
               </label>
               <label>
-                <input type="checkbox" name="docNominee" defaultChecked /> 6. Nominee ID / Proof Details
+                <input type="checkbox" name="docNominee" defaultChecked /> 6.
+                Nominee ID / Proof Details
               </label>
               <label>
-                <input type="checkbox" name="docOther" /> 7. Other (if applicable) <input type="text" name="docOtherText" style={{ width: "110px" }} />
+                <input type="checkbox" name="docOther" /> 7. Other (if
+                applicable){" "}
+                <input
+                  type="text"
+                  name="docOtherText"
+                  style={{ width: "110px" }}
+                />
               </label>
             </div>
           </div>
 
-          <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
-            <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
-              <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach PAN Card</span>
-              <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "panDocUrl")} />
+          <div
+            style={{
+              marginTop: "12px",
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                border: "1px dashed #c9972f",
+                padding: "8px",
+                background: "#fffef9",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  display: "block",
+                  color: "#8a6d1f",
+                }}
+              >
+                Attach PAN Card
+              </span>
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                style={{ fontSize: "11px" }}
+                onChange={(e) => handleFileUpload(e, "panDocUrl")}
+              />
               {form.panDocUrl && (
                 <div className="flex items-center gap-2 mt-1">
-                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#0c1c3d",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ✔ Attached
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setPreviewDoc({ title: "PAN Card Document", url: form.panDocUrl })}
+                    onClick={() =>
+                      setPreviewDoc({
+                        title: "PAN Card Document",
+                        url: form.panDocUrl,
+                      })
+                    }
                     className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
                   >
                     <Eye className="w-3 h-3 text-indigo-600" /> View
@@ -2225,15 +3251,48 @@ function DebentureFormContent() {
                 </div>
               )}
             </div>
-            <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
-              <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Aadhaar Card</span>
-              <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "aadharDocUrl")} />
+            <div
+              style={{
+                border: "1px dashed #c9972f",
+                padding: "8px",
+                background: "#fffef9",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  display: "block",
+                  color: "#8a6d1f",
+                }}
+              >
+                Attach Aadhaar Card
+              </span>
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                style={{ fontSize: "11px" }}
+                onChange={(e) => handleFileUpload(e, "aadharDocUrl")}
+              />
               {form.aadharDocUrl && (
                 <div className="flex items-center gap-2 mt-1">
-                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#0c1c3d",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ✔ Attached
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setPreviewDoc({ title: "Aadhaar Card Document", url: form.aadharDocUrl })}
+                    onClick={() =>
+                      setPreviewDoc({
+                        title: "Aadhaar Card Document",
+                        url: form.aadharDocUrl,
+                      })
+                    }
                     className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
                   >
                     <Eye className="w-3 h-3 text-indigo-600" /> View
@@ -2241,15 +3300,48 @@ function DebentureFormContent() {
                 </div>
               )}
             </div>
-            <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
-              <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Bank Proof / Passbook</span>
-              <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "bankPassbookUrl")} />
+            <div
+              style={{
+                border: "1px dashed #c9972f",
+                padding: "8px",
+                background: "#fffef9",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  display: "block",
+                  color: "#8a6d1f",
+                }}
+              >
+                Attach Bank Proof / Passbook
+              </span>
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                style={{ fontSize: "11px" }}
+                onChange={(e) => handleFileUpload(e, "bankPassbookUrl")}
+              />
               {form.bankPassbookUrl && (
                 <div className="flex items-center gap-2 mt-1">
-                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#0c1c3d",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ✔ Attached
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setPreviewDoc({ title: "Bank Passbook / Cheque Proof", url: form.bankPassbookUrl })}
+                    onClick={() =>
+                      setPreviewDoc({
+                        title: "Bank Passbook / Cheque Proof",
+                        url: form.bankPassbookUrl,
+                      })
+                    }
                     className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
                   >
                     <Eye className="w-3 h-3 text-indigo-600" /> View
@@ -2257,15 +3349,48 @@ function DebentureFormContent() {
                 </div>
               )}
             </div>
-            <div style={{ border: "1px dashed #c9972f", padding: "8px", background: "#fffef9" }}>
-              <span style={{ fontSize: "11px", fontWeight: "bold", display: "block", color: "#8a6d1f" }}>Attach Nominee Proof</span>
-              <input type="file" accept=".pdf,image/*" style={{ fontSize: "11px" }} onChange={(e) => handleFileUpload(e, "nomineeDocUrl")} />
+            <div
+              style={{
+                border: "1px dashed #c9972f",
+                padding: "8px",
+                background: "#fffef9",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  display: "block",
+                  color: "#8a6d1f",
+                }}
+              >
+                Attach Nominee Proof
+              </span>
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                style={{ fontSize: "11px" }}
+                onChange={(e) => handleFileUpload(e, "nomineeDocUrl")}
+              />
               {form.nomineeDocUrl && (
                 <div className="flex items-center gap-2 mt-1">
-                  <span style={{ fontSize: "11px", color: "#0c1c3d", fontWeight: "bold" }}>✔ Attached</span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#0c1c3d",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ✔ Attached
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setPreviewDoc({ title: "Nominee ID / Proof Document", url: form.nomineeDocUrl })}
+                    onClick={() =>
+                      setPreviewDoc({
+                        title: "Nominee ID / Proof Document",
+                        url: form.nomineeDocUrl,
+                      })
+                    }
                     className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 flex items-center gap-0.5"
                   >
                     <Eye className="w-3 h-3 text-indigo-600" /> View
@@ -2281,68 +3406,97 @@ function DebentureFormContent() {
           <div className="office-col">
             <div className="office-title">FOR OFFICE USE ONLY</div>
             <div className="row">
-              <span className="lbl">Application Received On</span>: <input type="date" name="officeReceivedOn" />
+              <span className="lbl">Application Received On</span>:{" "}
+              <input type="date" name="officeReceivedOn" />
             </div>
             <div className="row">
-              <span className="lbl">Received By</span>: <input type="text" name="officeReceivedBy" />
+              <span className="lbl">Received By</span>:{" "}
+              <input type="text" name="officeReceivedBy" />
             </div>
             <div className="row">
-              <span className="lbl">Amount Received</span>: &#8377; <input type="number" name="officeAmountReceived" />
+              <span className="lbl">Amount Received</span>: &#8377;{" "}
+              <input type="number" name="officeAmountReceived" />
             </div>
             <div className="row">
-              <span className="lbl">Payment Mode</span>: <input type="text" name="officePaymentMode" />
+              <span className="lbl">Payment Mode</span>:{" "}
+              <input type="text" name="officePaymentMode" />
             </div>
             <div className="row">
-              <span className="lbl">Remark</span>: <input type="text" name="officeRemark" />
+              <span className="lbl">Remark</span>:{" "}
+              <input type="text" name="officeRemark" />
             </div>
             <div className="row">
               <span className="lbl">Application Status</span>:
               <label>
-                <input type="radio" name="officeStatus" value="Accepted" /> Accepted
+                <input type="radio" name="officeStatus" value="Accepted" />{" "}
+                Accepted
               </label>
               <label>
-                <input type="radio" name="officeStatus" value="Rejected" /> Rejected
+                <input type="radio" name="officeStatus" value="Rejected" />{" "}
+                Rejected
               </label>
             </div>
             <div className="row">
-              <span className="lbl">Allotted Debenture No.</span>: <input type="text" name="officeAllottedNo" />
+              <span className="lbl">Allotted Debenture No.</span>:{" "}
+              <input type="text" name="officeAllottedNo" />
             </div>
           </div>
           <div className="office-col">
             <div className="office-title">VERIFIED BY</div>
             <div className="row">
-              <span className="lbl">Name</span>: <input type="text" name="verifiedName" />
+              <span className="lbl">Name</span>:{" "}
+              <input type="text" name="verifiedName" />
             </div>
             <div className="row">
-              <span className="lbl">Designation</span>: <input type="text" name="verifiedDesignation" />
+              <span className="lbl">Designation</span>:{" "}
+              <input type="text" name="verifiedDesignation" />
             </div>
             <div className="row">
-              <span className="lbl">Sign &amp; Date</span>: <input type="text" name="verifiedSignDate" />
+              <span className="lbl">Sign &amp; Date</span>:{" "}
+              <input type="text" name="verifiedSignDate" />
             </div>
           </div>
           <div className="office-col">
             <div className="office-title">APPROVED BY</div>
             <div className="row">
-              <span className="lbl">Name</span>: <input type="text" name="approvedName" />
+              <span className="lbl">Name</span>:{" "}
+              <input type="text" name="approvedName" />
             </div>
             <div className="row">
-              <span className="lbl">Designation</span>: <input type="text" name="approvedDesignation" />
+              <span className="lbl">Designation</span>:{" "}
+              <input type="text" name="approvedDesignation" />
             </div>
             <div className="row">
-              <span className="lbl">Sign &amp; Date</span>: <input type="text" name="approvedSignDate" />
+              <span className="lbl">Sign &amp; Date</span>:{" "}
+              <input type="text" name="approvedSignDate" />
             </div>
-            <div style={{ marginTop: "6px", fontWeight: 700 }}>For {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}</div>
+            <div style={{ marginTop: "6px", fontWeight: 700 }}>
+              For{" "}
+              {settings?.companyProfile?.name ||
+                "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}
+            </div>
             <div className="sign-name">Ram Mohan Sharma</div>
             <div style={{ fontSize: "10.5px" }}>
-              Ram Mohan Sharma<br />Authorized Signatory
+              Ram Mohan Sharma
+              <br />
+              Authorized Signatory
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <div className="stamp">
                 <img
                   src="/company-seal.png"
                   alt="Company Logo"
-                  style={{ width: "100%", height: "100%", objectFit: "cover", padding: "3px", borderRadius: "50%", background: "#fff" }}
-                  onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    padding: "3px",
+                    borderRadius: "50%",
+                    background: "#fff",
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
                 />
               </div>
             </div>
@@ -2350,7 +3504,11 @@ function DebentureFormContent() {
         </div>
 
         {/* Hidden button for form submission trigger */}
-        <button type="submit" style={{ display: "none" }} id="hiddenSubmitBtn" />
+        <button
+          type="submit"
+          style={{ display: "none" }}
+          id="hiddenSubmitBtn"
+        />
       </form>
 
       {/* ACTION BAR */}
@@ -2392,6 +3550,22 @@ function DebentureFormContent() {
               bankPassbookUrl: "",
               place: "",
             }));
+            setEmailOtp({
+              code: "",
+              sentTo: "",
+              verifiedFor: "",
+              expiresAt: 0,
+              resendIn: 0,
+              busy: false,
+            });
+            setPhoneOtp({
+              code: "",
+              sentTo: "",
+              verifiedFor: "",
+              expiresAt: 0,
+              resendIn: 0,
+              busy: false,
+            });
             clearSignature();
             setError(null);
           }}
@@ -2412,17 +3586,28 @@ function DebentureFormContent() {
         <button
           type="button"
           id="submitBtn"
-          disabled={loading}
+          disabled={loading || !emailIsVerified || !phoneIsVerified}
           onClick={(e) => {
             const hiddenBtn = document.getElementById("hiddenSubmitBtn");
             if (hiddenBtn) hiddenBtn.click();
           }}
+          className={`rounded-md px-6 py-2 font-medium transition-colors ${
+            !emailIsVerified || !phoneIsVerified
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
+              : "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+          }`}
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading
+            ? "Submitting..."
+            : !emailIsVerified || !phoneIsVerified
+              ? "Verify Email & Mobile to Submit"
+              : "Submit"}
         </button>
       </div>
 
-      <div id="statusMsg">{loading && "Submitting application, please wait..."}</div>
+      <div id="statusMsg">
+        {loading && "Submitting application, please wait..."}
+      </div>
 
       {/* Live Camera Modal Popup */}
       {cameraActive && (
@@ -2442,9 +3627,12 @@ function DebentureFormContent() {
             </div>
 
             <div className="overflow-y-auto flex-1 p-5 space-y-4">
-
               <div className="relative w-full aspect-square bg-zinc-900 rounded-lg overflow-hidden border-2 border-[#c9972f] flex items-center justify-center">
-                {cameraLoading && <span className="text-white text-xs">Accessing Camera...</span>}
+                {cameraLoading && (
+                  <span className="text-white text-xs">
+                    Accessing Camera...
+                  </span>
+                )}
                 <video
                   ref={videoRef}
                   autoPlay
@@ -2454,7 +3642,9 @@ function DebentureFormContent() {
                 />
               </div>
 
-              <p className="text-[11px] text-zinc-500">Align your face inside the square frame and click Capture.</p>
+              <p className="text-[11px] text-zinc-500">
+                Align your face inside the square frame and click Capture.
+              </p>
 
               <div className="flex justify-center space-x-3 pt-1">
                 <button
@@ -2483,7 +3673,8 @@ function DebentureFormContent() {
           <div className="bg-white rounded-2xl max-w-sm w-full max-h-[90vh] flex flex-col overflow-hidden border-2 border-[#0c1c3d] shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3 px-6 pt-6 shrink-0">
               <h3 className="font-bold text-sm text-[#0c1c3d] flex items-center gap-2">
-                <Smartphone className="w-4 h-4 text-amber-500" /> Scan QR to Sign on Phone
+                <Smartphone className="w-4 h-4 text-amber-500" /> Scan QR to
+                Sign on Phone
               </h3>
               <button
                 type="button"
@@ -2498,7 +3689,6 @@ function DebentureFormContent() {
             </div>
 
             <div className="overflow-y-auto flex-1 p-6 space-y-4">
-
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center space-y-3">
                 {qrUrl ? (
                   <div className="p-3 bg-white rounded-lg shadow-sm border border-slate-200">
@@ -2511,12 +3701,14 @@ function DebentureFormContent() {
                 )}
 
                 <div className="flex items-center text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                  <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" /> Waiting for mobile signature...
+                  <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" /> Waiting
+                  for mobile signature...
                 </div>
               </div>
 
               <p className="text-[11px] text-zinc-500 leading-snug">
-                Point your smartphone camera at this QR code. Draw your signature on your phone screen and tap Submit.
+                Point your smartphone camera at this QR code. Draw your
+                signature on your phone screen and tap Submit.
               </p>
 
               <div className="flex items-center gap-2 pt-1">
@@ -2535,7 +3727,11 @@ function DebentureFormContent() {
                   }}
                   className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded hover:bg-indigo-100 flex items-center gap-1"
                 >
-                  {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {copiedLink ? (
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
                   {copiedLink ? "Copied" : "Copy Link"}
                 </button>
               </div>
@@ -2550,7 +3746,9 @@ function DebentureFormContent() {
           <div className="bg-white rounded-xl w-full max-w-lg flex flex-col overflow-hidden">
             <div className="flex justify-between items-center p-4 border-b">
               <h3 className="font-bold text-lg text-zinc-900">
-                {cropTargetField === "passportPhotoUrl" ? "Crop Photo" : "Crop Signature"}
+                {cropTargetField === "passportPhotoUrl"
+                  ? "Crop Photo"
+                  : "Crop Signature"}
               </h3>
               <button
                 type="button"
@@ -2570,11 +3768,15 @@ function DebentureFormContent() {
                 crop={crop}
                 zoom={zoom}
                 rotation={rotation}
-                aspect={cropTargetField === "passportPhotoUrl" ? 3.5 / 4.5 : 3 / 1}
+                aspect={
+                  cropTargetField === "passportPhotoUrl" ? 3.5 / 4.5 : 3 / 1
+                }
                 onCropChange={setCrop}
                 onRotationChange={setRotation}
                 onZoomChange={setZoom}
-                onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+                onCropComplete={(croppedArea, croppedAreaPixels) =>
+                  setCroppedAreaPixels(croppedAreaPixels)
+                }
               />
             </div>
             <div className="p-4 space-y-4">
@@ -2595,7 +3797,9 @@ function DebentureFormContent() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-zinc-600 mb-2 block">Rotation: {rotation}°</label>
+                <label className="text-xs font-bold text-zinc-600 mb-2 block">
+                  Rotation: {rotation}°
+                </label>
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -2679,7 +3883,13 @@ function DebentureFormContent() {
 
 export default function DebentureApplicationPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center">Loading Debenture Application Form...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 text-center">
+          Loading Debenture Application Form...
+        </div>
+      }
+    >
       <DebentureFormContent />
     </Suspense>
   );

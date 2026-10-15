@@ -30,6 +30,20 @@ const getTransporter = async () => {
   return null;
 };
 
+export async function sendDebentureVerificationEmail(email: string, otp: string): Promise<boolean> {
+  const smtpConfig = await getTransporter();
+  if (!smtpConfig) return false;
+
+  await smtpConfig.transporter.sendMail({
+    from: smtpConfig.from,
+    to: email,
+    subject: "Your Debenture Application verification code",
+    text: `Your verification code is ${otp}. It is valid for 10 minutes. Do not share this code with anyone.`,
+    html: `<p>Your debenture application verification code is <strong>${otp}</strong>.</p><p>It is valid for 10 minutes. Do not share this code with anyone.</p>`,
+  });
+  return true;
+}
+
 export async function sendWelcomeEmail({
   email,
   firstName,

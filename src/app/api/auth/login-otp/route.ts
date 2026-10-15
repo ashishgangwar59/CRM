@@ -47,9 +47,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid OTP or request expired" }, { status: 401 });
       }
 
-      // In production, we enforce exact match. For development, we allow '123456' as a universal testing bypass code
-      const isMockBypass = process.env.NODE_ENV !== "production" && otp === "123456";
-      if (otpRecord.otp !== otp && !isMockBypass) {
+      if (otpRecord.otp !== otp) {
         return NextResponse.json({ error: "Incorrect OTP code. Please try again." }, { status: 401 });
       }
 

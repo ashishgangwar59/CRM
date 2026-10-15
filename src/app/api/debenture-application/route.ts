@@ -4,6 +4,7 @@ import { User } from "@/lib/models/User";
 import { Investor } from "@/lib/models/Investor";
 import { Employee } from "@/lib/models/Employee";
 import { Counter } from "@/lib/models/Counter";
+import { DebentureContactOtp } from "@/lib/models/DebentureContactOtp";
 import { verifyAccessToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
@@ -115,6 +116,25 @@ export async function POST(req: Request) {
     const cleanPhone = phone.trim().replace(/\D/g, "");
     if (cleanPhone.length < 10) {
       return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
+    }
+
+    const verifiedEmail = await DebentureContactOtp.findOne({
+      channel: "email",
+      target: cleanEmail,
+      verifiedAt: { $ne: null },
+      expiresAt: { $gt: new Date() },
+    });
+    if (!verifiedEmail) {
+      return NextResponse.json({ error: "Please verify your email address before submitting." }, { status: 403 });
+    }
+    const verifiedPhone = await DebentureContactOtp.findOne({
+      channel: "phone",
+      target: cleanPhone,
+      verifiedAt: { $ne: null },
+      expiresAt: { $gt: new Date() },
+    });
+    if (!verifiedPhone) {
+      return NextResponse.json({ error: "Please verify your mobile number before submitting." }, { status: 403 });
     }
 
     if (panNumber && panNumber.trim().length > 0 && panNumber.trim().length !== 10) {

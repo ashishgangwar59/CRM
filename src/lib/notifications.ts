@@ -41,7 +41,7 @@ class NotificationEngine {
     return true;
   }
 
-  public async sendSMS(phone: string, message: string, otpCode?: string): Promise<boolean> {
+  public async sendSMS(phone: string, message: string, otpCode?: string, requireConfiguredProvider = false): Promise<boolean> {
     const cfg = await getSmsGatewayConfig();
     const { twilioSid, twilioToken, twilioFrom, msg91AuthKey, msg91TemplateId, msg91SenderId } = cfg;
 
@@ -120,6 +120,10 @@ class NotificationEngine {
       } catch (err) {
         console.error("[SMS Dispatch Error via MSG91]", err);
       }
+    }
+
+    if (requireConfiguredProvider) {
+      return false;
     }
 
     // Fallback: Console log
