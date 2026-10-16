@@ -69,8 +69,11 @@ export async function POST(req: Request) {
     const data = await req.json();
 
     const structure = await SalaryStructure.findOneAndUpdate(
-      { employeeId: data.employeeId, monthYear: data.monthYear },
-      { ...data },
+      // Salary structures are unique per employee (employeeId_1 index).
+      // Match only by employeeId so saving an existing employee updates it,
+      // even when the imported/saved monthYear has changed.
+      { employeeId: data.employeeId },
+      { $set: data },
       { new: true, upsert: true } // Create if doesn't exist, update if it does
     );
 

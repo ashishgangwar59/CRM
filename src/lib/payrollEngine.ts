@@ -33,13 +33,17 @@ export async function calculatePayrollForEmployee(
   const paidDays = totalDays - LOPDays;
   const prorationFactor = Math.max(0, paidDays / totalDays);
 
-  const basic = (structure.basic || 0) * prorationFactor;
-  const hra = (structure.hra || 0) * prorationFactor;
-  const specialAllowance = (structure.specialAllowance || 0) * prorationFactor;
-  const metroAllowance = (structure.metroAllowance || 0) * prorationFactor;
-  const travelAllowance = (structure.travelAllowance || 0) * prorationFactor;
-  
-  const totalFixedEarnings = basic + hra + specialAllowance + metroAllowance + travelAllowance;
+  // Round each prorated component before adding them so the displayed
+  // component total does not differ from gross salary by ₹1 due to decimals.
+  const basic = Math.round((structure.basic || 0) * prorationFactor);
+  const hra = Math.round((structure.hra || 0) * prorationFactor);
+  const travelAllowance = Math.round((structure.travelAllowance || 0) * prorationFactor);
+
+  // Only fixed salary components are prorated for paid days. Incentives are
+  // calculated independently below and must not be reduced by paid days.
+  const specialAllowance = 0;
+  const metroAllowance = 0;
+  const totalFixedEarnings = basic + hra + travelAllowance;
 
   // 3 & 4. Calculate Personal Incentive (Priority: Employee -> Designation -> Default)
   let personalIncentive = 0;
@@ -164,7 +168,7 @@ export async function calculatePayrollForEmployee(
   }
 
   // 11. Loss of Pay Amount (for display purposes)
-  const baseFixed = (structure.basic || 0) + (structure.hra || 0) + (structure.specialAllowance || 0) + (structure.metroAllowance || 0) + (structure.travelAllowance || 0);
+  const baseFixed = (structure.basic || 0) + (structure.hra || 0) + (structure.travelAllowance || 0);
   const lopAmount = baseFixed - totalFixedEarnings;
 
   // 12. Total Deductions
