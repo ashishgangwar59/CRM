@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IndianRupee } from "lucide-react";
+import { Download, IndianRupee, Loader2, Upload } from "lucide-react";
 
 export default function SalaryStructurePage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [structures, setStructures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
   const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
 
@@ -100,6 +102,50 @@ export default function SalaryStructurePage() {
     }
   };
 
+  const handleBulkImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!window.confirm(`Import salary structures for ${monthYear}? This will update every employee row in the Excel file.`)) {
+      event.target.value = "";
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("monthYear", monthYear);
+      formData.append("file", file);
+      const response = await fetch("/api/payroll/structure/bulk", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        const details = Array.isArray(result.errors) ? `\n${result.errors.join("\n")}` : "";
+        const serverDetails = typeof result.details === "string" ? `\nDetails: ${result.details}` : "";
+        alert(`${result.error || "Salary structure import failed."}${details}${serverDetails}`);
+        return;
+      }
+
+      const failures = result.payrollRefreshFailures?.length
+        ? `\nPayroll refresh failed for: ${result.payrollRefreshFailures.join(", ")}`
+        : "";
+      alert(
+        `Imported salary structures for ${result.imported} employees. ` +
+        `Draft payrolls refreshed: ${result.refreshedPayrolls}.` +
+        `${failures}`
+      );
+      setSelectedEmp(null);
+      await fetchData();
+    } catch (error) {
+      console.error("Bulk salary structure import failed:", error);
+      alert("Error importing salary structures. Please try again.");
+    } finally {
+      setImporting(false);
+      event.target.value = "";
+    }
+  };
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   const selectedEmployeeObj = employees.find(e => e._id === selectedEmp);
@@ -112,7 +158,7 @@ export default function SalaryStructurePage() {
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Structures</h1>
           <p className="text-zinc-500 dark:text-zinc-400">Configure fixed earnings and deductions for employees per month.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Label className="text-sm text-zinc-500">Month:</Label>
           <Input 
             type="month" 
@@ -123,6 +169,31 @@ export default function SalaryStructurePage() {
               setSelectedEmp(null); // Reset selection when changing month
             }}
           />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={importing}
+            onClick={() => { window.location.href = `/api/payroll/structure/bulk?monthYear=${monthYear}`; }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Excel
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleBulkImport}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={importing}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            {importing ? "Importing..." : "Import Excel"}
+          </Button>
         </div>
       </div>
 
