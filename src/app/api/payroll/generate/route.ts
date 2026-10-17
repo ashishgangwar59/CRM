@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const payload = verifyAccessToken(token);
 
-    const { employeeId, monthYear, paidDays: customPaidDays, manualIncentive = 0, eligibleRevenue = 0 } = await req.json();
+    const { employeeId, monthYear, paidDays: customPaidDays, manualIncentive = 0, eligibleRevenue = 0, salaryPeriodStart, salaryPeriodEnd } = await req.json();
 
     // 1. Fetch LOP (Loss of Pay) Leaves for this month
     const leaves = await Leave.find({
@@ -65,6 +65,8 @@ export async function POST(req: Request) {
         grossSalary: result.grossSalary,
         totalDeductions: result.totalDeductions,
         netSalary: result.netSalary,
+        ...(salaryPeriodStart ? { salaryPeriodStart: new Date(salaryPeriodStart) } : {}),
+        ...(salaryPeriodEnd ? { salaryPeriodEnd: new Date(salaryPeriodEnd) } : {}),
         status: "Draft"
       },
       { new: true, upsert: true }

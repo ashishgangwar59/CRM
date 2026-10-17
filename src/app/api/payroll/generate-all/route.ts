@@ -22,9 +22,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden. Only Admins can run bulk payroll." }, { status: 403 });
     }
 
-    const { monthYear } = await req.json();
+    const { monthYear, salaryPeriodStart, salaryPeriodEnd } = await req.json();
     if (!monthYear) {
       return NextResponse.json({ error: "Month/Year is required (e.g. 2026-07)" }, { status: 400 });
+    }
+    if (salaryPeriodStart && salaryPeriodEnd && new Date(salaryPeriodStart) > new Date(salaryPeriodEnd)) {
+      return NextResponse.json({ error: "Salary period start date cannot be after end date." }, { status: 400 });
     }
 
     // 1. Get all active employees
@@ -76,6 +79,8 @@ export async function POST(req: Request) {
             grossSalary: result.grossSalary,
             totalDeductions: result.totalDeductions,
             netSalary: result.netSalary,
+            ...(salaryPeriodStart ? { salaryPeriodStart: new Date(salaryPeriodStart) } : {}),
+            ...(salaryPeriodEnd ? { salaryPeriodEnd: new Date(salaryPeriodEnd) } : {}),
             status: "Draft"
           },
           { new: true, upsert: true }
@@ -93,8 +98,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Bulk payroll generated successfully for ${monthYear}.`,
-      data: { processed: processedCount, failed: failedCount }
+      message: `Bulk payroll generation completed for ${monthYear}. ${processedCount} verified, ${failedCount} failed.`,
+      data: { processed: processedCount, failed: failedCount, total: activeEmployees.length }
     });
     
   } catch (error: any) {

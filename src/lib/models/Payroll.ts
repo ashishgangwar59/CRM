@@ -5,6 +5,8 @@ export interface IPayroll extends Document {
   monthYear: string; // e.g., "2026-07"
   paidDays?: number; // e.g., 15, 20, 30
   totalDays?: number; // e.g., 30
+  salaryPeriodStart?: Date;
+  salaryPeriodEnd?: Date;
   
   // Earnings
   earnings: {
@@ -52,6 +54,8 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
     monthYear: { type: String, required: true },
     paidDays: { type: Number, default: 30 },
     totalDays: { type: Number, default: 30 },
+    salaryPeriodStart: { type: Date },
+    salaryPeriodEnd: { type: Date },
     
     earnings: {
       basic: { type: Number, default: 0 },

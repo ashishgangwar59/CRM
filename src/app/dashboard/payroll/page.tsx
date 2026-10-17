@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IndianRupee, Settings, Link as LinkIcon, Download, CheckSquare, Loader2 } from "lucide-react";
+import { IndianRupee, Settings, Link as LinkIcon, Download, CheckSquare, Loader2, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -29,6 +29,11 @@ export default function PayrollDashboardPage() {
   const [selectedDaysMap, setSelectedDaysMap] = useState<Record<string, number>>({});
   const [manualIncentivesMap, setManualIncentivesMap] = useState<Record<string, number>>({});
   const [revenueMap, setRevenueMap] = useState<Record<string, number>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [salaryPeriodStart, setSalaryPeriodStart] = useState("");
+  const [salaryPeriodEnd, setSalaryPeriodEnd] = useState("");
+  const [updatingDates, setUpdatingDates] = useState(false);
+  const [approvingAll, setApprovingAll] = useState(false);
 
   const fetchPayrolls = async () => {
     setLoading(true);
@@ -117,11 +122,12 @@ export default function PayrollDashboardPage() {
       const res = await fetch("/api/payroll/generate-all", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthYear })
+        body: JSON.stringify({ monthYear, salaryPeriodStart, salaryPeriodEnd })
       });
       const data = await res.json();
       if (data.success) {
-        alert(data.message);
+        const summary = data.data ? `\nVerified: ${data.data.processed}/${data.data.total}\nFailed: ${data.data.failed}` : "";
+        alert(`${data.message}${summary}`);
         fetchPayrolls();
       } else {
         alert(data.error);
@@ -131,6 +137,28 @@ export default function PayrollDashboardPage() {
     } finally {
       setGeneratingAll(false);
     }
+  };
+
+  const handleBulkUpdateDates = async () => {
+    if (!monthYear || !salaryPeriodStart || !salaryPeriodEnd) return alert("Select month, From date, and To date.");
+    setUpdatingDates(true);
+    try {
+      const res = await fetch("/api/payroll/dates/bulk", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ monthYear, salaryPeriodStart, salaryPeriodEnd }) });
+      const data = await res.json();
+      if (data.success) { alert(`Updated dates for ${data.updated} payroll slips.`); fetchPayrolls(); }
+      else alert(data.error);
+    } finally { setUpdatingDates(false); }
+  };
+
+  const handleApproveAll = async () => {
+    if (!monthYear) return alert("Select a payroll month first.");
+    if (!confirm(`Approve all generated salary slips for ${monthYear}?`)) return;
+    setApprovingAll(true);
+    try {
+      const res = await fetch("/api/payroll/approve/bulk", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ monthYear }) });
+      const data = await res.json();
+      if (data.success) { alert(data.message); fetchPayrolls(); } else alert(data.error || "Bulk approval failed.");
+    } finally { setApprovingAll(false); }
   };
 
   const toggleSelection = (payrollId: string) => {
@@ -193,12 +221,20 @@ export default function PayrollDashboardPage() {
 
   const isEmployee = role === "Employee";
   const isEmployeeView = isEmployee || !monthYear;
-  const currentDataList = isEmployeeView ? payrolls : employees;
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredPayrolls = payrolls.filter((p) => {
+    const employee = p.employeeId;
+    return !normalizedSearch || `${employee?.firstName || ""} ${employee?.lastName || ""} ${employee?.employeeCode || ""}`.toLowerCase().includes(normalizedSearch);
+  });
+  const filteredEmployees = employees.filter((emp) =>
+    !normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch)
+  );
+  const currentDataList = isEmployeeView ? filteredPayrolls : filteredEmployees;
   const totalPages = Math.max(1, Math.ceil(currentDataList.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   
-  const paginatedPayrolls = isEmployeeView ? payrolls.slice(startIndex, startIndex + itemsPerPage) : payrolls;
-  const paginatedEmployees = !isEmployeeView ? employees.slice(startIndex, startIndex + itemsPerPage) : [];
+  const paginatedPayrolls = isEmployeeView ? filteredPayrolls.slice(startIndex, startIndex + itemsPerPage) : filteredPayrolls;
+  const paginatedEmployees = !isEmployeeView ? filteredEmployees.slice(startIndex, startIndex + itemsPerPage) : [];
 
   return (
     <div className="space-y-6 w-full pb-24 relative">
@@ -211,7 +247,7 @@ export default function PayrollDashboardPage() {
             {isEmployee ? "View and download your monthly salary slips." : "Manage, generate, and bulk pay employee salaries."}
           </p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {!isEmployee && (
             <>
               <Link href="/dashboard/payroll/ledger">
@@ -231,16 +267,21 @@ export default function PayrollDashboardPage() {
             </>
           )}
           {!isEmployee && (
-            <div className="flex items-center space-x-2">
-              <Input 
-                type="month" 
-                value={monthYear} 
-                onChange={(e) => {
-                  setMonthYear(e.target.value);
-                  if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", e.target.value);
-                }}
-                className="w-48"
-              />
+            <div className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Payroll month</label>
+                <Input type="month" value={monthYear} onChange={(e) => { setMonthYear(e.target.value); if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", e.target.value); }} className="w-44" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Salary from</label>
+                <Input type="date" value={salaryPeriodStart} onChange={(e) => setSalaryPeriodStart(e.target.value)} className="w-40" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Salary to</label>
+                <Input type="date" value={salaryPeriodEnd} onChange={(e) => setSalaryPeriodEnd(e.target.value)} className="w-40" />
+              </div>
+              <Button variant="outline" className="h-10" onClick={handleBulkUpdateDates} disabled={updatingDates}><CalendarDays className="mr-2 h-4 w-4" />{updatingDates ? "Saving..." : "Apply dates"}</Button>
+              <Button variant="outline" className="h-10 border-blue-200 text-blue-700 hover:bg-blue-50" onClick={handleApproveAll} disabled={approvingAll}>{approvingAll ? "Approving..." : "Approve all slips"}</Button>
               {monthYear && (
                 <Button variant="ghost" size="sm" onClick={() => {
                   setMonthYear("");
@@ -269,6 +310,14 @@ export default function PayrollDashboardPage() {
       )}
 
       <Card>
+        <CardHeader className="pb-3">
+          <Input
+            placeholder="Search employee name or code..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">

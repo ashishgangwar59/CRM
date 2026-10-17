@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { User } from "@/lib/models/User";
 import { Investor } from "@/lib/models/Investor";
+import { Employee } from "@/lib/models/Employee";
 import { Counter } from "@/lib/models/Counter";
 import { Otp } from "@/lib/models/Otp";
 import { notificationService } from "@/lib/notifications";
@@ -65,14 +66,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is already registered" }, { status: 400 });
     }
 
-    const existingInvestor = await Investor.findOne({ email: email.toLowerCase().trim() });
+    const cleanEmail = email.toLowerCase().trim();
+    const existingEmployee = await Employee.findOne({ email: { $regex: `^${cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } });
+    if (existingEmployee) {
+      return NextResponse.json({ error: "This email is already registered for an employee and cannot be used for an investor account." }, { status: 400 });
+    }
+
+    const existingInvestor = await Investor.findOne({ email: cleanEmail });
     if (existingInvestor) {
       return NextResponse.json({ error: "Email is already registered as Investor" }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       password: hashedPassword,
       role: "INVESTOR",
       accessibleModules: ["Investor Details", "Profile"],
@@ -83,7 +90,7 @@ export async function POST(req: Request) {
       investorCode,
       userId: user._id,
       fullName,
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       phone,
       investmentAmount: 0,
       monthlyGrowthPercentage: 1.33, // Default monthly growth 2.5%

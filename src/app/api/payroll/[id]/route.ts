@@ -49,10 +49,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     await connectToDatabase();
     const { id } = await params;
-    const { action } = await req.json(); // "Lock", "Approve", "Paid"
+    const { action, salaryPeriodStart, salaryPeriodEnd } = await req.json(); // "Lock", "Approve", "Paid"
 
     const payroll = await Payroll.findById(id);
     if (!payroll) return NextResponse.json({ error: "Payroll not found" }, { status: 404 });
+
+    if (action === "UpdateDates") {
+      if (!salaryPeriodStart || !salaryPeriodEnd) {
+        return NextResponse.json({ error: "Both salary period dates are required." }, { status: 400 });
+      }
+      if (new Date(salaryPeriodStart) > new Date(salaryPeriodEnd)) {
+        return NextResponse.json({ error: "Start date cannot be after end date." }, { status: 400 });
+      }
+      payroll.salaryPeriodStart = new Date(salaryPeriodStart);
+      payroll.salaryPeriodEnd = new Date(salaryPeriodEnd);
+      await payroll.save();
+      return NextResponse.json({ success: true, data: payroll });
+    }
 
     if (action === "Lock" && payroll.status === "Draft") {
       payroll.status = "Locked";

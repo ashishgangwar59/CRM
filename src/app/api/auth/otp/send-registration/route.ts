@@ -25,15 +25,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is already registered" }, { status: 400 });
     }
 
+    const existingEmployee = await Employee.findOne({ email: { $regex: `^${cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } });
+    if (existingEmployee) {
+      return NextResponse.json({ error: "This email is already registered for an employee and cannot be used for an investor account." }, { status: 400 });
+    }
+
     // 2. Check if Phone already exists in Employee/Investor
-    const existingEmployee = await Employee.findOne({
+    const existingEmployeeByPhone = await Employee.findOne({
       $or: [
         { phone: cleanPhone },
         { phone: cleanPhone.replace(/^\+91/, "").trim() },
         { phone: "+91" + cleanPhone.replace(/^\+91/, "").trim() }
       ]
     });
-    if (existingEmployee) {
+    if (existingEmployeeByPhone) {
       return NextResponse.json({ error: "Phone number is already associated with an account" }, { status: 400 });
     }
 

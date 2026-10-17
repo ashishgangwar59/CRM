@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Download, Mail, CheckCircle, Lock, ArrowLeft, Printer } from "lucide-react";
 
 function numberToWords(num: number): string {
@@ -26,6 +27,8 @@ export default function SalarySlipPage() {
   const [payroll, setPayroll] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [salaryPeriodStart, setSalaryPeriodStart] = useState("");
+  const [salaryPeriodEnd, setSalaryPeriodEnd] = useState("");
   const slipRef = useRef<HTMLDivElement>(null);
   const [companyProfile, setCompanyProfile] = useState<any>({
     name: "Niventra Capital Advisory India Capital Pvt. Ltd.",
@@ -42,12 +45,25 @@ export default function SalarySlipPage() {
       const data = await res.json();
       if (data.success) {
         setPayroll(data.data);
+        setSalaryPeriodStart(data.data.salaryPeriodStart ? new Date(data.data.salaryPeriodStart).toISOString().slice(0, 10) : "");
+        setSalaryPeriodEnd(data.data.salaryPeriodEnd ? new Date(data.data.salaryPeriodEnd).toISOString().slice(0, 10) : "");
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveSalaryDates = async () => {
+    const res = await fetch(`/api/payroll/${params.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "UpdateDates", salaryPeriodStart, salaryPeriodEnd })
+    });
+    const data = await res.json();
+    if (data.success) fetchPayroll();
+    else alert(data.error || "Unable to update salary period.");
   };
 
   useEffect(() => {
@@ -173,6 +189,9 @@ export default function SalarySlipPage() {
   const monthNameStr = payroll.monthYear
     ? new Date(`${payroll.monthYear}-01`).toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase()
     : payroll.monthYear;
+  const formatSlipDate = (value?: string) => value
+    ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
 
   // Verification URL for QR code (In real app, points to public verification page)
   const verificationUrl = `https://crm.company.com/verify-slip/${payroll._id}`;
@@ -210,18 +229,31 @@ export default function SalarySlipPage() {
       `}</style>
 
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between print:hidden">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-start gap-4 print:hidden">
+        <div className="flex items-center space-x-4 min-w-0 flex-1">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Slip</h1>
-            <p className="text-zinc-500 dark:text-zinc-400">{emp.firstName} {emp.lastName} • {monthNameStr} ({payroll.paidDays || 30} Days Salary)</p>
+          <p className="text-zinc-500 dark:text-zinc-400">{emp.firstName} {emp.lastName} • {monthNameStr} ({payroll.paidDays || 30} Days Salary)</p>
+          {(payroll.salaryPeriodStart || payroll.salaryPeriodEnd) && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Salary period: {payroll.salaryPeriodStart ? new Date(payroll.salaryPeriodStart).toLocaleDateString() : "—"} to {payroll.salaryPeriodEnd ? new Date(payroll.salaryPeriodEnd).toLocaleDateString() : "—"}
+            </p>
+          )}
           </div>
         </div>
 
-        <div className="flex space-x-2">
+        {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
+          <div className="flex flex-wrap items-end gap-2 print:hidden">
+            <div><label className="text-xs text-zinc-500">From</label><Input type="date" value={salaryPeriodStart} onChange={(e) => setSalaryPeriodStart(e.target.value)} /></div>
+            <div><label className="text-xs text-zinc-500">To</label><Input type="date" value={salaryPeriodEnd} onChange={(e) => setSalaryPeriodEnd(e.target.value)} /></div>
+            <Button variant="outline" onClick={handleSaveSalaryDates}>Save Dates</Button>
+          </div>
+        )}
+
+        <div className="flex flex-wrap justify-end gap-2 w-full xl:w-auto">
           {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
             <>
               {payroll.status === "Draft" && (
@@ -258,7 +290,7 @@ export default function SalarySlipPage() {
       </div>
 
       {/* The Printable Slip Area */}
-      <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200 printable-salary-slip-container" style={{ width: '800px', minHeight: '1131px', margin: '0 auto', padding: '0' }}>
+       <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200 printable-salary-slip-container w-full max-w-[800px] min-h-[1131px] mx-auto">
         <div ref={slipRef} className="p-5 w-full h-full bg-white relative">
 
           {/* Header Area */}
@@ -314,6 +346,14 @@ export default function SalarySlipPage() {
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Paid Days</p>
                   <p className="font-bold text-base text-emerald-700">{payroll.paidDays || 30} Days / 30</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Salary From</p>
+                  <p className="font-bold text-base text-indigo-900">{formatSlipDate(payroll.salaryPeriodStart)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Salary To</p>
+                  <p className="font-bold text-base text-indigo-900">{formatSlipDate(payroll.salaryPeriodEnd)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">PAN Card</p>
