@@ -290,7 +290,7 @@ export async function GET(req: Request) {
     let total = 0;
     
     // Select specific fields if slim is true to optimize payload
-    const selectFields = slim ? "firstName lastName employeeCode designation department status email" : "";
+    const selectFields = slim ? "firstName lastName employeeCode designation department status email dateOfJoining" : "";
 
     if (page > 0 && limit > 0) {
       total = await Employee.countDocuments(query);

@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     }
 
     // 1. Get all active employees
-    const activeEmployees = await Employee.find({ status: "Active" }).select("_id");
+    const monthEnd = new Date(`${monthYear}-31T23:59:59.999Z`);
+    const activeEmployees = await Employee.find({ status: "Active", $or: [{ dateOfJoining: { $exists: false } }, { dateOfJoining: null }, { dateOfJoining: { $lte: monthEnd } }] }).select("_id");
     const standardDaysInMonth = 30; // Could be calculated dynamically
     
     let processedCount = 0;

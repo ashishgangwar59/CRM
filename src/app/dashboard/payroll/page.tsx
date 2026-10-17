@@ -226,9 +226,11 @@ export default function PayrollDashboardPage() {
     const employee = p.employeeId;
     return !normalizedSearch || `${employee?.firstName || ""} ${employee?.lastName || ""} ${employee?.employeeCode || ""}`.toLowerCase().includes(normalizedSearch);
   });
-  const filteredEmployees = employees.filter((emp) =>
-    !normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch)
-  );
+  const selectedMonthEnd = monthYear ? new Date(`${monthYear}-31T23:59:59.999Z`) : null;
+  const filteredEmployees = employees.filter((emp) => {
+    const joinedBeforeMonthEnd = !selectedMonthEnd || !emp.dateOfJoining || new Date(emp.dateOfJoining) <= selectedMonthEnd;
+    return joinedBeforeMonthEnd && (!normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch));
+  });
   const currentDataList = isEmployeeView ? filteredPayrolls : filteredEmployees;
   const totalPages = Math.max(1, Math.ceil(currentDataList.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;

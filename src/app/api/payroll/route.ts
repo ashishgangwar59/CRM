@@ -30,6 +30,15 @@ export async function GET(req: Request) {
       const employee = await Employee.findOne({ email: user.email });
       if (!employee) return NextResponse.json({ error: "Employee record not found" }, { status: 404 });
       query.employeeId = employee._id;
+      if (employee.dateOfJoining) {
+        const joiningMonth = new Date(employee.dateOfJoining).toISOString().slice(0, 7);
+        if (monthYear && monthYear < joiningMonth) return NextResponse.json({ success: true, data: [] });
+        if (!monthYear) query.monthYear = { $gte: joiningMonth };
+      }
+    } else if (monthYear) {
+      const monthEnd = new Date(`${monthYear}-31T23:59:59.999Z`);
+      const eligibleEmployees = await Employee.find({ $or: [{ dateOfJoining: { $exists: false } }, { dateOfJoining: null }, { dateOfJoining: { $lte: monthEnd } }] }).select("_id");
+      query.employeeId = { $in: eligibleEmployees.map(employee => employee._id) };
     }
 
     const payrolls = await Payroll.find(query)

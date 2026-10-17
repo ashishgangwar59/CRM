@@ -5,6 +5,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { notificationService } from "@/lib/notifications";
 import { calculatePayrollForEmployee } from "@/lib/payrollEngine";
 import { Leave } from "@/lib/models/Leave";
+import { Employee } from "@/lib/models/Employee";
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +19,12 @@ export async function POST(req: Request) {
     const payload = verifyAccessToken(token);
 
     const { employeeId, monthYear, paidDays: customPaidDays, manualIncentive = 0, eligibleRevenue = 0, salaryPeriodStart, salaryPeriodEnd } = await req.json();
+
+    const employee = await Employee.findById(employeeId).select("dateOfJoining");
+    if (!employee) return NextResponse.json({ error: "Employee not found." }, { status: 404 });
+    if (employee.dateOfJoining && monthYear < new Date(employee.dateOfJoining).toISOString().slice(0, 7)) {
+      return NextResponse.json({ error: "Salary slip cannot be generated before the employee's joining month." }, { status: 400 });
+    }
 
     // 1. Fetch LOP (Loss of Pay) Leaves for this month
     const leaves = await Leave.find({
