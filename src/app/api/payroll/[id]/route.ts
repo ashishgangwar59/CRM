@@ -49,7 +49,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     await connectToDatabase();
     const { id } = await params;
-    const { action, salaryPeriodStart, salaryPeriodEnd } = await req.json(); // "Lock", "Approve", "Paid"
+    const { action, salaryPeriodStart, salaryPeriodEnd, designation, remarks } = await req.json(); // "Lock", "Approve", "Paid"
 
     const payroll = await Payroll.findById(id);
     if (!payroll) return NextResponse.json({ error: "Payroll not found" }, { status: 404 });
@@ -63,6 +63,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       }
       payroll.salaryPeriodStart = new Date(salaryPeriodStart);
       payroll.salaryPeriodEnd = new Date(salaryPeriodEnd);
+      await payroll.save();
+      return NextResponse.json({ success: true, data: payroll });
+    }
+
+    if (action === "UpdateDetails") {
+      if (typeof designation === "string") payroll.designation = designation.trim();
+      if (typeof remarks === "string") payroll.remarks = remarks.trim();
       await payroll.save();
       return NextResponse.json({ success: true, data: payroll });
     }

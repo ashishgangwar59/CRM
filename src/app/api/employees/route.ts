@@ -203,6 +203,8 @@ export async function GET(req: Request) {
     const department = searchParams.get("department") || "";
     const status = searchParams.get("status") || "";
     const slim = searchParams.get("slim") === "true";
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortDirection = searchParams.get("sortDirection") === "asc" ? 1 : -1;
 
     const query: any = {};
 
@@ -271,8 +273,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (search) {
-      query.$text = { $search: search };
+    if (search.trim()) {
+      // Use partial, case-insensitive matching so searches such as "ash"
+      // also find "Ashish". `$text` only matches indexed terms and can miss
+      // partial names, employee codes, and email addresses.
+      const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = { $regex: escapedSearch, $options: "i" };
+      query.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+        { employeeCode: searchRegex },
+      ];
     }
 
     if (department) {
@@ -291,18 +303,27 @@ export async function GET(req: Request) {
     
     // Select specific fields if slim is true to optimize payload
     const selectFields = slim ? "firstName lastName employeeCode designation department status email dateOfJoining" : "";
+    const sortFields: Record<string, string> = {
+      name: "firstName",
+      createdAt: "createdAt",
+      employeeCode: "employeeCode",
+      department: "department",
+      designation: "designation",
+      status: "status",
+    };
+    const sortField = sortFields[sortBy] || "firstName";
 
     if (page > 0 && limit > 0) {
       total = await Employee.countDocuments(query);
       employees = await Employee.find(query)
         .select(selectFields)
-        .sort({ createdAt: -1 })
+        .sort({ [sortField]: sortDirection, _id: 1 })
         .skip((page - 1) * limit)
         .limit(limit);
     } else {
       employees = await Employee.find(query)
         .select(selectFields)
-        .sort({ createdAt: -1 });
+        .sort({ [sortField]: sortDirection, _id: 1 });
     }
 
     return NextResponse.json({ 

@@ -19,6 +19,7 @@ const salaryColumns = [
   "Professional Tax",
   "Income Tax/TDS",
   "Advance Salary Drawn",
+  "Remarks",
 ] as const;
 
 type SalaryColumn = (typeof salaryColumns)[number];
@@ -106,6 +107,7 @@ export async function GET(req: Request) {
         "Professional Tax": structure?.professionalTax || 0,
         "Income Tax/TDS": structure?.incomeTax || 0,
         "Advance Salary Drawn": structure?.advanceSalaryDrawn || 0,
+        "Remarks": structure?.remarks || "",
       };
     });
 
@@ -156,7 +158,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "The Excel worksheet cannot contain more than 5,000 rows." }, { status: 400 });
     }
 
-    const requiredColumns = ["Employee Code", ...salaryColumns];
+    const requiredColumns = ["Employee Code", ...salaryColumns.filter(column => column !== "Remarks")];
     const missingColumns = requiredColumns.filter(column => !Object.prototype.hasOwnProperty.call(rows[0], column));
     if (missingColumns.length > 0) {
       return NextResponse.json({
@@ -168,7 +170,7 @@ export async function POST(req: Request) {
     const importedRows: Array<{
       rowNumber: number;
       employeeCode: string;
-      amounts: Record<SalaryColumn, number>;
+        amounts: Record<SalaryColumn, number | string>;
     }> = [];
     const seenEmployeeCodes = new Set<string>();
 
@@ -189,6 +191,10 @@ export async function POST(req: Request) {
       let validAmounts = true;
       for (const column of salaryColumns) {
         const value = row[column];
+        if (column === "Remarks") {
+          amounts[column] = value == null ? "" : String(value).trim();
+          continue;
+        }
         const amount = typeof value === "number" ? value : value === null || value === "" ? NaN : Number(value);
         if (!Number.isFinite(amount) || amount < 0) {
           errors.push(`Row ${rowNumber}: ${column} must be a non-negative number.`);
@@ -241,6 +247,7 @@ export async function POST(req: Request) {
               professionalTax: row.amounts["Professional Tax"],
               incomeTax: row.amounts["Income Tax/TDS"],
               advanceSalaryDrawn: row.amounts["Advance Salary Drawn"],
+              remarks: row.amounts.Remarks,
               effectiveDate: new Date(`${monthYear}-01T00:00:00.000Z`),
             },
           },

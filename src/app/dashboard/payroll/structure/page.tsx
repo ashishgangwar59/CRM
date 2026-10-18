@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, IndianRupee, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Download, IndianRupee, Loader2, Upload } from "lucide-react";
+import Link from "next/link";
 
 export default function SalaryStructurePage() {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -29,28 +30,39 @@ export default function SalaryStructurePage() {
     professionalTax: 0,
     incomeTax: 0,
     advanceSalaryDrawn: 0,
+    remarks: "",
   });
 
-  const fetchData = async () => {
+  const fetchEmployees = async () => {
     try {
-      const [empRes, structRes] = await Promise.all([
-        fetch("/api/employees?slim=true", { cache: 'no-store' }),
-        fetch(`/api/payroll/structure?monthYear=${monthYear}`, { cache: 'no-store' })
-      ]);
+      const empRes = await fetch("/api/employees?slim=true", { cache: 'no-store' });
       const empData = await empRes.json();
-      const structData = await structRes.json();
-
       if (empData.success) setEmployees(empData.data);
+    } catch (e) {
+      console.error("Failed to load employees:", e);
+    }
+  };
+
+  const fetchStructures = async () => {
+    try {
+      const structRes = await fetch(`/api/payroll/structure?monthYear=${monthYear}`, { cache: 'no-store' });
+      const structData = await structRes.json();
       if (structData.success) setStructures(structData.data);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to load salary structures:", e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    // Load the employee directory independently of the selected month. This
+    // keeps newly added employees visible when viewing an older month.
+    fetchEmployees();
+  }, []);
+
+  useEffect(() => {
+    fetchStructures();
   }, [monthYear]);
 
   const handleSelect = (empId: string) => {
@@ -69,9 +81,10 @@ export default function SalaryStructurePage() {
         professionalTax: existing.professionalTax || 0,
         incomeTax: existing.incomeTax || 0,
         advanceSalaryDrawn: existing.advanceSalaryDrawn || 0,
+        remarks: existing.remarks || "",
       });
     } else {
-      setFormData({ basic: 0, hra: 0, travelAllowance: 0, incentive: 0, teamIncentive: 0, fullBranchIncentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0, advanceSalaryDrawn: 0 });
+      setFormData({ basic: 0, hra: 0, travelAllowance: 0, incentive: 0, teamIncentive: 0, fullBranchIncentive: 0, pf: 0, esi: 0, professionalTax: 0, incomeTax: 0, advanceSalaryDrawn: 0, remarks: "" });
     }
   };
 
@@ -93,7 +106,7 @@ export default function SalaryStructurePage() {
       if (data.success) {
         alert("Salary Structure Saved!");
         setSelectedEmp(null);
-        fetchData();
+        fetchStructures();
       } else {
         alert(data.error);
       }
@@ -136,7 +149,7 @@ export default function SalaryStructurePage() {
         `${failures}`
       );
       setSelectedEmp(null);
-      await fetchData();
+      await fetchStructures();
     } catch (error) {
       console.error("Bulk salary structure import failed:", error);
       alert("Error importing salary structures. Please try again.");
@@ -155,6 +168,11 @@ export default function SalaryStructurePage() {
     <div className="space-y-6 w-full pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
+          <Link href="/dashboard/payroll">
+            <Button variant="ghost" className="mb-2 -ml-3 text-zinc-600 hover:text-zinc-900">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payroll
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Structures</h1>
           <p className="text-zinc-500 dark:text-zinc-400">Configure fixed earnings and deductions for employees per month.</p>
         </div>
@@ -249,18 +267,22 @@ export default function SalaryStructurePage() {
                       <Input type="number" required value={formData.travelAllowance} onChange={e => setFormData({ ...formData, travelAllowance: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Self Incentive (₹)</Label>
+                      <Label>Individual Performance (₹)</Label>
                       <Input type="number" required value={formData.incentive} onChange={e => setFormData({ ...formData, incentive: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Team Incentive (₹)</Label>
+                      <Label>Team Performance (₹)</Label>
                       <Input type="number" required value={formData.teamIncentive} onChange={e => setFormData({ ...formData, teamIncentive: Number(e.target.value) })} />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Full Branch Incentive (Fixed) (₹)</Label>
+                      <Label>Branch Performance (Fixed) (₹)</Label>
                       <Input type="number" required value={formData.fullBranchIncentive} onChange={e => setFormData({ ...formData, fullBranchIncentive: Number(e.target.value) })} />
                     </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label>Remarks (optional)</Label>
+                    <Input value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} placeholder="Add a note for this salary structure" />
                   </div>
                 </div>
 

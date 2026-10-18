@@ -43,6 +43,8 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [activeTab, setActiveTab] = useState<"list" | "hierarchy">("list");
   const [allEmployees, setAllEmployees] = useState([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -68,7 +70,7 @@ export default function EmployeesPage() {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/employees?search=${encodeURIComponent(debouncedSearch)}&status=${status}&page=${page}&limit=${limit}`);
+      const res = await fetch(`/api/employees?search=${encodeURIComponent(debouncedSearch)}&status=${status}&page=${page}&limit=${limit}&sortBy=${sortBy}&sortDirection=${sortDirection}`);
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);
@@ -136,7 +138,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchEmployees();
-  }, [debouncedSearch, status, page, limit]);
+  }, [debouncedSearch, status, page, limit, sortBy, sortDirection]);
 
   useEffect(() => {
     if (activeTab === "hierarchy") {
@@ -300,7 +302,7 @@ export default function EmployeesPage() {
       {activeTab === "list" ? (
         <Card>
           <CardContent className="p-6 space-y-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <Input
@@ -310,7 +312,8 @@ export default function EmployeesPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <select
+              <div className="flex flex-wrap items-center gap-2">
+                <select
                 className="flex h-10 w-48 rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:focus:ring-zinc-300"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -321,7 +324,25 @@ export default function EmployeesPage() {
                 <option value="Notice Period">Notice Period</option>
                 <option value="Resigned">Resigned</option>
                 <option value="Absconding">Absconding</option>
-              </select>
+                </select>
+                <select
+                  className="flex h-10 w-44 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  value={sortBy}
+                  onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                >
+                  <option value="createdAt">Latest Added</option>
+                  <option value="name">Sort: Name</option>
+                  <option value="employeeCode">Sort: Code</option>
+                  <option value="department">Sort: Department</option>
+                  <option value="designation">Sort: Designation</option>
+                  <option value="status">Sort: Status</option>
+                </select>
+                <Button type="button" variant="outline" className="h-10" onClick={() => { setSortDirection((direction) => direction === "asc" ? "desc" : "asc"); setPage(1); }}>
+                  {sortBy === "createdAt"
+                    ? (sortDirection === "desc" ? "Newest" : "Oldest")
+                    : (sortDirection === "asc" ? "A–Z" : "Z–A")}
+                </Button>
+              </div>
             </div>
 
             <Table>

@@ -4,7 +4,6 @@ import { Payroll } from "@/lib/models/Payroll";
 import { verifyAccessToken } from "@/lib/auth";
 import { notificationService } from "@/lib/notifications";
 import { calculatePayrollForEmployee } from "@/lib/payrollEngine";
-import { Leave } from "@/lib/models/Leave";
 import { Employee } from "@/lib/models/Employee";
 
 export async function POST(req: Request) {
@@ -20,28 +19,16 @@ export async function POST(req: Request) {
 
     const { employeeId, monthYear, paidDays: customPaidDays, manualIncentive = 0, eligibleRevenue = 0, salaryPeriodStart, salaryPeriodEnd } = await req.json();
 
-    const employee = await Employee.findById(employeeId).select("dateOfJoining");
+    const employee = await Employee.findById(employeeId).select("dateOfJoining designation");
     if (!employee) return NextResponse.json({ error: "Employee not found." }, { status: 404 });
     if (employee.dateOfJoining && monthYear < new Date(employee.dateOfJoining).toISOString().slice(0, 7)) {
       return NextResponse.json({ error: "Salary slip cannot be generated before the employee's joining month." }, { status: 400 });
     }
 
-    // 1. Fetch LOP (Loss of Pay) Leaves for this month
-    const leaves = await Leave.find({
-      employeeId,
-      leaveType: "Loss of Pay",
-      status: "Approved",
-      startDate: { $gte: new Date(`${monthYear}-01`), $lt: new Date(`${monthYear}-31T23:59:59`) }
-    });
-
+    // Approved leave is paid leave and must not reduce the employee's salary.
+    // Only an explicitly selected paid-days value can create a manual
+    // salary proration/adjustment.
     let lopDays = 0;
-    leaves.forEach(leave => {
-      if (leave.isHalfDay) lopDays += 0.5;
-      else {
-        const diff = Math.abs(leave.endDate.getTime() - leave.startDate.getTime());
-        lopDays += Math.ceil(diff / (1000 * 60 * 60 * 24) + 1) + 1;
-      }
-    });
 
     const standardDaysInMonth = 30; // Could be dynamic based on monthYear
     if (typeof customPaidDays === "number" && customPaidDays > 0) {
@@ -74,6 +61,7 @@ export async function POST(req: Request) {
         netSalary: result.netSalary,
         ...(salaryPeriodStart ? { salaryPeriodStart: new Date(salaryPeriodStart) } : {}),
         ...(salaryPeriodEnd ? { salaryPeriodEnd: new Date(salaryPeriodEnd) } : {}),
+        designation: employee.designation || "",
         status: "Draft"
       },
       { new: true, upsert: true }

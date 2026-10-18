@@ -20,6 +20,7 @@ export interface ISalaryStructure extends Document {
   professionalTax: number;
   incomeTax: number;
   advanceSalaryDrawn: number;
+  remarks?: string;
 
   effectiveDate: Date;
   
@@ -46,6 +47,7 @@ const SalaryStructureSchema: Schema<ISalaryStructure> = new Schema(
     professionalTax: { type: Number, default: 0 },
     incomeTax: { type: Number, default: 0 },
     advanceSalaryDrawn: { type: Number, default: 0 },
+    remarks: { type: String, default: "" },
     
     effectiveDate: { type: Date, default: Date.now },
   },

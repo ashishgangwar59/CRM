@@ -4,20 +4,81 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Mail, CheckCircle, Lock, ArrowLeft, Printer } from "lucide-react";
+import {
+  Download,
+  Mail,
+  CheckCircle,
+  Lock,
+  ArrowLeft,
+  Printer,
+} from "lucide-react";
 
 function numberToWords(num: number): string {
   if (num === 0) return "Zero";
-  const a = ["", "One ", "Two ", "Three ", "Four ", "Five ", "Six ", "Seven ", "Eight ", "Nine ", "Ten ", "Eleven ", "Twelve ", "Thirteen ", "Fourteen ", "Fifteen ", "Sixteen ", "Seventeen ", "Eighteen ", "Nineteen "];
-  const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-  const n = ("000000000" + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+  const a = [
+    "",
+    "One ",
+    "Two ",
+    "Three ",
+    "Four ",
+    "Five ",
+    "Six ",
+    "Seven ",
+    "Eight ",
+    "Nine ",
+    "Ten ",
+    "Eleven ",
+    "Twelve ",
+    "Thirteen ",
+    "Fourteen ",
+    "Fifteen ",
+    "Sixteen ",
+    "Seventeen ",
+    "Eighteen ",
+    "Nineteen ",
+  ];
+  const b = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+  const n = ("000000000" + num)
+    .substr(-9)
+    .match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
   if (!n) return "";
   let str = "";
-  str += (Number(n[1]) != 0) ? (a[Number(n[1])] || b[n[1][0] as any] + " " + a[n[1][1] as any]) + "Crore " : "";
-  str += (Number(n[2]) != 0) ? (a[Number(n[2])] || b[n[2][0] as any] + " " + a[n[2][1] as any]) + "Lakh " : "";
-  str += (Number(n[3]) != 0) ? (a[Number(n[3])] || b[n[3][0] as any] + " " + a[n[3][1] as any]) + "Thousand " : "";
-  str += (Number(n[4]) != 0) ? (a[Number(n[4])] || b[n[4][0] as any] + " " + a[n[4][1] as any]) + "Hundred " : "";
-  str += (Number(n[5]) != 0) ? ((str != "") ? "and " : "") + (a[Number(n[5])] || b[n[5][0] as any] + " " + a[n[5][1] as any]) : "";
+  str +=
+    Number(n[1]) != 0
+      ? (a[Number(n[1])] || b[n[1][0] as any] + " " + a[n[1][1] as any]) +
+        "Crore "
+      : "";
+  str +=
+    Number(n[2]) != 0
+      ? (a[Number(n[2])] || b[n[2][0] as any] + " " + a[n[2][1] as any]) +
+        "Lakh "
+      : "";
+  str +=
+    Number(n[3]) != 0
+      ? (a[Number(n[3])] || b[n[3][0] as any] + " " + a[n[3][1] as any]) +
+        "Thousand "
+      : "";
+  str +=
+    Number(n[4]) != 0
+      ? (a[Number(n[4])] || b[n[4][0] as any] + " " + a[n[4][1] as any]) +
+        "Hundred "
+      : "";
+  str +=
+    Number(n[5]) != 0
+      ? (str != "" ? "and " : "") +
+        (a[Number(n[5])] || b[n[5][0] as any] + " " + a[n[5][1] as any])
+      : "";
   return str.trim() + " Only";
 }
 
@@ -29,14 +90,17 @@ export default function SalarySlipPage() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [salaryPeriodStart, setSalaryPeriodStart] = useState("");
   const [salaryPeriodEnd, setSalaryPeriodEnd] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [remarks, setRemarks] = useState("");
   const slipRef = useRef<HTMLDivElement>(null);
   const [companyProfile, setCompanyProfile] = useState<any>({
     name: "Niventra Capital Advisory India Capital Pvt. Ltd.",
-    address: "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
+    address:
+      "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
     email: "info@niventracapitaladvisory.com",
     website: "www.niventracapitaladvisory.com",
     phone: "18008900818",
-    gstNo: "07AAICN4810R1Z2"
+    gstNo: "07AAICN4810R1Z2",
   });
 
   const fetchPayroll = async () => {
@@ -45,8 +109,20 @@ export default function SalarySlipPage() {
       const data = await res.json();
       if (data.success) {
         setPayroll(data.data);
-        setSalaryPeriodStart(data.data.salaryPeriodStart ? new Date(data.data.salaryPeriodStart).toISOString().slice(0, 10) : "");
-        setSalaryPeriodEnd(data.data.salaryPeriodEnd ? new Date(data.data.salaryPeriodEnd).toISOString().slice(0, 10) : "");
+        setSalaryPeriodStart(
+          data.data.salaryPeriodStart
+            ? new Date(data.data.salaryPeriodStart).toISOString().slice(0, 10)
+            : "",
+        );
+        setSalaryPeriodEnd(
+          data.data.salaryPeriodEnd
+            ? new Date(data.data.salaryPeriodEnd).toISOString().slice(0, 10)
+            : "",
+        );
+        // Prefer the current employee profile so older month-wise slips show
+        // the latest designation.
+        setDesignation(data.data.employeeId?.designation || data.data.designation || "");
+        setRemarks(data.data.remarks || "");
       }
     } catch (e) {
       console.error(e);
@@ -59,41 +135,54 @@ export default function SalarySlipPage() {
     const res = await fetch(`/api/payroll/${params.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "UpdateDates", salaryPeriodStart, salaryPeriodEnd })
+      body: JSON.stringify({
+        action: "UpdateDates",
+        salaryPeriodStart,
+        salaryPeriodEnd,
+      }),
     });
     const data = await res.json();
     if (data.success) fetchPayroll();
     else alert(data.error || "Unable to update salary period.");
   };
 
+  const handleSaveSlipDetails = async () => {
+    const res = await fetch(`/api/payroll/${params.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "UpdateDetails", designation, remarks }) });
+    const data = await res.json();
+    if (data.success) fetchPayroll(); else alert(data.error || "Unable to save salary-slip details.");
+  };
+
   useEffect(() => {
     fetchPayroll();
 
     fetch("/api/auth/me")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.success) {
           setCurrentUserRole(data.role);
         }
       })
-      .catch(e => console.error("Error loading user info:", e));
+      .catch((e) => console.error("Error loading user info:", e));
 
     fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.success && data.data && data.data.companyProfile) {
           const cp = data.data.companyProfile;
           setCompanyProfile({
-            name: cp.name || "Niventra Capital Advisory India Capital Pvt. Ltd.",
-            address: cp.address || "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
+            name:
+              cp.name || "Niventra Capital Advisory India Capital Pvt. Ltd.",
+            address:
+              cp.address ||
+              "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
             email: cp.email || "info@niventracapitaladvisory.com",
             website: cp.website || "www.niventracapitaladvisory.com",
             phone: cp.phone || "18008900818",
-            gstNo: cp.gstNo || "07AAICN4810R1Z2"
+            gstNo: cp.gstNo || "07AAICN4810R1Z2",
           });
         }
       })
-      .catch(e => console.error("Error loading settings:", e));
+      .catch((e) => console.error("Error loading settings:", e));
   }, [params.id]);
 
   const handleAction = async (action: string) => {
@@ -101,7 +190,7 @@ export default function SalarySlipPage() {
       const res = await fetch(`/api/payroll/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ action }),
       });
       const data = await res.json();
       if (data.success) {
@@ -126,6 +215,15 @@ export default function SalarySlipPage() {
       allowTaint: false,
       backgroundColor: "#ffffff",
       logging: false,
+      onclone: (clonedDocument) => {
+        // html2canvas cannot parse modern CSS lab()/oklab() colors used by
+        // Tailwind's generated theme styles. Replace them only in the cloned
+        // document used for PDF rendering; the live page remains unchanged.
+        clonedDocument.querySelectorAll("style").forEach((style) => {
+          style.textContent = style.textContent
+            ?.replace(/(?:ok)?lab\([^;{}]*\)/gi, "#000000") || "";
+        });
+      },
     });
 
     const imgData = canvas.toDataURL("image/jpeg", 0.98);
@@ -135,8 +233,17 @@ export default function SalarySlipPage() {
       format: "a4",
     });
 
-    // Fit strictly on 1 single page (210mm x 297mm)
-    pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+    // Preserve the slip's aspect ratio and fit it inside the A4 printable area.
+    const maxWidth = 190;
+    const maxHeight = 277;
+    const imageRatio = canvas.width / canvas.height;
+    let imageWidth = maxWidth;
+    let imageHeight = imageWidth / imageRatio;
+    if (imageHeight > maxHeight) {
+      imageHeight = maxHeight;
+      imageWidth = imageHeight * imageRatio;
+    }
+    pdf.addImage(imgData, "JPEG", (210 - imageWidth) / 2, (297 - imageHeight) / 2, imageWidth, imageHeight, undefined, "FAST");
     return pdf;
   };
 
@@ -144,7 +251,9 @@ export default function SalarySlipPage() {
     try {
       const pdf = await generateSinglePagePDF();
       if (pdf) {
-        pdf.save(`SalarySlip_${payroll.monthYear}_${payroll.employeeId?.employeeCode || "Slip"}.pdf`);
+        pdf.save(
+          `SalarySlip_${payroll.monthYear}_${payroll.employeeId?.employeeCode || "Slip"}.pdf`,
+        );
       }
     } catch (error) {
       console.error("PDF generation failed", error);
@@ -161,7 +270,10 @@ export default function SalarySlipPage() {
           pdfBase64 = pdf.output("datauristring");
         }
       } catch (err) {
-        console.error("Failed to generate PDF string for email attachment", err);
+        console.error(
+          "Failed to generate PDF string for email attachment",
+          err,
+        );
       }
 
       const res = await fetch(`/api/payroll/${params.id}/email`, {
@@ -181,17 +293,25 @@ export default function SalarySlipPage() {
   };
 
   if (loading) return <div className="p-8">Loading salary slip...</div>;
-  if (!payroll) return <div className="p-8 text-rose-500">Payroll not found!</div>;
+  if (!payroll)
+    return <div className="p-8 text-rose-500">Payroll not found!</div>;
 
   const emp = payroll.employeeId;
 
   // Format month name month-wise (e.g., "JULY 2026")
   const monthNameStr = payroll.monthYear
-    ? new Date(`${payroll.monthYear}-01`).toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase()
+    ? new Date(`${payroll.monthYear}-01`)
+        .toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        .toUpperCase()
     : payroll.monthYear;
-  const formatSlipDate = (value?: string) => value
-    ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-    : "—";
+  const formatSlipDate = (value?: string) =>
+    value
+      ? new Date(value).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "—";
 
   // Verification URL for QR code (In real app, points to public verification page)
   const verificationUrl = `https://crm.company.com/verify-slip/${payroll._id}`;
@@ -200,6 +320,13 @@ export default function SalarySlipPage() {
     <div className="space-y-6 max-w-4xl mx-auto pb-24">
       <style jsx global>{`
         @media print {
+          html, body {
+            width: 210mm !important;
+            height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -211,12 +338,22 @@ export default function SalarySlipPage() {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100% !important;
+            width: 210mm !important;
+            height: 297mm !important;
+             max-height: 297mm !important;
+             min-height: 0 !important;
+             overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
-            zoom: 0.85;
+             page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .printable-salary-slip-container > div {
+            width: 277mm !important;
+            transform: scale(0.76) !important;
+            transform-origin: top left !important;
           }
           @page {
             size: A4 portrait;
@@ -235,39 +372,64 @@ export default function SalarySlipPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Salary Slip</h1>
-          <p className="text-zinc-500 dark:text-zinc-400">{emp.firstName} {emp.lastName} • {monthNameStr} ({payroll.paidDays || 30} Days Salary)</p>
-          {(payroll.salaryPeriodStart || payroll.salaryPeriodEnd) && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Salary period: {payroll.salaryPeriodStart ? new Date(payroll.salaryPeriodStart).toLocaleDateString() : "—"} to {payroll.salaryPeriodEnd ? new Date(payroll.salaryPeriodEnd).toLocaleDateString() : "—"}
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Salary Slip
+            </h1>
+            <p className="text-zinc-500 dark:text-zinc-400">
+              {emp.firstName} {emp.lastName} • {monthNameStr} (
+              {payroll.paidDays || 30} Days Salary)
             </p>
-          )}
+            {(payroll.salaryPeriodStart || payroll.salaryPeriodEnd) && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Salary period:{" "}
+                {payroll.salaryPeriodStart
+                  ? new Date(payroll.salaryPeriodStart).toLocaleDateString()
+                  : "—"}{" "}
+                to{" "}
+                {payroll.salaryPeriodEnd
+                  ? new Date(payroll.salaryPeriodEnd).toLocaleDateString()
+                  : "—"}
+              </p>
+            )}
           </div>
         </div>
 
-        {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
-          <div className="flex flex-wrap items-end gap-2 print:hidden">
-            <div><label className="text-xs text-zinc-500">From</label><Input type="date" value={salaryPeriodStart} onChange={(e) => setSalaryPeriodStart(e.target.value)} /></div>
-            <div><label className="text-xs text-zinc-500">To</label><Input type="date" value={salaryPeriodEnd} onChange={(e) => setSalaryPeriodEnd(e.target.value)} /></div>
-            <Button variant="outline" onClick={handleSaveSalaryDates}>Save Dates</Button>
-          </div>
-        )}
+        
 
         <div className="flex flex-wrap justify-end gap-2 w-full xl:w-auto">
           {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
+            <div className="flex flex-wrap items-end gap-2 mr-2">
+              <div><label className="block text-[10px] font-semibold text-zinc-500">Designation</label><Input className="h-9 w-40" value={designation} onChange={(e) => setDesignation(e.target.value)} /></div>
+              <div><label className="block text-[10px] font-semibold text-zinc-500">Remarks</label><Input className="h-9 w-48" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional remark" /></div>
+              <Button variant="outline" className="h-9" onClick={handleSaveSlipDetails}>Save Details</Button>
+            </div>
+          )}
+          {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
             <>
               {payroll.status === "Draft" && (
-                <Button variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => handleAction("Lock")}>
+                <Button
+                  variant="outline"
+                  className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                  onClick={() => handleAction("Lock")}
+                >
                   <Lock className="mr-2 h-4 w-4" /> Lock
                 </Button>
               )}
               {payroll.status === "Locked" && (
-                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => handleAction("Approve")}>
+                <Button
+                  variant="outline"
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  onClick={() => handleAction("Approve")}
+                >
                   <CheckCircle className="mr-2 h-4 w-4" /> Approve
                 </Button>
               )}
               {payroll.status === "Approved" && (
-                <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleAction("Paid")}>
+                <Button
+                  variant="outline"
+                  className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                  onClick={() => handleAction("Paid")}
+                >
                   Mark as Paid (Wallet)
                 </Button>
               )}
@@ -290,30 +452,36 @@ export default function SalarySlipPage() {
       </div>
 
       {/* The Printable Slip Area */}
-       <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200 printable-salary-slip-container w-full max-w-[800px] min-h-[1131px] mx-auto">
+      <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200 printable-salary-slip-container w-full max-w-[800px] min-h-[1131px] mx-auto">
         <div ref={slipRef} className="p-5 w-full h-full bg-white relative">
-
           {/* Header Area */}
-          <div className="flex justify-between items-start border-b-2  pb-6 mb-8">
+          <div className="relative flex justify-between items-start border-b-2 pb-6 mb-8">
             <div className="flex items-center space-x-4">
               <div className="h-18 w-18 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-                <img src="/logo.png" alt="Company Logo" className="h-full w-full object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="Company Logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div>
-                <h2 className="text-xl font-black text-[#134086] tracking-tight">{companyProfile.name}</h2>
-                <div className="mt-2 flex items-center space-x-3">
-                  <span className="text-[10px] font-black tracking-widest text-white bg-[#134086] px-3 py-1 rounded">
-                    PAYSLIP FOR {monthNameStr}
-                  </span>
-                  <span className="text-[10px] font-bold text-indigo-900 border border-indigo-900 px-2.5 py-0.5 rounded">
-                    PAID DAYS: {payroll.paidDays || 30} DAYS
-                  </span>
-                </div>
+                <h2 className="text-xl font-black text-[#134086] tracking-tight">
+                  {companyProfile.name}
+                </h2>
               </div>
             </div>
+            <div className="absolute left-1/2 top-12 -translate-x-1/2 whitespace-nowrap">
+              <span className="text-[10px] font-black tracking-widest text-[#134086]">
+                PAYSLIP FOR {monthNameStr}
+              </span>
+            </div>
             <div className="text-right">
-              <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Document Ref</p>
-              <p className="text-sm font-mono text-zinc-800 font-medium">{payroll._id.toString().slice(-8).toUpperCase()}</p>
+              <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider">
+                Document Ref
+              </p>
+              <p className="text-sm font-mono text-zinc-800 font-medium">
+                {payroll._id.toString().slice(-8).toUpperCase()}
+              </p>
             </div>
           </div>
 
@@ -324,104 +492,194 @@ export default function SalarySlipPage() {
 
               <div className="grid grid-cols-4 gap-x-8 gap-y-3">
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Employee Name</p>
-                  <p className="font-bold text-base text-zinc-900">{emp.firstName} {emp.lastName}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    Employee Name
+                  </p>
+                  <p className="font-bold text-base text-zinc-900">
+                    {emp.firstName} {emp.lastName}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Employee Code</p>
-                  <p className="font-bold text-base text-zinc-900">{emp.employeeCode}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    Employee Code
+                  </p>
+                  <p className="font-bold text-base text-zinc-900">
+                    {emp.employeeCode}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    Designation
+                  </p>
+                  <p className="font-medium text-zinc-800">
+                    {emp.designation || payroll.designation || "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Pay Month</p>
-                  <p className="font-bold text-base text-indigo-900">{monthNameStr}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    Department
+                  </p>
+                  <p className="font-medium text-zinc-800">
+                    {emp.department || "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Designation</p>
-                  <p className="font-medium text-zinc-800">{emp.designation || "—"}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    Paid Days
+                  </p>
+                  <p className="font-bold text-base text-emerald-700">
+                    {payroll.paidDays || 30} Days / 30
+                  </p>
+                </div>
+              
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    PAN Card
+                  </p>
+                  <p className="font-medium text-zinc-800">
+                    {emp.kyc?.panNumber || "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Department</p>
-                  <p className="font-medium text-zinc-800">{emp.department || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Paid Days</p>
-                  <p className="font-bold text-base text-emerald-700">{payroll.paidDays || 30} Days / 30</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Salary From</p>
-                  <p className="font-bold text-base text-indigo-900">{formatSlipDate(payroll.salaryPeriodStart)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Salary To</p>
-                  <p className="font-bold text-base text-indigo-900">{formatSlipDate(payroll.salaryPeriodEnd)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">PAN Card</p>
-                  <p className="font-medium text-zinc-800">{emp.kyc?.panNumber || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Bank A/C No.</p>
-                  <p className="font-medium text-zinc-800">{emp.bankDetails?.accountNumber || "—"}</p>
-                </div>
-                <div className="col-span-5">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Company Bank Details</p>
-                  <p className="font-medium text-zinc-800">084002000002213, Indian Overseas Bank, New Delhi</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                    Bank A/C No.
+                  </p>
+                  <p className="font-medium text-zinc-800">
+                    {emp.bankDetails?.accountNumber || "—"}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Status & Wallet Info */}
             <div className="text-right flex flex-col items-end justify-center h-full space-y-3">
-              <div>
-                <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${payroll.status === "Paid" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                  payroll.status === "Approved" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                    "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}>
-                  {payroll.status.toUpperCase()}
-                </span>
-              </div>
               {payroll.paymentDetails && (
                 <div className="text-right">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Transaction ID</p>
-                  <p className="text-xs font-mono font-medium text-indigo-700 bg-white px-2 py-1 rounded inline-block mt-1">{payroll.paymentDetails.transactionId}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
+                    Transaction ID
+                  </p>
+                  <p className="text-xs font-mono font-medium text-indigo-700 bg-white px-2 py-1 rounded inline-block mt-1">
+                    {payroll.paymentDetails.transactionId}
+                  </p>
 
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold mt-2">Paid On</p>
-                  <p className="text-xs font-medium text-zinc-800">{new Date(payroll.paymentDetails.paymentDate).toLocaleDateString()}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold mt-2">
+                    Paid On
+                  </p>
+                  <p className="text-xs font-medium text-zinc-800">
+                    {new Date(
+                      payroll.paymentDetails.paymentDate,
+                    ).toLocaleDateString()}
+                  </p>
                 </div>
               )}
             </div>
           </div>
 
-
           {/* Salary Structure Table */}
           <div className="grid grid-cols-2 gap-8 mb-8">
             {/* Earnings */}
             <div>
-              <h4 className="font-black border-b-2 border-emerald-600 pb-2 mb-4 text-emerald-800 uppercase tracking-wider text-sm">Earnings</h4>
+              <h4 className="font-black border-b-2 border-emerald-600 pb-2 mb-4 text-emerald-800 uppercase tracking-wider text-sm">
+                Earnings
+              </h4>
               <div className="space-y-4">
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Basic Salary</span><span className="font-bold">₹{payroll.earnings.basic.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">House Rent Allowance</span><span className="font-bold">₹{payroll.earnings.hra.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Travel Allowance</span><span className="font-bold">₹{(payroll.earnings.travelAllowance || payroll.earnings.metroAllowance || payroll.earnings.specialAllowance || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Self Incentive</span><span className="font-bold">₹{(payroll.earnings.personalIncentive || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">{emp.designation?.toLowerCase().includes("branch head") ? "Full Branch Incentive" : "Team Incentive"}</span><span className="font-bold">₹{(payroll.earnings.teamBusinessIncentive || 0).toLocaleString()}</span></div>
-                {payroll.earnings.bonus > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">Performance Bonus</span><span className="font-bold">₹{payroll.earnings.bonus.toLocaleString()}</span></div>}
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">Basic Salary</span>
+                  <span className="font-bold">
+                    ₹{payroll.earnings.basic.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">House Rent Allowance</span>
+                  <span className="font-bold">
+                    ₹{payroll.earnings.hra.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">Travel Allowance</span>
+                  <span className="font-bold">
+                    ₹
+                    {(
+                      payroll.earnings.travelAllowance ||
+                      payroll.earnings.metroAllowance ||
+                      payroll.earnings.specialAllowance ||
+                      0
+                    ).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">Individual Performance</span>
+                  <span className="font-bold">
+                    ₹
+                    {(payroll.earnings.personalIncentive || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">
+                    {emp.designation?.toLowerCase().includes("branch head")
+                      ? "Full Branch Incentive"
+                      : "Team Performance Incentive"}
+                  </span>
+                  <span className="font-bold">
+                    ₹
+                    {(
+                      payroll.earnings.teamBusinessIncentive || 0
+                    ).toLocaleString()}
+                  </span>
+                </div>
+                {payroll.earnings.bonus > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-700">Performance Bonus</span>
+                    <span className="font-bold">
+                      ₹{payroll.earnings.bonus.toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Deductions */}
             <div>
-              <h4 className="font-black border-b-2 border-rose-600 pb-2 mb-4 text-rose-800 uppercase tracking-wider text-sm">Deductions</h4>
+              <h4 className="font-black border-b-2 border-rose-600 pb-2 mb-4 text-rose-800 uppercase tracking-wider text-sm">
+                Deductions
+              </h4>
               <div className="space-y-4">
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Provident Fund (PF)</span><span className="font-bold text-rose-700">₹{payroll.deductions.pf.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">ESI Contribution</span><span className="font-bold text-rose-700">₹{payroll.deductions.esi.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Professional Tax</span><span className="font-bold text-rose-700">₹{payroll.deductions.professionalTax.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-zinc-700">Income Tax (TDS)</span><span className="font-bold text-rose-700">₹{payroll.deductions.incomeTax.toLocaleString()}</span></div>
-                {payroll.deductions.unpaidLeaveDeduction > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-700">LOP Deduction (Leaves)</span><span className="font-bold text-rose-700">₹{payroll.deductions.unpaidLeaveDeduction.toLocaleString()}</span></div>}
-                {(payroll.deductions.advanceSalaryDrawn || payroll.deductions.advance) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">Provident Fund (PF)</span>
+                  <span className="font-bold text-rose-700">
+                    ₹{payroll.deductions.pf.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">ESI Contribution</span>
+                  <span className="font-bold text-rose-700">
+                    ₹{payroll.deductions.esi.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">Professional Tax</span>
+                  <span className="font-bold text-rose-700">
+                    ₹{payroll.deductions.professionalTax.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-700">Income Tax (TDS)</span>
+                  <span className="font-bold text-rose-700">
+                    ₹{payroll.deductions.incomeTax.toLocaleString()}
+                  </span>
+                </div>
+                {(payroll.deductions.advanceSalaryDrawn ||
+                  payroll.deductions.advance) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-zinc-700">Advance Salary Drawn</span>
                     <span className="font-bold text-rose-700">
-                      ₹{(payroll.deductions.advanceSalaryDrawn || payroll.deductions.advance || 0).toLocaleString()}
+                      ₹
+                      {(
+                        payroll.deductions.advanceSalaryDrawn ||
+                        payroll.deductions.advance ||
+                        0
+                      ).toLocaleString()}
                     </span>
                   </div>
                 )}
@@ -432,12 +690,20 @@ export default function SalarySlipPage() {
           {/* Totals Section */}
           <div className="grid grid-cols-2 gap-8 mb-8 border-t border-zinc-200 pt-4">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-bold text-zinc-500 uppercase">Gross Earnings</span>
-              <span className="font-black text-lg">₹{payroll.grossSalary.toLocaleString()}</span>
+              <span className="font-bold text-zinc-500 uppercase">
+                Gross Earnings (₹)
+              </span>
+              <span className="font-black text-lg">
+                {payroll.grossSalary.toLocaleString()}
+              </span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="font-bold text-zinc-500 uppercase">Total Deductions</span>
-              <span className="font-black text-lg text-rose-700">₹{payroll.totalDeductions.toLocaleString()}</span>
+              <span className="font-bold text-zinc-500 uppercase">
+                Total Deductions
+              </span>
+              <span className="font-black text-lg text-rose-700">
+                ₹{payroll.totalDeductions.toLocaleString()}
+              </span>
             </div>
           </div>
 
@@ -445,8 +711,12 @@ export default function SalarySlipPage() {
           <div className="bg-white text-zinc-900 rounded-md p-6 flex flex-col md:flex-row justify-between items-center relative overflow-hidden mb-8 shadow-sm border border-zinc-200 print:border-black print:shadow-none">
             <div className="absolute right-0 top-0 opacity-10 h-full w-1/2 bg-gradient-to-l from-zinc-200 to-transparent pointer-events-none"></div>
             <div>
-              <p className="font-bold uppercase tracking-widest text-sm mb-1 text-zinc-700">Net Salary Payable</p>
-              <p className="text-xs text-zinc-500">Amount transferred to employee bank account</p>
+              <p className="font-bold uppercase tracking-widest text-sm mb-1 text-zinc-700">
+                Net Salary Payable
+              </p>
+              <p className="text-xs text-zinc-500">
+                Amount transferred to employee bank account
+              </p>
             </div>
             <div className="text-5xl font-black tracking-tighter mt-4 md:mt-0 text-zinc-900">
               <span className="mr-2 font-normal text-zinc-400">₹</span>
@@ -455,41 +725,31 @@ export default function SalarySlipPage() {
           </div>
 
           <div className="mb-12 border-l-4 border-emerald-500 pl-4 bg-emerald-50 p-3 text-emerald-900 font-semibold text-sm">
-            <span className="uppercase text-xs tracking-wider text-emerald-700 block mb-1">Amount In Words</span>
+            <span className="uppercase text-xs tracking-wider text-emerald-700 block mb-1">
+              Amount In Words
+            </span>
             Rupees {numberToWords(Math.round(payroll.netSalary))}
           </div>
 
+          {payroll.remarks && (
+            <div className="mb-12 rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-950">
+              <span className="uppercase text-xs tracking-wider text-amber-700 block mb-1">Remarks</span>
+              <p className="whitespace-pre-wrap font-medium text-sm">{payroll.remarks}</p>
+            </div>
+          )}
+
           {/* Footer Area: Signature & Info */}
           <div className="mt-16 flex justify-between items-end border-t border-zinc-200 pt-8">
-            <div className="text-xs text-zinc-500 max-w-xs">
-              <p className="font-bold text-zinc-800 uppercase tracking-wider mb-1">Important Note</p>
-              <p>This is a system generated document and is valid without a physical signature. Any discrepancies should be reported to HR within 7 days.</p>
-              <p className="font-mono mt-2 text-[10px] bg-zinc-100 p-1 rounded inline-block">ID: {payroll._id}</p>
-            </div>
-
-            <div className="text-center pb-4">
-              <div className="h-16 flex items-center justify-center mb-2">
-                <span className="font-[cursive] text-4xl text-indigo-950 opacity-80" style={{ fontFamily: 'Brush Script MT, cursive' }}>Deepak Dayal</span>
-              </div>
-              <div className="border-t-2 border-zinc-300 w-56 pt-2">
-                <p className="font-bold text-zinc-800 text-sm">Authorized Signatory</p>
-                <p className="text-xs text-zinc-500">Human Resources Department</p>
-              </div>
+            <div className="text-xs text-zinc-500 max-w">
+              <p className="font-bold text-zinc-800 uppercase tracking-wider mb-1">
+                Important Note
+              </p>
+              <p>
+                This is a system-generated document; therefore, a physical signature is not required.
+              </p>
+             
             </div>
           </div>
-
-          {/* Company Footer */}
-          <div className="mt-8 pt-4 border-t border-zinc-200 text-center flex flex-col items-center">
-            <h3 className="font-bold text-zinc-800 text-sm uppercase tracking-wide">{companyProfile.name}</h3>
-            <p className="text-xs text-zinc-500 mt-1">{companyProfile.address}</p>
-            <p className="text-xs text-zinc-500 mt-1 font-medium">
-              E: {companyProfile.email} <span className="mx-2">|</span> T: {companyProfile.phone} <span className="mx-2">|</span> W: {companyProfile.website}
-            </p>
-            {/* <p className="text-xs text-zinc-500 mt-1 font-medium">
-              Company Bank: Indian Overseas Bank, New Delhi <span className="mx-2">|</span> A/C No: 084002000002213
-            </p> */}
-          </div>
-
         </div>
       </div>
     </div>

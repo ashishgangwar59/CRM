@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     // 1. Get all active employees
     const monthEnd = new Date(`${monthYear}-31T23:59:59.999Z`);
-    const activeEmployees = await Employee.find({ status: "Active", $or: [{ dateOfJoining: { $exists: false } }, { dateOfJoining: null }, { dateOfJoining: { $lte: monthEnd } }] }).select("_id");
+    const activeEmployees = await Employee.find({ status: "Active", $or: [{ dateOfJoining: { $exists: false } }, { dateOfJoining: null }, { dateOfJoining: { $lte: monthEnd } }] }).select("_id designation");
     const standardDaysInMonth = 30; // Could be calculated dynamically
     
     let processedCount = 0;
@@ -82,6 +82,7 @@ export async function POST(req: Request) {
             netSalary: result.netSalary,
             ...(salaryPeriodStart ? { salaryPeriodStart: new Date(salaryPeriodStart) } : {}),
             ...(salaryPeriodEnd ? { salaryPeriodEnd: new Date(salaryPeriodEnd) } : {}),
+            designation: emp.designation || "",
             status: "Draft"
           },
           { new: true, upsert: true }

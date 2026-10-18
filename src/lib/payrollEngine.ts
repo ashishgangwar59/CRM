@@ -199,7 +199,8 @@ export async function calculatePayrollForEmployee(
       loan: 0,
       advance: 0,
       advanceSalaryDrawn: Math.round(advanceSalary),
-      unpaidLeaveDeduction: Math.round(lopAmount),
+      // LOP is already reflected through paid-day proration; do not deduct it again.
+      unpaidLeaveDeduction: 0,
       otherDeductions: Math.round(otherDeductions)
     },
     grossSalary: Math.round(grossSalary),

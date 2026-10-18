@@ -30,6 +30,8 @@ export default function PayrollDashboardPage() {
   const [manualIncentivesMap, setManualIncentivesMap] = useState<Record<string, number>>({});
   const [revenueMap, setRevenueMap] = useState<Record<string, number>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [salaryPeriodStart, setSalaryPeriodStart] = useState("");
   const [salaryPeriodEnd, setSalaryPeriodEnd] = useState("");
   const [updatingDates, setUpdatingDates] = useState(false);
@@ -231,12 +233,51 @@ export default function PayrollDashboardPage() {
     const joinedBeforeMonthEnd = !selectedMonthEnd || !emp.dateOfJoining || new Date(emp.dateOfJoining) <= selectedMonthEnd;
     return joinedBeforeMonthEnd && (!normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch));
   });
-  const currentDataList = isEmployeeView ? filteredPayrolls : filteredEmployees;
+
+  const compareValues = (a: any, b: any) => {
+    let valueA: string | number = "";
+    let valueB: string | number = "";
+
+    if (sortBy === "name") {
+      valueA = `${a.employeeId?.firstName || a.firstName || ""} ${a.employeeId?.lastName || a.lastName || ""}`.toLowerCase();
+      valueB = `${b.employeeId?.firstName || b.firstName || ""} ${b.employeeId?.lastName || b.lastName || ""}`.toLowerCase();
+    } else if (sortBy === "code") {
+      valueA = a.employeeId?.employeeCode || a.employeeCode || "";
+      valueB = b.employeeId?.employeeCode || b.employeeCode || "";
+    } else if (sortBy === "designation") {
+      valueA = a.employeeId?.designation || a.designation || "";
+      valueB = b.employeeId?.designation || b.designation || "";
+    } else if (sortBy === "department") {
+      valueA = a.employeeId?.department || a.department || "";
+      valueB = b.employeeId?.department || b.department || "";
+    } else if (sortBy === "salary") {
+      valueA = a.netSalary || 0;
+      valueB = b.netSalary || 0;
+    } else if (sortBy === "paidDays") {
+      valueA = a.paidDays || 0;
+      valueB = b.paidDays || 0;
+    } else if (sortBy === "status") {
+      valueA = a.status || "";
+      valueB = b.status || "";
+    } else if (sortBy === "month") {
+      valueA = a.monthYear || "";
+      valueB = b.monthYear || "";
+    }
+
+    const result = typeof valueA === "number" && typeof valueB === "number"
+      ? valueA - valueB
+      : String(valueA).localeCompare(String(valueB));
+    return sortDirection === "asc" ? result : -result;
+  };
+
+  const sortedPayrolls = [...filteredPayrolls].sort(compareValues);
+  const sortedEmployees = [...filteredEmployees].sort(compareValues);
+  const currentDataList = isEmployeeView ? sortedPayrolls : sortedEmployees;
   const totalPages = Math.max(1, Math.ceil(currentDataList.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   
-  const paginatedPayrolls = isEmployeeView ? filteredPayrolls.slice(startIndex, startIndex + itemsPerPage) : filteredPayrolls;
-  const paginatedEmployees = !isEmployeeView ? filteredEmployees.slice(startIndex, startIndex + itemsPerPage) : [];
+  const paginatedPayrolls = isEmployeeView ? sortedPayrolls.slice(startIndex, startIndex + itemsPerPage) : sortedPayrolls;
+  const paginatedEmployees = !isEmployeeView ? sortedEmployees.slice(startIndex, startIndex + itemsPerPage) : [];
 
   return (
     <div className="space-y-6 w-full pb-24 relative">
@@ -270,19 +311,24 @@ export default function PayrollDashboardPage() {
           )}
           {!isEmployee && (
             <div className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Payroll month</label>
-                <Input type="month" value={monthYear} onChange={(e) => { setMonthYear(e.target.value); if (typeof window !== "undefined") sessionStorage.setItem("payrollMonth", e.target.value); }} className="w-44" />
+              <div className="flex items-center gap-2">
+                <label htmlFor="payroll-month" className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                  Month
+                </label>
+                <Input
+                  id="payroll-month"
+                  type="month"
+                  value={monthYear}
+                  onChange={(e) => {
+                    const selectedMonth = e.target.value;
+                    setMonthYear(selectedMonth);
+                    if (typeof window !== "undefined") {
+                      sessionStorage.setItem("payrollMonth", selectedMonth);
+                    }
+                  }}
+                  className="h-10 w-40"
+                />
               </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Salary from</label>
-                <Input type="date" value={salaryPeriodStart} onChange={(e) => setSalaryPeriodStart(e.target.value)} className="w-40" />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Salary to</label>
-                <Input type="date" value={salaryPeriodEnd} onChange={(e) => setSalaryPeriodEnd(e.target.value)} className="w-40" />
-              </div>
-              <Button variant="outline" className="h-10" onClick={handleBulkUpdateDates} disabled={updatingDates}><CalendarDays className="mr-2 h-4 w-4" />{updatingDates ? "Saving..." : "Apply dates"}</Button>
               <Button variant="outline" className="h-10 border-blue-200 text-blue-700 hover:bg-blue-50" onClick={handleApproveAll} disabled={approvingAll}>{approvingAll ? "Approving..." : "Approve all slips"}</Button>
               {monthYear && (
                 <Button variant="ghost" size="sm" onClick={() => {
@@ -313,12 +359,47 @@ export default function PayrollDashboardPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <Input
-            placeholder="Search employee name or code..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Input
+              placeholder="Search employee name or code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-zinc-500">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+              className="h-9 rounded-md border border-zinc-300 bg-white px-2 text-sm"
+            >
+              <option value="name">Employee Name</option>
+              {!isEmployeeView ? (
+                <>
+                  <option value="code">Employee Code</option>
+                  <option value="designation">Designation</option>
+                  <option value="department">Department</option>
+                  <option value="status">Status</option>
+                </>
+              ) : (
+                <>
+                  <option value="month">Month</option>
+                  <option value="paidDays">Paid Days</option>
+                  <option value="salary">Net Salary</option>
+                  <option value="status">Status</option>
+                </>
+              )}
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { setSortDirection((direction) => direction === "asc" ? "desc" : "asc"); setCurrentPage(1); }}
+            >
+              {sortDirection === "asc" ? "Ascending" : "Descending"}
+            </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>

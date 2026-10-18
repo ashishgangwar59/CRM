@@ -7,6 +7,8 @@ export interface IPayroll extends Document {
   totalDays?: number; // e.g., 30
   salaryPeriodStart?: Date;
   salaryPeriodEnd?: Date;
+  designation?: string;
+  remarks?: string;
   
   // Earnings
   earnings: {
@@ -56,6 +58,8 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
     totalDays: { type: Number, default: 30 },
     salaryPeriodStart: { type: Date },
     salaryPeriodEnd: { type: Date },
+    designation: { type: String },
+    remarks: { type: String },
     
     earnings: {
       basic: { type: Number, default: 0 },
