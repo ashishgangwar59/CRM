@@ -16,6 +16,7 @@ export default function SalaryStructurePage() {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
+  const [employeeSearch, setEmployeeSearch] = useState("");
   const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
 
   const [formData, setFormData] = useState({
@@ -35,7 +36,7 @@ export default function SalaryStructurePage() {
 
   const fetchEmployees = async () => {
     try {
-      const empRes = await fetch("/api/employees?slim=true", { cache: 'no-store' });
+      const empRes = await fetch("/api/employees?slim=true&status=Active", { cache: 'no-store' });
       const empData = await empRes.json();
       if (empData.success) setEmployees(empData.data);
     } catch (e) {
@@ -163,6 +164,11 @@ export default function SalaryStructurePage() {
 
   const selectedEmployeeObj = employees.find(e => e._id === selectedEmp);
   const isBranchHead = selectedEmployeeObj?.designation?.toLowerCase().includes("branch head");
+  const filteredEmployees = employees.filter((employee) =>
+    `${employee.firstName || ""} ${employee.lastName || ""} ${employee.employeeCode || ""}`
+      .toLowerCase()
+      .includes(employeeSearch.trim().toLowerCase())
+  );
 
   return (
     <div className="space-y-6 w-full pb-10">
@@ -219,10 +225,16 @@ export default function SalaryStructurePage() {
         <Card className="md:col-span-1 h-[600px] overflow-y-auto">
           <CardHeader>
             <CardTitle>Employees</CardTitle>
+            <Input
+              placeholder="Search employee name or code..."
+              value={employeeSearch}
+              onChange={(e) => setEmployeeSearch(e.target.value)}
+              className="mt-2"
+            />
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {employees.map(emp => {
+              {filteredEmployees.map(emp => {
                 const hasStruct = structures.some(s => s.employeeId?._id === emp._id || s.employeeId === emp._id);
                 return (
                   <div

@@ -55,7 +55,7 @@ export default function PayrollDashboardPage() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("/api/employees?slim=true");
+      const res = await fetch("/api/employees?slim=true&status=Active");
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);

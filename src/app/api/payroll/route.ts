@@ -42,6 +42,17 @@ export async function GET(req: Request) {
       }
     }
 
+    // Keep resigned employees out of the admin/key-admin payroll list.
+    if (payload.role !== "Employee") {
+      const resignedEmployees = await Employee.find({ status: "Resigned" }).select("_id").lean();
+      if (resignedEmployees.length > 0) {
+        query.employeeId = {
+          ...(query.employeeId || {}),
+          $nin: resignedEmployees.map((employee) => employee._id),
+        };
+      }
+    }
+
     const payrolls = await Payroll.find(query)
       .populate("employeeId", "firstName lastName employeeCode department designation")
       .sort({ createdAt: -1 })
