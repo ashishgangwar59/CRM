@@ -7,6 +7,7 @@ import { LeaveBalance } from "@/lib/models/LeaveBalance";
 import { Payroll } from "@/lib/models/Payroll";
 import { Announcement } from "@/lib/models/Announcement";
 import { EmployeeTask } from "@/lib/models/EmployeeTask";
+import { SystemSettings } from "@/lib/models/SystemSettings";
 import { Holiday } from "@/lib/models/Holiday"; // Assuming we have this, or we can just mock upcoming if not
 import { User } from "@/lib/models/User";
 
@@ -83,11 +84,12 @@ export async function GET(req: Request) {
       value: value as number
     }));
 
-    // 4. Salary Summary & History (Show Approved and Paid slips)
-    const salaries = await Payroll.find({ employeeId, status: { $in: ["Approved", "Paid"] } })
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean();
+    // 4. Salary Summary & History (controlled by Admin/Key Admin settings)
+    const settings = await SystemSettings.findOne().select("payrollVisibility").lean();
+    const canViewSalaryHistory = settings?.payrollVisibility?.employeeCanViewSalarySlip !== false;
+    const salaries = canViewSalaryHistory
+      ? await Payroll.find({ employeeId, status: { $in: ["Approved", "Paid"] } }).sort({ createdAt: -1 }).limit(6).lean()
+      : [];
 
     const latestSalary = salaries[0] || null;
     const salaryHistory = salaries.map(s => ({

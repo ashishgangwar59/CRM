@@ -84,6 +84,9 @@ export interface ISystemSettings extends Document {
     email: string;
     backupTime: string; // e.g. "10:00"
   };
+  payrollVisibility: {
+    employeeCanViewSalarySlip: boolean;
+  };
 }
 
 const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
@@ -199,6 +202,9 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
     backupConfig: {
       email: { type: String, default: "admin@example.com" },
       backupTime: { type: String, default: "10:00" }
+    },
+    payrollVisibility: {
+      employeeCanViewSalarySlip: { type: Boolean, default: true }
     },
     letterTemplates: {
       offerLetter: {

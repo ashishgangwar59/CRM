@@ -4,6 +4,7 @@ import { Payroll } from "@/lib/models/Payroll";
 import { verifyAccessToken } from "@/lib/auth";
 import { User } from "@/lib/models/User";
 import { Employee } from "@/lib/models/Employee";
+import { SystemSettings } from "@/lib/models/SystemSettings";
 
 export async function GET(req: Request) {
   try {
@@ -25,6 +26,10 @@ export async function GET(req: Request) {
     }
 
     if (payload.role === "Employee") {
+      const settings = await SystemSettings.findOne().select("payrollVisibility").lean();
+      if (settings?.payrollVisibility?.employeeCanViewSalarySlip === false) {
+        return NextResponse.json({ success: true, data: [] });
+      }
       const user = await User.findById(payload.userId);
       if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
       const employee = await Employee.findOne({ email: user.email });
@@ -35,10 +40,6 @@ export async function GET(req: Request) {
         if (monthYear && monthYear < joiningMonth) return NextResponse.json({ success: true, data: [] });
         if (!monthYear) query.monthYear = { $gte: joiningMonth };
       }
-    } else if (monthYear) {
-      const monthEnd = new Date(`${monthYear}-31T23:59:59.999Z`);
-      const eligibleEmployees = await Employee.find({ $or: [{ dateOfJoining: { $exists: false } }, { dateOfJoining: null }, { dateOfJoining: { $lte: monthEnd } }] }).select("_id");
-      query.employeeId = { $in: eligibleEmployees.map(employee => employee._id) };
     }
 
     const payrolls = await Payroll.find(query)

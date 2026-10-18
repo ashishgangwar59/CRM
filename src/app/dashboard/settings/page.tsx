@@ -290,6 +290,27 @@ export default function SettingsPage() {
 
               {activeTab === "Company Profile" && (
                 <div className="space-y-4">
+                  <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+                    <h3 className="font-semibold text-zinc-900">Payroll Visibility</h3>
+                    <label className="mt-3 flex items-start gap-3 text-sm text-zinc-700">
+                      <input
+                        type="checkbox"
+                        className="mt-1 rounded border-zinc-300"
+                        checked={settings.payrollVisibility?.employeeCanViewSalarySlip ?? true}
+                        onChange={e => setSettings({
+                          ...settings,
+                          payrollVisibility: {
+                            ...settings.payrollVisibility,
+                            employeeCanViewSalarySlip: e.target.checked,
+                          },
+                        })}
+                      />
+                      <span>
+                        Show Salary History in the employee dashboard (including view and download).
+                        <span className="block text-xs text-zinc-500">Admin and Key Admin users can always access salary slips.</span>
+                      </span>
+                    </label>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Company Name</Label>

@@ -36,6 +36,7 @@ export default function PayrollDashboardPage() {
   const [salaryPeriodEnd, setSalaryPeriodEnd] = useState("");
   const [updatingDates, setUpdatingDates] = useState(false);
   const [approvingAll, setApprovingAll] = useState(false);
+  const [employeeCanViewSalarySlip, setEmployeeCanViewSalarySlip] = useState(true);
 
   const fetchPayrolls = async () => {
     setLoading(true);
@@ -73,6 +74,12 @@ export default function PayrollDashboardPage() {
         if (data.role !== "Employee") {
           fetchEmployees();
         } else {
+          fetch("/api/settings")
+            .then((settingsRes) => settingsRes.json())
+            .then((settingsData) => {
+              setEmployeeCanViewSalarySlip(settingsData.data?.payrollVisibility?.employeeCanViewSalarySlip ?? true);
+            })
+            .catch(() => setEmployeeCanViewSalarySlip(true));
           setMonthYear(""); // Show all slips for employee by default
         }
       }
@@ -222,16 +229,15 @@ export default function PayrollDashboardPage() {
   }, [payrolls, employees, monthYear]);
 
   const isEmployee = role === "Employee";
+  const salarySlipHidden = isEmployee && !employeeCanViewSalarySlip;
   const isEmployeeView = isEmployee || !monthYear;
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredPayrolls = payrolls.filter((p) => {
     const employee = p.employeeId;
     return !normalizedSearch || `${employee?.firstName || ""} ${employee?.lastName || ""} ${employee?.employeeCode || ""}`.toLowerCase().includes(normalizedSearch);
   });
-  const selectedMonthEnd = monthYear ? new Date(`${monthYear}-31T23:59:59.999Z`) : null;
   const filteredEmployees = employees.filter((emp) => {
-    const joinedBeforeMonthEnd = !selectedMonthEnd || !emp.dateOfJoining || new Date(emp.dateOfJoining) <= selectedMonthEnd;
-    return joinedBeforeMonthEnd && (!normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch));
+    return !normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch);
   });
 
   const compareValues = (a: any, b: any) => {
@@ -420,7 +426,13 @@ export default function PayrollDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading || role === null ? (
+              {salarySlipHidden ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-12 text-zinc-500">
+                    Salary slips are currently hidden by the administrator.
+                  </TableCell>
+                </TableRow>
+              ) : loading || role === null ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex items-center justify-center gap-3 text-zinc-500">

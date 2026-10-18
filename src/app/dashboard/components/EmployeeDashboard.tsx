@@ -159,6 +159,7 @@ export function EmployeeDashboard() {
             </Card>
           </div>
 
+          {data.salaryHistory && data.salaryHistory.length > 0 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Salary History</CardTitle>
@@ -194,6 +195,7 @@ export function EmployeeDashboard() {
               </Table>
             </CardContent>
           </Card>
+          )}
         </div>
 
         {/* Right Column (Social/Widgets) */}
