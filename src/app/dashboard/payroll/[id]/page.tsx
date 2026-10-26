@@ -351,8 +351,10 @@ export default function SalarySlipPage() {
             break-inside: avoid !important;
           }
           .printable-salary-slip-container > div {
-            width: 277mm !important;
-            transform: scale(0.76) !important;
+            width: 100% !important;
+            min-height: 297mm !important;
+            padding: 8mm !important;
+            transform: none !important;
             transform-origin: top left !important;
           }
           @page {
@@ -396,9 +398,9 @@ export default function SalarySlipPage() {
 
         
 
-        <div className="flex flex-wrap justify-end gap-2 w-full xl:w-auto">
+        <div className="flex flex-wrap justify-end gap-1 w-full xl:w-auto">
           {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
-            <div className="flex flex-wrap items-end gap-2 mr-2">
+            <div className="flex flex-wrap items-end gap-2 mr-2 flex-2">
               <div><label className="block text-[10px] font-semibold text-zinc-500">Designation</label><Input className="h-9 w-40" value={designation} onChange={(e) => setDesignation(e.target.value)} /></div>
               <div><label className="block text-[10px] font-semibold text-zinc-500">Remarks</label><Input className="h-9 w-48" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional remark" /></div>
               <Button variant="outline" className="h-9" onClick={handleSaveSlipDetails}>Save Details</Button>
@@ -443,21 +445,21 @@ export default function SalarySlipPage() {
             <Printer className="mr-2 h-4 w-4" /> Print / Save PDF
           </Button>
 
-          {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
+          {/* {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
             <Button onClick={handleEmail}>
               <Mail className="mr-2 h-4 w-4" /> Email PDF
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 
       {/* The Printable Slip Area */}
-      <div className="bg-white text-black rounded-sm shadow-xl border border-zinc-200 printable-salary-slip-container w-full max-w-[800px] min-h-[1131px] mx-auto">
-        <div ref={slipRef} className="p-5 w-full h-full bg-white relative">
+      <div className="bg-white  rounded-none shadow-xl border-2 border-zinc-700 printable-salary-slip-container w-full max-w-[820px] min-h-[1131px] mx-auto my-4 p-2 sm:p-4 print:my-0 print:p-0">
+        <div ref={slipRef} className="p-4 sm:p-6 w-full h-full bg-white relative">
           {/* Header Area */}
-          <div className="relative flex justify-between items-start border-b-2 pb-6 mb-8">
+          <div className="relative flex justify-between items-start border-2 border-zinc-700 pb-0 mb-0 min-h-[92px]">
             <div className="flex items-center space-x-4">
-              <div className="h-18 w-18 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+              <div className="h-20 w-24 bg-white flex items-center justify-center overflow-hidden border-r-2 border-zinc-700 px-2">
                 <img
                   src="/logo.png"
                   alt="Company Logo"
@@ -465,18 +467,18 @@ export default function SalarySlipPage() {
                 />
               </div>
               <div>
-                <h2 className="text-xl font-black text-[#134086] tracking-tight">
+                <h2 className="text-xl font-black  tracking-tight text-[#134086] ">
                   {companyProfile.name}
                 </h2>
               </div>
             </div>
             <div className="absolute left-1/2 top-12 -translate-x-1/2 whitespace-nowrap">
-              <span className="text-[10px] font-black tracking-widest text-[#134086]">
+              <span className="text-[10px] font-black tracking-widest text-[#134086] ">
                 PAYSLIP FOR {monthNameStr}
               </span>
             </div>
             <div className="text-right">
-              <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider">
+              <p className="text-xs text-zinc-700 font-bold uppercase tracking-wider">
                 Document Ref
               </p>
               <p className="text-sm font-mono text-zinc-800 font-medium">
@@ -486,24 +488,24 @@ export default function SalarySlipPage() {
           </div>
 
           {/* Employee Details Area */}
-          <div className="flex items-start justify-between bg-zinc-50 p-6 rounded-lg mb-8 border border-zinc-100">
+          <div className="flex items-start justify-between bg-white p-0 rounded-none mb-4 border-x-2 border-b-2 border-zinc-700">
             <div className="flex space-x-6">
               {/* Employee Photo */}
 
-              <div className="grid grid-cols-4 gap-x-8 gap-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 w-full [&>div]:border-b [&>div]:border-r [&>div]:border-zinc-700 [&>div]:p-2">
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                  <p className="text-[12px] text-zinc-500 uppercase tracking-wider font-semibold">
                     Employee Name
                   </p>
-                  <p className="font-bold text-base text-zinc-900">
+                  <p className="font-bold text-[13px] text-zinc-900">
                     {emp.firstName} {emp.lastName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                  <p className="text-[12px] text-zinc-500 uppercase tracking-wider font-semibold">
                     Employee Code
                   </p>
-                  <p className="font-bold text-base text-zinc-900">
+                  <p className="font-bold text-[13px] text-zinc-900">
                     {emp.employeeCode}
                   </p>
                 </div>
@@ -577,13 +579,13 @@ export default function SalarySlipPage() {
           </div>
 
           {/* Salary Structure Table */}
-          <div className="grid grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-2 gap-0 mb-4 border-2 border-zinc-700 divide-x-2 divide-zinc-700">
             {/* Earnings */}
             <div>
-              <h4 className="font-black border-b-2 border-emerald-600 pb-2 mb-4 text-emerald-800 uppercase tracking-wider text-sm">
-                Earnings
+              <h4 className="font-black border-b border-zinc-700 bg-white pb-2 mb-0 px-2 text-zinc-900 uppercase tracking-wider text-sm">
+                Earnings <span className="float-right text-[10px] tracking-normal">Actual&nbsp;&nbsp;&nbsp;Earned</span>
               </h4>
-              <div className="space-y-4">
+              <div className="space-y-0 divide-y divide-zinc-300 p-2 min-h-[230px]">
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-700">Basic Salary</span>
                   <span className="font-bold">
@@ -609,7 +611,7 @@ export default function SalarySlipPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-700">Individual Performance</span>
+                  <span className="text-zinc-700">Individual Incentive</span>
                   <span className="font-bold">
                     ₹
                     {(payroll.earnings.personalIncentive || 0).toLocaleString()}
@@ -641,10 +643,10 @@ export default function SalarySlipPage() {
 
             {/* Deductions */}
             <div>
-              <h4 className="font-black border-b-2 border-rose-600 pb-2 mb-4 text-rose-800 uppercase tracking-wider text-sm">
-                Deductions
+              <h4 className="font-black border-b border-zinc-700 bg-white pb-2 mb-0 px-2 text-zinc-900 uppercase tracking-wider text-sm">
+                Deductions <span className="float-right text-[10px] tracking-normal">Actual&nbsp;&nbsp;&nbsp;Earned</span>
               </h4>
-              <div className="space-y-4">
+              <div className="space-y-0 divide-y divide-zinc-300 p-2 min-h-[230px]">
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-700">Provident Fund (PF)</span>
                   <span className="font-bold text-rose-700">
@@ -708,8 +710,7 @@ export default function SalarySlipPage() {
           </div>
 
           {/* Net Pay Banner */}
-          <div className="bg-white text-zinc-900 rounded-md p-6 flex flex-col md:flex-row justify-between items-center relative overflow-hidden mb-8 shadow-sm border border-zinc-200 print:border-black print:shadow-none">
-            <div className="absolute right-0 top-0 opacity-10 h-full w-1/2 bg-gradient-to-l from-zinc-200 to-transparent pointer-events-none"></div>
+          <div className="bg-white text-zinc-900 rounded-none p-3 flex flex-col md:flex-row justify-between items-center relative overflow-hidden mb-8 border-2 border-zinc-700 print:border-black print:shadow-none">
             <div>
               <p className="font-bold uppercase tracking-widest text-sm mb-1 text-zinc-700">
                 Net Salary Payable
@@ -724,8 +725,8 @@ export default function SalarySlipPage() {
             </div>
           </div>
 
-          <div className="mb-12 border-l-4 border-emerald-500 pl-4 bg-emerald-50 p-3 text-emerald-900 font-semibold text-sm">
-            <span className="uppercase text-xs tracking-wider text-emerald-700 block mb-1">
+          <div className="mb-12 border border-zinc-700 pl-4 bg-white p-3 text-zinc-900 font-semibold text-sm">
+              <span className="uppercase text-xs tracking-wider text-zinc-700 block mb-1">
               Amount In Words
             </span>
             Rupees {numberToWords(Math.round(payroll.netSalary))}

@@ -310,8 +310,9 @@ export default function OfferLetterPage() {
                       <div className="flex justify-between items-end mt-4">
                         <div>
                           <p className="font-bold mb-4">AUTHORISED SIGNATORY</p>
+                          <p>Head </p>
+                          <p>Human Resource</p>
                           <p>Date: {formattedOfferDate}</p>
-                          <p>Designation: Head Human Resource </p>
                         </div>
                         <div className="text-center">
                           <p className="font-bold mb-8">EMPLOYEE ACCEPTANCE</p>
@@ -444,7 +445,7 @@ export default function OfferLetterPage() {
 
                 <tr className="hover:bg-zinc-50">
                   <td className="border border-zinc-200 p-2 text-zinc-700">
-                    Team Performance Structure
+                    Team Performance Incentive
                   </td>
                   <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
                     {employee.salaryStructure.teamPerformanceStructure || "-"}
