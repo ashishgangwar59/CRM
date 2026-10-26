@@ -49,6 +49,7 @@ export default function EditEmployeePage() {
     bloodGroup: "",
     maritalStatus: "",
     dateOfJoining: "",
+    offerLetterDate: "",
     workLocation: "",
     status: "Active",
     employeeType: "Full-Time",
@@ -116,6 +117,7 @@ export default function EditEmployeePage() {
             bloodGroup: emp.bloodGroup || "",
             maritalStatus: emp.maritalStatus || "",
             dateOfJoining: emp.dateOfJoining ? new Date(emp.dateOfJoining).toISOString().split('T')[0] : "",
+            offerLetterDate: emp.offerLetterDate ? new Date(emp.offerLetterDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             workLocation: emp.workLocation || "",
             status: emp.status || "Active",
             employeeType: emp.employeeType || "Full-Time",
@@ -591,6 +593,10 @@ export default function EditEmployeePage() {
                     <div className="space-y-2">
                       <Label htmlFor="dateOfJoining">Date of Joining</Label>
                       <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="offerLetterDate">Offer Letter Date</Label>
+                      <Input id="offerLetterDate" type="date" value={formData.offerLetterDate} onChange={(e) => handleChange("offerLetterDate", e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="workLocation">Work Location / Branch</Label>

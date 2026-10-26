@@ -24,6 +24,7 @@ export interface IEmployee extends Document {
   designation?: string;
   reportingManager?: string;
   dateOfJoining?: Date;
+  offerLetterDate?: Date;
   workLocation?: string;
   createdBy?: mongoose.Types.ObjectId;
 
@@ -135,6 +136,7 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
     designation: { type: String },
     reportingManager: { type: String },
     dateOfJoining: { type: Date },
+    offerLetterDate: { type: Date },
     workLocation: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
 

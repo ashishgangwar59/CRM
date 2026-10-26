@@ -38,6 +38,7 @@ export default function NewEmployeePage() {
     bloodGroup: "",
     maritalStatus: "",
     dateOfJoining: "",
+    offerLetterDate: new Date().toISOString().split("T")[0],
     workLocation: "",
     status: "Active",
     employeeType: "Full-Time",
@@ -409,6 +410,10 @@ export default function NewEmployeePage() {
                 <div className="space-y-2">
                   <Label htmlFor="dateOfJoining">Joined Date</Label>
                   <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offerLetterDate">Offer Letter Date</Label>
+                  <Input id="offerLetterDate" type="date" value={formData.offerLetterDate} onChange={(e) => handleChange("offerLetterDate", e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="workLocation">Work Location</Label>

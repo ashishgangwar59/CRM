@@ -9,7 +9,11 @@ const Header = () => (
   <div className="px-10 pt-5 pb-5 z-11 flex items-center justify-between relative mb-6 shrink-0">
     <div className="absolute bottom-0 left-10 right-10 h-[3px] bg-gradient-to-r from-[#134086] via-[#D4AF37] to-[#134086]"></div>
     <div className="flex items-center gap-6">
-      <img src="/logo.png" alt="Niventra Logo" className="h-24 object-contain drop-shadow-md" />
+      <img
+        src="/logo.png"
+        alt="Niventra Logo"
+        className="h-24 object-contain drop-shadow-md"
+      />
     </div>
     <div className="text-right flex flex-col justify-center">
       <h1 className="text-[26px] font-serif font-black text-[#134086] tracking-wider uppercase leading-tight drop-shadow-md">
@@ -33,16 +37,27 @@ const Footer = ({
   address = "",
   phone = "",
   email = "",
-  website = ""
-}: { address?: string; phone?: string; email?: string; website?: string }) => (
+  website = "",
+}: {
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+}) => (
   <div className="mt-auto z-10 relative shrink-0">
     <div className="absolute top-0 left-10 right-10 h-[2px] bg-gradient-to-r from-[#134086] via-[#D4AF37] to-[#134086]"></div>
     <div className="px-10 pt-4 pb-8 flex justify-between items-center text-[#134086] text-[11px] font-medium">
       <div className="flex-1 flex flex-col justify-center space-y-3">
         <div className="flex items-center gap-6 text-[12px]">
-          <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {phone}</span>
-          <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {email}</span>
-          <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> {website}</span>
+          <span className="flex items-center gap-1.5">
+            <Phone className="w-3.5 h-3.5" /> {phone}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Mail className="w-3.5 h-3.5" /> {email}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5" /> {website}
+          </span>
         </div>
         <div className="flex items-start gap-1.5 text-zinc-600">
           <MapPin className="w-4 h-4 shrink-0 text-[#134086]" />
@@ -50,7 +65,11 @@ const Footer = ({
         </div>
       </div>
       <div className="w-[72px] h-[72px] p-1.5 bg-white border border-zinc-200 shadow-sm rounded-md shrink-0 flex items-center justify-center">
-        <QRCodeSVG value="https://www.niventracapitaladvisory.com" size={60} fgColor="#134086" />
+        <QRCodeSVG
+          value="https://www.niventracapitaladvisory.com"
+          size={60}
+          fgColor="#134086"
+        />
       </div>
     </div>
   </div>
@@ -71,8 +90,8 @@ export default function OfferLetterPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/employees/${id}`).then(res => res.json()),
-      fetch(`/api/settings`).then(res => res.json())
+      fetch(`/api/employees/${id}`).then((res) => res.json()),
+      fetch(`/api/settings`).then((res) => res.json()),
     ])
       .then(([empData, settingsData]) => {
         if (empData.success) {
@@ -86,25 +105,44 @@ export default function OfferLetterPage() {
       .catch(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div>;
-  if (!employee) return <div className="text-center p-12 text-rose-500 font-bold text-xl">Employee not found.</div>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  if (!employee)
+    return (
+      <div className="text-center p-12 text-rose-500 font-bold text-xl">
+        Employee not found.
+      </div>
+    );
 
   const handlePrint = () => {
     window.print();
   };
 
-  const today = new Date().toLocaleDateString('en-IN', {
-    day: '2-digit', month: '2-digit', year: 'numeric'
-  });
+  const formattedOfferDate = employee.offerLetterDate
+    ? new Date(employee.offerLetterDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 
   const joiningDate = employee.dateOfJoining
-    ? new Date(employee.dateOfJoining).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(employee.dateOfJoining).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
     : "";
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @media print {
           @page { margin: 0; size: A4; }
           body { 
@@ -113,7 +151,9 @@ export default function OfferLetterPage() {
             background: white !important;
           }
         }
-      `}} />
+      `,
+        }}
+      />
       <div className="min-h-screen bg-gray-100 py-8 print:py-0 print:bg-white">
         {/* Non-printable header */}
         <div className="max-w-4xl mx-auto mb-4 flex justify-end print:hidden">
@@ -127,15 +167,21 @@ export default function OfferLetterPage() {
 
         {/* DYNAMIC OFFER LETTER PAGES */}
         {Object.keys(settings?.letterTemplates?.offerLetter || {})
-          .filter(k => k.startsWith('page'))
-          .sort((a, b) => (parseInt(a.replace('page', '')) || 0) - (parseInt(b.replace('page', '')) || 0))
+          .filter((k) => k.startsWith("page"))
+          .sort(
+            (a, b) =>
+              (parseInt(a.replace("page", "")) || 0) -
+              (parseInt(b.replace("page", "")) || 0),
+          )
           .map((pageKey, index, array) => {
             const isFirstPage = index === 0;
             const isLastPage = index === array.length - 1;
 
             return (
               <div key={pageKey}>
-                {index > 0 && <div className="page-break print:break-before-page" />}
+                {index > 0 && (
+                  <div className="page-break print:break-before-page" />
+                )}
                 <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-lg print:shadow-none print:w-[210mm] print:h-[297mm] text-zinc-900 text-[13px] leading-relaxed font-sans relative flex flex-col mb-8 print:mb-0 overflow-hidden box-border pt-0">
                   <Watermark />
                   <Header />
@@ -144,28 +190,104 @@ export default function OfferLetterPage() {
                     {isFirstPage && (
                       <>
                         <div className="mb-6 space-y-1">
-                          <div className="flex"><span className="w-48 font-bold">OFFER LETTER NO.</span><span>: NIV/HR/{new Date().getFullYear()}/OL-{employee.employeeCode || "NEW"}</span></div>
-                          <div className="flex"><span className="w-48 font-bold">EMPLOYEE ID</span><span>: {employee.employeeCode || `NIV/EMP/${new Date().getFullYear()}/NEW`}</span></div>
-                          <div className="flex"><span className="w-48 font-bold">DATE</span><span>: {today}</span></div>
-                          <div className="flex"><span className="w-48 font-bold">DESIGNATION</span><span>: {employee.designation || "__________________"}</span></div>
+                          <div className="flex">
+                            <span className="w-48 font-bold">
+                              OFFER LETTER NO.
+                            </span>
+                            <span>
+                              : NIV/HR/{new Date().getFullYear()}/OL-
+                              {employee.employeeCode || "NEW"}
+                            </span>
+                          </div>
+                          <div className="flex">
+                            <span className="w-48 font-bold">EMPLOYEE ID</span>
+                            <span>
+                              :{" "}
+                              {employee.employeeCode ||
+                                `NIV/EMP/${new Date().getFullYear()}/NEW`}
+                            </span>
+                          </div>
+                          <div className="flex">
+                            <span className="w-48 font-bold">Date</span>
+                            <span>: {" "}
+                              {formattedOfferDate}
+                            </span>
+                          </div>
+                          <div className="flex">
+                            <span className="w-48 font-bold">DESIGNATION</span>
+                            <span>
+                              : {employee.designation || "__________________"}
+                            </span>
+                          </div>
                         </div>
 
-                        <h2 className="text-center font-bold underline uppercase text-lg mb-4">OFFER LETTER</h2>
+                        <h2 className="text-center font-bold underline uppercase text-lg mb-4">
+                          OFFER LETTER
+                        </h2>
 
                         <p className="mb-2">
-                          Dear Mr./Ms. <strong>{employee.firstName} {employee.lastName}</strong>,
+                          Dear Mr./Ms.{" "}
+                          <strong>
+                            {employee.firstName} {employee.lastName}
+                          </strong>
+                          ,
                         </p>
                         <p className="mb-4">
-                          We are pleased to offer you the position of <strong>{employee.designation || "__________________"}</strong> with {settings?.companyProfile?.name || "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}, subject to this Offer Letter, applicable employment terms, Company policies and applicable law.
+                          We are pleased to offer you the position of{" "}
+                          <strong>
+                            {employee.designation || "__________________"}
+                          </strong>{" "}
+                          with{" "}
+                          {settings?.companyProfile?.name ||
+                            "NIVENTRA CAPITAL ADVISORY INDIA PVT LTD"}
+                          , subject to this Offer Letter, applicable employment
+                          terms, Company policies and applicable law.
                         </p>
 
-                        <h3 className="font-bold underline uppercase mb-2">EMPLOYEE DETAILS</h3>
+                        <h3 className="font-bold underline uppercase mb-2">
+                          EMPLOYEE DETAILS
+                        </h3>
                         <table className="w-full mb-4">
                           <tbody>
-                            <tr><td className="w-48 py-0.5">Candidate Name</td><td>: <strong>{employee.firstName} {employee.lastName}</strong></td></tr>
-                            <tr><td className="w-48 py-0.5">Father/Mother Name</td><td>: <strong>{employee.fatherOrMotherName || "__________________"}</strong></td></tr>
-                            <tr><td className="w-48 py-0.5">Designation</td><td>: <strong>{employee.designation || "__________________"}</strong></td></tr>
-                            <tr><td className="w-48 py-0.5">Date of Joining</td><td>: <strong>{joiningDate || "___ / ___ / 2026"}</strong></td></tr>
+                            <tr>
+                              <td className="w-48 py-0.5">Candidate Name</td>
+                              <td>
+                                :{" "}
+                                <strong>
+                                  {employee.firstName} {employee.lastName}
+                                </strong>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="w-48 py-0.5">
+                                Father/Mother Name
+                              </td>
+                              <td>
+                                :{" "}
+                                <strong>
+                                  {employee.fatherOrMotherName ||
+                                    "__________________"}
+                                </strong>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="w-48 py-0.5">Designation</td>
+                              <td>
+                                :{" "}
+                                <strong>
+                                  {employee.designation || "__________________"}
+                                </strong>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="w-48 py-0.5">Date of Joining</td>
+                              <td>
+                                :{" "}
+                                <strong>
+                                  {joiningDate || "___ / ___ / 2026"}
+                                </strong>
+                              </td>
+                            </tr>
                           </tbody>
                         </table>
                       </>
@@ -174,8 +296,13 @@ export default function OfferLetterPage() {
                     <div
                       className="text-justify"
                       dangerouslySetInnerHTML={{
-                        __html: (settings?.letterTemplates?.offerLetter?.[pageKey] || "")
-                          .replace(/\{\{employeeName\}\}/g, `${employee.firstName} ${employee.lastName}`)
+                        __html: (
+                          settings?.letterTemplates?.offerLetter?.[pageKey] ||
+                          ""
+                        ).replace(
+                          /\{\{employeeName\}\}/g,
+                          `${employee.firstName} ${employee.lastName}`,
+                        ),
                       }}
                     />
 
@@ -183,13 +310,15 @@ export default function OfferLetterPage() {
                       <div className="flex justify-between items-end mt-4">
                         <div>
                           <p className="font-bold mb-4">AUTHORISED SIGNATORY</p>
-                          <p>Date: {today}</p>
-                          <p>Designation: HR HEAD</p>
+                          <p>Date: {formattedOfferDate}</p>
+                          <p>Designation: Head Human Resource </p>
                         </div>
                         <div className="text-center">
                           <p className="font-bold mb-8">EMPLOYEE ACCEPTANCE</p>
                           <p>___________________________</p>
-                          <p className="text-sm mt-1">{employee.firstName} {employee.lastName}</p>
+                          <p className="text-sm mt-1">
+                            {employee.firstName} {employee.lastName}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -214,55 +343,263 @@ export default function OfferLetterPage() {
           <Header />
 
           <div className="px-10 flex-1 z-10 mt-[-10px]">
-            <h2 className="text-center font-bold underline uppercase text-lg mb-2">SALARY STRUCTURE</h2>
+            <h2 className="text-center font-bold underline uppercase text-lg mb-2">
+              SALARY STRUCTURE
+            </h2>
             <table className="w-full mb-3 ">
               <tbody>
-                <tr><td className="w-48 py-1">Name</td><td>: <strong>{employee.firstName} {employee.lastName}</strong></td></tr>
-                <tr><td className="w-48 py-1">Designation</td><td>: <strong>{employee.designation || "__________________"}</strong></td></tr>
-                <tr><td className="w-48 py-1">Department</td><td>: <strong>{employee.department || "__________________"}</strong></td></tr>
-                <tr><td className="w-48 py-1">CTC per Annum</td><td>: <strong>{employee.salaryStructure?.ctcPerAnnum ? `Rs. ${employee.salaryStructure.ctcPerAnnum}` : "__________________"}</strong></td></tr>
+                <tr>
+                  <td className="w-48 py-1">Name</td>
+                  <td>
+                    :{" "}
+                    <strong>
+                      {employee.firstName} {employee.lastName}
+                    </strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-48 py-1">Designation</td>
+                  <td>
+                    :{" "}
+                    <strong>
+                      {employee.designation || "__________________"}
+                    </strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-48 py-1">Department</td>
+                  <td>
+                    :{" "}
+                    <strong>
+                      {employee.department || "__________________"}
+                    </strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-48 py-1">CTC per Annum</td>
+                  <td>
+                    :{" "}
+                    <strong>
+                      {employee.salaryStructure?.ctcPerAnnum
+                        ? `Rs. ${employee.salaryStructure.ctcPerAnnum}`
+                        : "__________________"}
+                    </strong>
+                  </td>
+                </tr>
               </tbody>
             </table>
 
             <table className="w-full border-collapse mb-4 shadow-sm zoom-[0.63]">
               <thead>
                 <tr>
-                  <th className="bg-[#134086] text-white border border-[#134086] p-2 text-left font-semibold uppercase tracking-wider text-xs">Salary Breakup : Per Month</th>
-                  <th className="bg-[#134086] text-white border border-[#134086] p-2 text-right font-semibold uppercase tracking-wider text-xs w-48">Amount (₹)</th>
+                  <th className="bg-[#134086] text-white border border-[#134086] p-2 text-left font-semibold uppercase tracking-wider text-xs">
+                    Salary Breakup : Per Month
+                  </th>
+                  <th className="bg-[#134086] text-white border border-[#134086] p-2 text-right font-semibold uppercase tracking-wider text-xs w-48">
+                    Amount (₹)
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-sm">
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Basic Salary</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.basic || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">HRA</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.hra || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Transport allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.conveyance || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Medical Allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.medicalAllowance || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Special Allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.specialAllowance || "-"}</td></tr>
-               
-                  <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Team Performance Structure</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure.teamPerformanceStructure || "-"}</td></tr>
-                  <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Personal Performance Incentive</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure.personalPerformanceIncentive || "-"}</td></tr>
-                <tr className="bg-zinc-100 font-bold"><td className="border border-zinc-200 p-2 text-[#134086]">A. Monthly Gross</td><td className="border border-zinc-200 p-2 text-right text-[#134086]"></td></tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    Basic Salary
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.basic || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    HRA
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.hra || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    Transport allowance
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.conveyance || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    Medical Allowance
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.medicalAllowance || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    Special Allowance
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.specialAllowance || "-"}
+                  </td>
+                </tr>
 
-                <tr><td className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold" colSpan={2}>Benefits</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 pl-4">P.F.</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.pf || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 pl-4">E.S.I.</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.esi || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 pl-4">Insurance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.insurance || "-"}</td></tr>
-                <tr className="bg-zinc-100 font-bold"><td className="border border-zinc-200 p-2 text-[#134086]">B. Total Benefits</td><td className="border border-zinc-200 p-2 text-right text-[#134086]"></td></tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    Team Performance Structure
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure.teamPerformanceStructure || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700">
+                    Personal Performance Incentive
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure.personalPerformanceIncentive ||
+                      "-"}
+                  </td>
+                </tr>
+                <tr className="bg-zinc-100 font-bold">
+                  <td className="border border-zinc-200 p-2 text-[#134086]">
+                    A. Monthly Gross
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right text-[#134086]"></td>
+                </tr>
 
-                <tr><td className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold" colSpan={2}>Liabilities</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 pl-4">Leaves</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.leaves || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 pl-4">L.T.A.</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.lta || "-"}</td></tr>
-                <tr className="bg-zinc-100 font-bold"><td className="border border-zinc-200 p-2 text-[#134086]">C. Total Liabilities</td><td className="border border-zinc-200 p-2 text-right text-[#134086]"></td></tr>
+                <tr>
+                  <td
+                    className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold"
+                    colSpan={2}
+                  >
+                    Benefits
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700 pl-4">
+                    P.F.
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.pf || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700 pl-4">
+                    E.S.I.
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.esi || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700 pl-4">
+                    Insurance
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.insurance || "-"}
+                  </td>
+                </tr>
+                <tr className="bg-zinc-100 font-bold">
+                  <td className="border border-zinc-200 p-2 text-[#134086]">
+                    B. Total Benefits
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right text-[#134086]"></td>
+                </tr>
 
-                <tr className="bg-[#134086]/10 font-bold"><td className="border border-zinc-200 p-2 text-[#134086]">D. CTC per Annum (A + B + C)</td><td className="border border-zinc-200 p-2 text-right text-[#134086] text-base">{employee.salaryStructure?.ctcPerAnnum ? `Rs. ${employee.salaryStructure.ctcPerAnnum}` : "-"}</td></tr>
+                <tr>
+                  <td
+                    className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold"
+                    colSpan={2}
+                  >
+                    Liabilities
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700 pl-4">
+                    Leaves
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.leaves || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-zinc-700 pl-4">
+                    L.T.A.
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
+                    {employee.salaryStructure?.lta || "-"}
+                  </td>
+                </tr>
+                <tr className="bg-zinc-100 font-bold">
+                  <td className="border border-zinc-200 p-2 text-[#134086]">
+                    C. Total Liabilities
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right text-[#134086]"></td>
+                </tr>
 
-                <tr><td className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold" colSpan={2}>Deductions</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-rose-700 pl-4">P.F.</td><td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">{employee.salaryStructure?.pf || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-rose-700 pl-4">Professional Tax</td><td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">{employee.salaryStructure?.professionalTax || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-rose-700 pl-4">E.S.I.</td><td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">{employee.salaryStructure?.esi || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-rose-700 pl-4">*Income Tax (TDS)</td><td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">{employee.salaryStructure?.tds || "-"}</td></tr>
-                <tr className="bg-rose-50 font-bold"><td className="border border-zinc-200 p-2 text-rose-800">E. Total Deductions</td><td className="border border-zinc-200 p-2 text-right text-rose-800"></td></tr>
+                <tr className="bg-[#134086]/10 font-bold">
+                  <td className="border border-zinc-200 p-2 text-[#134086]">
+                    D. CTC per Annum (A + B + C)
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right text-[#134086] text-base">
+                    {employee.salaryStructure?.ctcPerAnnum
+                      ? `Rs. ${employee.salaryStructure.ctcPerAnnum}`
+                      : "-"}
+                  </td>
+                </tr>
 
-                <tr className="bg-[#134086] font-bold text-white"><td className="border border-[#134086] p-3 text-lg uppercase tracking-wider">F. Net Take Home (A - E)</td><td className="border border-[#134086] p-3 text-right text-lg"></td></tr>
+                <tr>
+                  <td
+                    className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold"
+                    colSpan={2}
+                  >
+                    Deductions
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-rose-700 pl-4">
+                    P.F.
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">
+                    {employee.salaryStructure?.pf || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-rose-700 pl-4">
+                    Professional Tax
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">
+                    {employee.salaryStructure?.professionalTax || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-rose-700 pl-4">
+                    E.S.I.
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">
+                    {employee.salaryStructure?.esi || "-"}
+                  </td>
+                </tr>
+                <tr className="hover:bg-zinc-50">
+                  <td className="border border-zinc-200 p-2 text-rose-700 pl-4">
+                    *Income Tax (TDS)
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right font-medium text-rose-700">
+                    {employee.salaryStructure?.tds || "-"}
+                  </td>
+                </tr>
+                <tr className="bg-rose-50 font-bold">
+                  <td className="border border-zinc-200 p-2 text-rose-800">
+                    E. Total Deductions
+                  </td>
+                  <td className="border border-zinc-200 p-2 text-right text-rose-800"></td>
+                </tr>
+
+                <tr className="bg-[#134086] font-bold text-white">
+                  <td className="border border-[#134086] p-3 text-lg uppercase tracking-wider">
+                    F. Net Take Home (A - E)
+                  </td>
+                  <td className="border border-[#134086] p-3 text-right text-lg"></td>
+                </tr>
               </tbody>
             </table>
 
@@ -318,7 +655,6 @@ export default function OfferLetterPage() {
             website={settings?.companyProfile?.website}
           />
         </div> */}
-
       </div>
     </>
   );
