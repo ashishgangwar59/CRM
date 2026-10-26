@@ -61,7 +61,7 @@ export default function EditEmployeePage() {
     emergencyContact: { name: "", relation: "", phone: "" },
     salaryStructure: {
       ctcPerAnnum: "", basic: "", hra: "", conveyance: "", medicalAllowance: "",
-      specialAllowance: "", incentive: "", pf: "", esi: "", insurance: "", leaves: "",
+      specialAllowance: "", incentive: "", teamPerformanceStructure: "", personalPerformanceIncentive: "", pf: "", esi: "", insurance: "", leaves: "",
       lta: "", professionalTax: "", tds: ""
     },
     profilePhotoUrl: "",
@@ -147,6 +147,8 @@ export default function EditEmployeePage() {
               medicalAllowance: emp.salaryStructure?.medicalAllowance || "",
               specialAllowance: emp.salaryStructure?.specialAllowance || "",
               incentive: emp.salaryStructure?.incentive || "",
+              teamPerformanceStructure: emp.salaryStructure?.teamPerformanceStructure || "",
+              personalPerformanceIncentive: emp.salaryStructure?.personalPerformanceIncentive || "",
               pf: emp.salaryStructure?.pf || "",
               esi: emp.salaryStructure?.esi || "",
               insurance: emp.salaryStructure?.insurance || "",
@@ -588,7 +590,7 @@ export default function EditEmployeePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dateOfJoining">Date of Joining</Label>
-                      <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} min={new Date().toISOString().split("T")[0]} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
+                      <Input id="dateOfJoining" type="date" value={formData.dateOfJoining} onChange={(e) => handleChange("dateOfJoining", e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="workLocation">Work Location / Branch</Label>
@@ -632,8 +634,12 @@ export default function EditEmployeePage() {
                       <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="sal_incentive">Incentive</Label>
-                      <Input id="sal_incentive" value={formData.salaryStructure.incentive || ""} onChange={(e) => handleChange("salaryStructure.incentive", e.target.value)} />
+                      <Label htmlFor="sal_team_performance">Team Performance Structure</Label>
+                      <Input id="sal_team_performance" value={formData.salaryStructure.teamPerformanceStructure} onChange={(e) => handleChange("salaryStructure.teamPerformanceStructure", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sal_personal_performance">Personal Performance Incentive</Label>
+                      <Input id="sal_personal_performance" value={formData.salaryStructure.personalPerformanceIncentive} onChange={(e) => handleChange("salaryStructure.personalPerformanceIncentive", e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="sal_pf">P.F. Deduction</Label>

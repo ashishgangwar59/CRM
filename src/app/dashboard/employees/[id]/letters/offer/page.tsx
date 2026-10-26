@@ -183,7 +183,6 @@ export default function OfferLetterPage() {
                       <div className="flex justify-between items-end mt-4">
                         <div>
                           <p className="font-bold mb-4">AUTHORISED SIGNATORY</p>
-                          <p>Name: CS KATARIA</p>
                           <p>Date: {today}</p>
                           <p>Designation: HR HEAD</p>
                         </div>
@@ -225,7 +224,7 @@ export default function OfferLetterPage() {
               </tbody>
             </table>
 
-            <table className="w-full border-collapse mb-4 shadow-sm zoom-[0.65]">
+            <table className="w-full border-collapse mb-4 shadow-sm zoom-[0.63]">
               <thead>
                 <tr>
                   <th className="bg-[#134086] text-white border border-[#134086] p-2 text-left font-semibold uppercase tracking-wider text-xs">Salary Breakup : Per Month</th>
@@ -235,12 +234,12 @@ export default function OfferLetterPage() {
               <tbody className="text-sm">
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Basic Salary</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.basic || "-"}</td></tr>
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">HRA</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.hra || "-"}</td></tr>
-                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Conveyance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.conveyance || "-"}</td></tr>
+                <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Transport allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.conveyance || "-"}</td></tr>
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Medical Allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.medicalAllowance || "-"}</td></tr>
                 <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Special Allowance</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure?.specialAllowance || "-"}</td></tr>
-                {employee.salaryStructure?.incentive && (
-                  <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700 font-semibold text-emerald-700">Incentive</td><td className="border border-zinc-200 p-2 text-right font-semibold text-emerald-700">{employee.salaryStructure.incentive}</td></tr>
-                )}
+               
+                  <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Team Performance Structure</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure.teamPerformanceStructure || "-"}</td></tr>
+                  <tr className="hover:bg-zinc-50"><td className="border border-zinc-200 p-2 text-zinc-700">Personal Performance Incentive</td><td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">{employee.salaryStructure.personalPerformanceIncentive || "-"}</td></tr>
                 <tr className="bg-zinc-100 font-bold"><td className="border border-zinc-200 p-2 text-[#134086]">A. Monthly Gross</td><td className="border border-zinc-200 p-2 text-right text-[#134086]"></td></tr>
 
                 <tr><td className="border border-zinc-200 p-2 bg-zinc-50 text-xs text-zinc-500 uppercase tracking-wider font-bold" colSpan={2}>Benefits</td></tr>
@@ -267,7 +266,7 @@ export default function OfferLetterPage() {
               </tbody>
             </table>
 
-            <div className="text-sm space-y-1 mt-4">
+            <div className="text-sm space-y-1 mt-2">
               <p>• Income Tax (TDS) Applicable</p>
               <p>• Take home will reduce upon your Income Tax Savings</p>
             </div>

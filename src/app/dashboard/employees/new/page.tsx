@@ -50,7 +50,7 @@ export default function NewEmployeePage() {
     emergencyContact: { name: "", relation: "", phone: "" },
     salaryStructure: {
       ctcPerAnnum: "", basic: "", hra: "", conveyance: "", medicalAllowance: "",
-      specialAllowance: "", incentive: "", pf: "", esi: "", insurance: "", leaves: "",
+      specialAllowance: "", incentive: "", teamPerformanceStructure: "", personalPerformanceIncentive: "", pf: "", esi: "", insurance: "", leaves: "",
       lta: "", professionalTax: "", tds: ""
     },
     profilePhotoUrl: "",
@@ -551,8 +551,12 @@ export default function NewEmployeePage() {
                   <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sal_incentive">Incentive</Label>
-                  <Input id="sal_incentive" value={formData.salaryStructure?.incentive || ""} onChange={(e) => handleChange("salaryStructure.incentive", e.target.value)} />
+                  <Label htmlFor="sal_team_performance">Team Performance Structure</Label>
+                  <Input id="sal_team_performance" value={formData.salaryStructure.teamPerformanceStructure} onChange={(e) => handleChange("salaryStructure.teamPerformanceStructure", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sal_personal_performance">Personal Performance Incentive</Label>
+                  <Input id="sal_personal_performance" value={formData.salaryStructure.personalPerformanceIncentive} onChange={(e) => handleChange("salaryStructure.personalPerformanceIncentive", e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sal_pf">P.F. Deduction</Label>
