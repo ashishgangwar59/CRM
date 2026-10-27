@@ -138,6 +138,31 @@ export default function OfferLetterPage() {
       })
     : "";
 
+  const salary = employee.salaryStructure || {};
+  const toAmount = (value: unknown) => {
+    const amount = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(amount) ? amount : 0;
+  };
+  const grossEarningsPerMonth = [
+    salary.basic,
+    salary.hra,
+    salary.conveyance,
+    salary.medicalAllowance,
+    salary.specialAllowance,
+    salary.incentive,
+  ].reduce((total, value) => total + toAmount(value), 0);
+  const totalDeductionsPerMonth = [
+    salary.pf,
+    salary.esi,
+    salary.insurance,
+    salary.professionalTax,
+    salary.tds,
+  ].reduce((total, value) => total + toAmount(value), 0);
+  const grossSalaryPerMonth = grossEarningsPerMonth - totalDeductionsPerMonth;
+  const grossSalaryDisplay = grossEarningsPerMonth > 0
+    ? `Rs. ${grossSalaryPerMonth.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+    : "-";
+
   return (
     <>
       <style
@@ -445,7 +470,7 @@ export default function OfferLetterPage() {
 
                 <tr className="hover:bg-zinc-50">
                   <td className="border border-zinc-200 p-2 text-zinc-700">
-                    Team Performance Incentive
+                    Team Performance Incentive in (%)
                   </td>
                   <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
                     {employee.salaryStructure.teamPerformanceStructure || "-"}
@@ -453,7 +478,7 @@ export default function OfferLetterPage() {
                 </tr>
                 <tr className="hover:bg-zinc-50">
                   <td className="border border-zinc-200 p-2 text-zinc-700">
-                    Personal Performance Incentive
+                    Personal Performance Incentive in (%)
                   </td>
                   <td className="border border-zinc-200 p-2 text-right font-medium text-zinc-900">
                     {employee.salaryStructure.personalPerformanceIncentive ||
@@ -539,12 +564,10 @@ export default function OfferLetterPage() {
 
                 <tr className="bg-[#134086]/10 font-bold">
                   <td className="border border-zinc-200 p-2 text-[#134086]">
-                    D. CTC per Annum (A + B + C)
+                    D. Gross Salary Per Month 
                   </td>
                   <td className="border border-zinc-200 p-2 text-right text-[#134086] text-base">
-                    {employee.salaryStructure?.ctcPerAnnum
-                      ? `Rs. ${employee.salaryStructure.ctcPerAnnum}`
-                      : "-"}
+                    {grossSalaryDisplay}
                   </td>
                 </tr>
 
