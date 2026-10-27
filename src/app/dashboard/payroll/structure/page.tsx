@@ -283,7 +283,7 @@ export default function SalaryStructurePage() {
                       <Input type="number" required value={formData.incentive} onChange={e => setFormData({ ...formData, incentive: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Team Performance Structure (₹)</Label>
+                      <Label>Team Performance Incentive (₹)</Label>
                       <Input type="number" required value={formData.teamIncentive} onChange={e => setFormData({ ...formData, teamIncentive: Number(e.target.value) })} />
                     </div>
 

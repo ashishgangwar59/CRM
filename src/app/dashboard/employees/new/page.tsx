@@ -556,7 +556,7 @@ export default function NewEmployeePage() {
                   <Input id="sal_special" value={formData.salaryStructure.specialAllowance} onChange={(e) => handleChange("salaryStructure.specialAllowance", e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sal_team_performance">Team Performance Structure</Label>
+                  <Label htmlFor="sal_team_performance">Team Performance Incentive</Label>
                   <Input id="sal_team_performance" value={formData.salaryStructure.teamPerformanceStructure} onChange={(e) => handleChange("salaryStructure.teamPerformanceStructure", e.target.value)} />
                 </div>
                 <div className="space-y-2">

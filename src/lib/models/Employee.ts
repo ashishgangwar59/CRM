@@ -101,6 +101,8 @@ export interface IEmployee extends Document {
     medicalAllowance?: string;
     specialAllowance?: string;
     pf?: string;
+    teamPerformanceStructure?: string;
+    personalPerformanceIncentive?: string;
     esi?: string;
     insurance?: string;
     leaves?: string;
@@ -213,6 +215,8 @@ const EmployeeSchema: Schema<IEmployee> = new Schema(
       medicalAllowance: { type: String },
       specialAllowance: { type: String },
       incentive: { type: String },
+      teamPerformanceStructure: { type: String },
+      personalPerformanceIncentive: { type: String },
       pf: { type: String },
       esi: { type: String },
       insurance: { type: String },
