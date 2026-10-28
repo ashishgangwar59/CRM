@@ -104,7 +104,6 @@ export default function JoiningLetterPage() {
             <div className="mb-8 space-y-1">
               <div className="flex"><span className="w-48 font-bold">JOINING LETTER NO.</span><span>: NIV/HR/{new Date().getFullYear()}/JL-{employee.employeeCode || "NEW"}</span></div>
               <div className="flex"><span className="w-48 font-bold">EMPLOYEE ID</span><span>: {employee.employeeCode || `NIV/EMP/${new Date().getFullYear()}/NEW`}</span></div>
-              <div className="flex"><span className="w-48 font-bold">DATE</span><span>: {today}</span></div>
               <div className="flex"><span className="w-48 font-bold">DESIGNATION</span><span>: {employee.designation || "__________________"}</span></div>
             </div>
 
