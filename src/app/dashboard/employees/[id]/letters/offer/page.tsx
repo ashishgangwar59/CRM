@@ -160,7 +160,7 @@ export default function OfferLetterPage() {
   ].reduce((total, value) => total + toAmount(value), 0);
   const grossSalaryPerMonth = grossEarningsPerMonth - totalDeductionsPerMonth;
   const grossSalaryDisplay = grossEarningsPerMonth > 0
-    ? `Rs. ${grossSalaryPerMonth.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
+    ? `Rs. ${grossSalaryPerMonth.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
     : "-";
 
   return (
