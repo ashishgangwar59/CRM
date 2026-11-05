@@ -1661,7 +1661,7 @@ export default function InvoicePage() {
                   <div className="bank-details">
                     <div>
                       <span className="k">Bank Name</span>
-                      <span className="v">Indian Overseas Bank</span>
+                      <span className="v">INDUSIND BANK LTD.</span>
                     </div>
                     <div>
                       <span className="k">A/c Name</span>
@@ -1669,17 +1669,17 @@ export default function InvoicePage() {
                     </div>
                     <div>
                       <span className="k">A/C Number</span>
-                      <span className="v font-mono">084002000002213</span>
+                      <span className="v font-mono">201038531249</span>
                     </div>
                     <div>
                       <span className="k">IFSC Code</span>
                       <span className="v font-mono">
-                        IOBA0000840</span>
+                        INDB0002143</span>
                     </div>
                     <div>
                       <span className="k">Branch</span>
-                      <span className="v">
-                        No 98, Block No 90, Gole Market, Baird Road New Delhi - 110001
+                      <span className="ellipis w-80">
+                        Emaar Emerald Plaza, Golf Course Extension Road, Sector 65, Gurgaon, Haryana – 122101.
                       </span>
                     </div>
                   </div>

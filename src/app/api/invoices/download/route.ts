@@ -653,16 +653,16 @@ export async function GET(req: Request) {
             </div>
             <div>
               <span class="k">A/C Number</span>
-              <span class="v font-mono">084002000002213</span>
+              <span class="v font-mono">201038531249</span>
             </div>
             <div>
               <span class="k">IFSC Code</span>
-              <span class="v font-mono">IOBA0000840</span>
+              <span class="v font-mono">INDB0002143</span>
             </div>
             <div>
               <span class="k">Branch</span>
-              <span class="v">
-               No 98, Block No 90, Gole Market, Baird Road New Delhi - 110001
+              <span class="ellipis w-80">
+                Emaar Emerald Plaza, Golf Course Extension Road, Sector 65, Gurgaon, Haryana – 122101.
               </span>
             </div>
           </div>
