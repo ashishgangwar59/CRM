@@ -27,6 +27,14 @@ export interface IInvoice extends Document {
   chequeDdNo?: string;
   chequeDdDate?: string;
   drawnOnBank?: string;
+  selectedBankAccountId?: string;
+  bankTransferDetails?: {
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+    ifscCode: string;
+    branch: string;
+  };
   attachments?: { name: string; type: string; dataUrl: string; size: number }[];
   themeColor?: string;
   createdAt: Date;
@@ -61,6 +69,14 @@ const InvoiceSchema: Schema<IInvoice> = new Schema(
     chequeDdNo: { type: String, default: "" },
     chequeDdDate: { type: String, default: "" },
     drawnOnBank: { type: String, default: "" },
+    selectedBankAccountId: { type: String, default: "" },
+    bankTransferDetails: {
+      bankName: { type: String, default: "" },
+      accountName: { type: String, default: "" },
+      accountNumber: { type: String, default: "" },
+      ifscCode: { type: String, default: "" },
+      branch: { type: String, default: "" },
+    },
     attachments: [
       {
         name: { type: String },

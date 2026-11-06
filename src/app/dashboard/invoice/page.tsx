@@ -62,11 +62,10 @@ export default function InvoicePage() {
   const [billToState, setBillToState] = useState("Delhi");
   const [billToStateCode, setBillToStateCode] = useState("07");
 
-  // Bank details
-  const [bankName, setBankName] = useState("ICICI Bank Ltd");
-  const [accountNo, setAccountNo] = useState("000705001234");
-  const [ifscCode, setIfscCode] = useState("ICIC0000007");
-  const [branch, setBranch] = useState("Connaught Place Branch, New Delhi");
+  // Company bank accounts are configured in Settings and selected per invoice.
+  const [invoiceBankAccounts, setInvoiceBankAccounts] = useState<any[]>([]);
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState("");
+  const [bankTransferDetails, setBankTransferDetails] = useState<any>(null);
 
   // Payment Details from Screenshot
   const [modeOfPayment, setModeOfPayment] = useState("Cash");
@@ -161,6 +160,12 @@ export default function InvoicePage() {
         if (data.success && data.data?.companyProfile?.website) {
           setCompanyWebsite(data.data.companyProfile.website);
         }
+        const accounts = data.data?.invoiceBankAccounts || [];
+        setInvoiceBankAccounts(accounts);
+        if (accounts.length > 0) {
+          setSelectedBankAccountId(accounts[0].id || "");
+          setBankTransferDetails(accounts[0]);
+        }
       })
       .catch(console.error);
   }, []);
@@ -194,6 +199,8 @@ export default function InvoicePage() {
         chequeDdNo,
         chequeDdDate,
         drawnOnBank,
+        selectedBankAccountId,
+        bankTransferDetails,
         attachments: uploadedFiles,
         themeColor
       };
@@ -281,6 +288,8 @@ export default function InvoicePage() {
     setChequeDdNo(inv.chequeDdNo || "");
     setChequeDdDate(inv.chequeDdDate || "");
     setDrawnOnBank(inv.drawnOnBank || "");
+    setSelectedBankAccountId(inv.selectedBankAccountId || "");
+    setBankTransferDetails(inv.bankTransferDetails || null);
 
     // Ensure all items conform to interface
     const formattedItems = inv.items.map((item: any) => ({
@@ -328,6 +337,9 @@ export default function InvoicePage() {
     setChequeDdNo("");
     setChequeDdDate("");
     setDrawnOnBank("");
+    const firstBankAccount = invoiceBankAccounts[0] || null;
+    setSelectedBankAccountId(firstBankAccount?.id || "");
+    setBankTransferDetails(firstBankAccount);
     setUploadedFiles([]);
     setItems([
       {
@@ -859,6 +871,28 @@ export default function InvoicePage() {
                         <Label className="text-xs text-rose-500 font-bold">Transaction / UTR No. *</Label>
                         <Input value={transactionUtrNo} onChange={(e) => setTransactionUtrNo(e.target.value)} placeholder="UTR / Trans No." className="h-8 text-xs font-semibold" />
                       </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-zinc-500">Bank Transfer Account (shown on invoice)</Label>
+                      <select
+                        value={selectedBankAccountId}
+                        onChange={(e) => {
+                          const selectedAccount = invoiceBankAccounts.find((account) => account.id === e.target.value) || null;
+                          setSelectedBankAccountId(e.target.value);
+                          setBankTransferDetails(selectedAccount);
+                        }}
+                        className="mt-1 h-8 w-full rounded-md border border-zinc-300 bg-white px-2 text-xs"
+                      >
+                        <option value="">Select bank account</option>
+                        {invoiceBankAccounts.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.bankName} — {account.accountNumber}
+                          </option>
+                        ))}
+                      </select>
+                      {invoiceBankAccounts.length === 0 && (
+                        <p className="mt-1 text-[11px] text-amber-600">Add company bank accounts first in Settings → Invoice Bank Accounts.</p>
+                      )}
                     </div>
                     {/* Cheque / DD No, Date, Drawn on Bank */}
                     <div className="grid grid-cols-3 gap-2">
@@ -1661,25 +1695,25 @@ export default function InvoicePage() {
                   <div className="bank-details">
                     <div>
                       <span className="k">Bank Name</span>
-                      <span className="v">INDUSIND BANK LTD.</span>
+                      <span className="v">{bankTransferDetails?.bankName || "-"}</span>
                     </div>
                     <div>
                       <span className="k">A/c Name</span>
-                      <span className="v">Niventra Capital Advisory India Pvt Ltd</span>
+                      <span className="v">{bankTransferDetails?.accountName || "-"}</span>
                     </div>
                     <div>
                       <span className="k">A/C Number</span>
-                      <span className="v font-mono">201038531249</span>
+                      <span className="v font-mono">{bankTransferDetails?.accountNumber || "-"}</span>
                     </div>
                     <div>
                       <span className="k">IFSC Code</span>
-                      <span className="v font-mono">
-                        INDB0002143</span>
+                      <span className="v font-mono">{bankTransferDetails?.ifscCode || "-"}</span>
                     </div>
                     <div>
                       <span className="k">Branch</span>
-                      <span className="ellipis w-80">
-                        Emaar Emerald Plaza, Golf Course Extension Road, Sector 65, Gurgaon, Haryana – 122101.
+                      <span className="ellipis w-80">{bankTransferDetails?.branch || "-"}</span>
+                      <span className="hidden">
+                      {bankTransferDetails?.branch || "-"}
                       </span>
                     </div>
                   </div>

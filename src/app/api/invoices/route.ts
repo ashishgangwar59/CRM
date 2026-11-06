@@ -76,6 +76,8 @@ export async function POST(req: Request) {
       chequeDdNo,
       chequeDdDate,
       drawnOnBank,
+      selectedBankAccountId,
+      bankTransferDetails,
       attachments,
       themeColor
     } = body;
@@ -108,6 +110,8 @@ export async function POST(req: Request) {
       chequeDdNo,
       chequeDdDate,
       drawnOnBank,
+      selectedBankAccountId,
+      bankTransferDetails,
       attachments: attachments || [],
       themeColor: themeColor || "#1a3668"
     });

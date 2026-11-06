@@ -51,6 +51,7 @@ export default function SettingsPage() {
 
   const TABS = [
     { name: "Company Profile", icon: Building },
+    { name: "Invoice Bank Accounts", icon: Building },
     { name: "Departments", icon: Users },
     { name: "Designations", icon: Briefcase },
     { name: "Office Locations", icon: Building },
@@ -341,6 +342,65 @@ export default function SettingsPage() {
                       onChange={e => setSettings({ ...settings, companyProfile: { ...settings.companyProfile, address: e.target.value } })}
                     />
                   </div>
+                </div>
+              )}
+
+              {activeTab === "Invoice Bank Accounts" && (
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="font-semibold text-zinc-900">Invoice Bank Transfer Details</h3>
+                    <p className="mt-1 text-sm text-zinc-500">Add the company bank accounts available when creating an invoice. The selected account is printed in Bank Transfer Details.</p>
+                  </div>
+                  <div className="space-y-4">
+                    {(settings.invoiceBankAccounts || []).map((account: any, index: number) => (
+                      <div key={account.id || index} className="rounded-lg border border-zinc-200 p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="font-medium text-zinc-800">Bank Account {index + 1}</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 border-rose-200 text-xs text-rose-600 hover:bg-rose-50"
+                            onClick={() => setSettings({ ...settings, invoiceBankAccounts: settings.invoiceBankAccounts.filter((_: any, itemIndex: number) => itemIndex !== index) })}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          {[
+                            ["Bank Name", "bankName"], ["A/c Name", "accountName"], ["A/C Number", "accountNumber"], ["IFSC Code", "ifscCode"], ["Branch", "branch"],
+                          ].map(([label, field]) => (
+                            <div className={field === "branch" ? "md:col-span-2" : ""} key={field}>
+                              <Label>{label}</Label>
+                              <Input
+                                value={account[field] || ""}
+                                onChange={e => setSettings({
+                                  ...settings,
+                                  invoiceBankAccounts: settings.invoiceBankAccounts.map((item: any, itemIndex: number) => itemIndex === index ? { ...item, [field]: e.target.value } : item),
+                                })}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSettings({
+                      ...settings,
+                      invoiceBankAccounts: [...(settings.invoiceBankAccounts || []), {
+                        id: `bank-${Date.now()}`,
+                        bankName: "",
+                        accountName: "",
+                        accountNumber: "",
+                        ifscCode: "",
+                        branch: "",
+                      }],
+                    })}
+                  >
+                    Add Bank Account
+                  </Button>
                 </div>
               )}
 

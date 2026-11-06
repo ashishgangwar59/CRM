@@ -59,6 +59,8 @@ export default function AdminInvestorsPage() {
   const [filterDays, setFilterDays] = useState("");
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
+  const [employeeFilter, setEmployeeFilter] = useState("");
+  const [employees, setEmployees] = useState<any[]>([]);
   const debouncedSearch = useDebounce(search, 500);
 
   const [page, setPage] = useState(1);
@@ -171,6 +173,15 @@ export default function AdminInvestorsPage() {
       .catch((err) => console.error("Error fetching role:", err));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/employees?status=Active&slim=true")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setEmployees(data.data || []);
+      })
+      .catch(console.error);
+  }, []);
+
   // New investor form
   const [addForm, setAddForm] = useState({
     fullName: "",
@@ -203,7 +214,7 @@ export default function AdminInvestorsPage() {
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}${maturityFilter ? `&maturityStatus=${maturityFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
+      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}${maturityFilter ? `&maturityStatus=${maturityFilter}` : ""}${employeeFilter ? `&referralEmployeeId=${encodeURIComponent(employeeFilter)}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -233,11 +244,11 @@ export default function AdminInvestorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, maturityFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
+  }, [debouncedSearch, statusFilter, maturityFilter, employeeFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
 
   useEffect(() => {
     fetchInvestors();
-  }, [debouncedSearch, statusFilter, maturityFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
+  }, [debouncedSearch, statusFilter, maturityFilter, employeeFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -478,6 +489,20 @@ export default function AdminInvestorsPage() {
               className="pl-9"
             />
           </div>
+
+          <select
+            value={employeeFilter}
+            onChange={(e) => setEmployeeFilter(e.target.value)}
+            className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 xl:w-64"
+            aria-label="Filter investors by employee"
+          >
+            <option value="">All employees / Direct investors</option>
+            {employees.map((employee) => (
+              <option key={employee._id} value={employee._id}>
+                {`${employee.firstName || ""} ${employee.lastName || ""}`.trim()} {employee.employeeCode ? `(${employee.employeeCode})` : ""}
+              </option>
+            ))}
+          </select>
 
           <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
             <div className="relative group flex items-center justify-center">

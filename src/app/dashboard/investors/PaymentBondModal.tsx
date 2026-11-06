@@ -386,7 +386,7 @@ export default function PaymentBondModal({ investor, onClose, autoDownload }: Pa
                   <div className="ribbon-flourish">✦</div>
                   <div>
                     <h2>SECURED NON-CONVERTIBLE DEBENTURE</h2>
-                    <h3>B O N D &nbsp; C E R T I F I C A T E</h3>
+                    <h3>C E R T I F I C A T E</h3>
                   </div>
                   <div className="ribbon-flourish">✦</div>
                 </section>

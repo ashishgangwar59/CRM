@@ -57,6 +57,7 @@ export async function GET(req: Request) {
       const search = searchParams.get("search") || "";
       const status = searchParams.get("status") || "";
       const maturityStatus = searchParams.get("maturityStatus") || "";
+      const referralEmployeeId = searchParams.get("referralEmployeeId") || "";
 
       const query: any = {};
       if (search) {
@@ -67,6 +68,25 @@ export async function GET(req: Request) {
           query["debentureForm.applicationNo"] = { $exists: true, $ne: "" };
         } else {
           query.status = status;
+        }
+      }
+
+      // Match current and legacy investor records linked to the selected employee.
+      if (referralEmployeeId && mongoose.Types.ObjectId.isValid(referralEmployeeId)) {
+        const referralEmployee = await Employee.findById(referralEmployeeId)
+          .select("firstName lastName employeeCode")
+          .lean();
+        if (referralEmployee) {
+          const employeeName = `${referralEmployee.firstName || ""} ${referralEmployee.lastName || ""}`.trim();
+          query.$and = [{
+            $or: [
+              { referralEmployeeId },
+              ...(employeeName ? [{ referralEmployeeName: employeeName }] : []),
+              ...(referralEmployee.employeeCode ? [{ "debentureForm.referralCode": referralEmployee.employeeCode }] : []),
+            ],
+          }];
+        } else {
+          query.referralEmployeeId = "000000000000000000000000";
         }
       }
 

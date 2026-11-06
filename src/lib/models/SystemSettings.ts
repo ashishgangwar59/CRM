@@ -87,6 +87,14 @@ export interface ISystemSettings extends Document {
   payrollVisibility: {
     employeeCanViewSalarySlip: boolean;
   };
+  invoiceBankAccounts: {
+    id: string;
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+    ifscCode: string;
+    branch: string;
+  }[];
 }
 
 const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
@@ -205,6 +213,17 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
     },
     payrollVisibility: {
       employeeCanViewSalarySlip: { type: Boolean, default: true }
+    },
+    invoiceBankAccounts: {
+      type: [{
+        id: { type: String },
+        bankName: { type: String },
+        accountName: { type: String },
+        accountNumber: { type: String },
+        ifscCode: { type: String },
+        branch: { type: String },
+      }],
+      default: [],
     },
     letterTemplates: {
       offerLetter: {

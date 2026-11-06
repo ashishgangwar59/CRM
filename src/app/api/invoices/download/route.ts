@@ -19,6 +19,13 @@ export async function GET(req: Request) {
     }
 
     const settings = await SystemSettings.findOne().lean();
+    const bankTransfer = inv.bankTransferDetails || {
+      bankName: "",
+      accountName: "",
+      accountNumber: "",
+      ifscCode: "",
+      branch: "",
+    };
     const address = settings?.companyProfile?.address || "";
     const companyName = settings?.companyProfile?.name || "";
     const companyPhone = settings?.companyProfile?.phone || "";
@@ -645,23 +652,24 @@ export async function GET(req: Request) {
           <div class="bank-details">
             <div>
               <span class="k">Bank Name</span>
-              <span class="v">Indian Overseas Bank</span>
+              <span class="v">${bankTransfer.bankName || "-"}</span>
             </div>
             <div>
               <span class="k">A/c Name</span>
-              <span class="v">Niventra Capital Advisory India Pvt Ltd</span>
+              <span class="v">${bankTransfer.accountName || "-"}</span>
             </div>
             <div>
               <span class="k">A/C Number</span>
-              <span class="v font-mono">201038531249</span>
+              <span class="v font-mono">${bankTransfer.accountNumber || "-"}</span>
             </div>
             <div>
               <span class="k">IFSC Code</span>
-              <span class="v font-mono">INDB0002143</span>
+              <span class="v font-mono">${bankTransfer.ifscCode || "-"}</span>
             </div>
             <div>
               <span class="k">Branch</span>
-              <span class="ellipis w-80">
+              <span class="ellipis w-80">${bankTransfer.branch || "-"}</span>
+              <span style="display:none">
                 Emaar Emerald Plaza, Golf Course Extension Road, Sector 65, Gurgaon, Haryana – 122101.
               </span>
             </div>
