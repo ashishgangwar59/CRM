@@ -127,9 +127,9 @@ export default function SalarySlipPage() {
             ? new Date(data.data.salaryPeriodEnd).toISOString().slice(0, 10)
             : "",
         );
-        // Prefer the current employee profile so older month-wise slips show
-        // the latest designation.
-        setDesignation(data.data.employeeId?.designation || data.data.designation || "");
+        // Month-wise: the designation saved on this slip wins; fall back to
+        // the employee profile only when the slip has none.
+        setDesignation(data.data.designation || data.data.employeeId?.designation || "");
         setRemarks(data.data.remarks || "");
       }
     } catch (e) {
@@ -154,10 +154,21 @@ export default function SalarySlipPage() {
     else alert(data.error || "Unable to update salary period.");
   };
 
+  const [savingDetails, setSavingDetails] = useState(false);
   const handleSaveSlipDetails = async () => {
-    const res = await fetch(`/api/payroll/${params.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "UpdateDetails", designation, remarks }) });
-    const data = await res.json();
-    if (data.success) fetchPayroll(); else alert(data.error || "Unable to save salary-slip details.");
+    setSavingDetails(true);
+    try {
+      const res = await fetch(`/api/payroll/${params.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "UpdateDetails", designation, remarks }) });
+      const data = await res.json();
+      if (data.success) {
+        await fetchPayroll();
+        alert("Salary slip details saved for this month.");
+      } else alert(data.error || "Unable to save salary-slip details.");
+    } catch (e) {
+      alert("Unable to save salary-slip details.");
+    } finally {
+      setSavingDetails(false);
+    }
   };
 
   const handlePayModeChange = async (payMode: string) => {
@@ -349,6 +360,7 @@ export default function SalarySlipPage() {
       maximumFractionDigits: 2,
     });
 
+  const slipDesignation: string = payroll.designation || emp.designation || "";
   const earn = payroll.earnings || {};
   const ded = payroll.deductions || {};
   const advanceAmount = ded.advanceSalaryDrawn || ded.advance || 0;
@@ -363,7 +375,7 @@ export default function SalarySlipPage() {
     },
     { label: "Individual Incentive", amount: earn.personalIncentive || 0 },
     {
-      label: emp.designation?.toLowerCase().includes("branch head")
+      label: slipDesignation?.toLowerCase().includes("branch head")
         ? "Full Branch Incentive"
         : "Team Performance Incentive",
       amount: earn.teamBusinessIncentive || 0,
@@ -401,7 +413,7 @@ export default function SalarySlipPage() {
   const employeeDetails: [string, string][] = [
     ["Employee Name", `${emp.firstName || ""} ${emp.lastName || ""}`.trim()],
     ["Employee Code", emp.employeeCode],
-    ["Designation", emp.designation || payroll.designation],
+    ["Designation", slipDesignation],
     ["Department", emp.department],
     ["Date of Joining", emp.dateOfJoining ? formatSlipDate(emp.dateOfJoining) : ""],
     ["PAN", emp.kyc?.panNumber],
@@ -494,7 +506,7 @@ export default function SalarySlipPage() {
             <div className="flex flex-wrap items-end gap-2 mr-2 flex-2">
               <div><label className="block text-[10px] font-semibold text-zinc-500">Designation</label><Input className="h-9 w-40" value={designation} onChange={(e) => setDesignation(e.target.value)} /></div>
               <div><label className="block text-[10px] font-semibold text-zinc-500">Remarks</label><Input className="h-9 w-48" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional remark" /></div>
-              <Button variant="outline" className="h-9" onClick={handleSaveSlipDetails}>Save Details</Button>
+              <Button variant="outline" className="h-9" onClick={handleSaveSlipDetails} disabled={savingDetails}>{savingDetails ? "Saving..." : "Save Details"}</Button>
               {canEditPayMode && (
                 <div>
                   <label className="block text-[10px] font-semibold text-zinc-500">Pay Mode</label>
