@@ -9,7 +9,8 @@ export interface IPayroll extends Document {
   salaryPeriodEnd?: Date;
   designation?: string;
   remarks?: string;
-  
+  payMode: "Account" | "Cash" | "Online"; // "Online" = legacy value, shown as Account
+
   // Earnings
   earnings: {
     basic: number;
@@ -60,6 +61,7 @@ const PayrollSchema: Schema<IPayroll> = new Schema(
     salaryPeriodEnd: { type: Date },
     designation: { type: String },
     remarks: { type: String },
+    payMode: { type: String, enum: ["Account", "Cash", "Online"], default: "Account" },
     
     earnings: {
       basic: { type: Number, default: 0 },

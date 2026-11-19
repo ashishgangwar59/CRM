@@ -170,6 +170,22 @@ export default function PayrollDashboardPage() {
     } finally { setApprovingAll(false); }
   };
 
+  const [bulkPayMode, setBulkPayMode] = useState<"Account" | "Cash">("Account");
+  const [updatingPayMode, setUpdatingPayMode] = useState(false);
+  const canEditPayMode = ["ADMIN", "KEY_ADMIN", "KEYADMIN"].includes(role || "");
+  const handleBulkPayMode = async () => {
+    if (!monthYear) return alert("Select a payroll month first.");
+    if (!confirm(`Set pay mode to "${bulkPayMode}" for all salary slips of ${monthYear}?`)) return;
+    setUpdatingPayMode(true);
+    try {
+      const res = await fetch("/api/payroll/paymode/bulk", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ monthYear, payMode: bulkPayMode }) });
+      const data = await res.json();
+      if (data.success) { alert(data.message); fetchPayrolls(); } else alert(data.error || "Pay mode update failed.");
+    } catch (e) {
+      alert("Error updating pay mode.");
+    } finally { setUpdatingPayMode(false); }
+  };
+
   const toggleSelection = (payrollId: string) => {
     if (selectedPayrolls.includes(payrollId)) {
       setSelectedPayrolls(selectedPayrolls.filter(id => id !== payrollId));
@@ -336,6 +352,23 @@ export default function PayrollDashboardPage() {
                 />
               </div>
               <Button variant="outline" className="h-10 border-blue-200 text-blue-700 hover:bg-blue-50" onClick={handleApproveAll} disabled={approvingAll}>{approvingAll ? "Approving..." : "Approve all slips"}</Button>
+              {canEditPayMode && monthYear && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="bulk-pay-mode" className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Pay Mode</label>
+                  <select
+                    id="bulk-pay-mode"
+                    value={bulkPayMode}
+                    onChange={(e) => setBulkPayMode(e.target.value as "Account" | "Cash")}
+                    className="h-10 rounded-md border border-zinc-300 bg-white px-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <option value="Account">Account</option>
+                    <option value="Cash">Cash</option>
+                  </select>
+                  <Button variant="outline" className="h-10" onClick={handleBulkPayMode} disabled={updatingPayMode}>
+                    {updatingPayMode ? "Updating..." : "Apply to month"}
+                  </Button>
+                </div>
+              )}
               {monthYear && (
                 <Button variant="ghost" size="sm" onClick={() => {
                   setMonthYear("");

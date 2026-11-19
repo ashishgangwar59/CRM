@@ -160,6 +160,21 @@ export default function SalarySlipPage() {
     if (data.success) fetchPayroll(); else alert(data.error || "Unable to save salary-slip details.");
   };
 
+  const handlePayModeChange = async (payMode: string) => {
+    const previous = payroll?.payMode === "Cash" ? "Cash" : "Account";
+    setPayroll((p: any) => (p ? { ...p, payMode } : p)); // update instantly
+    const res = await fetch(`/api/payroll/${params.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "UpdatePayMode", payMode }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      setPayroll((p: any) => (p ? { ...p, payMode: previous } : p));
+      alert(data.error || "Unable to update pay mode.");
+    }
+  };
+
   useEffect(() => {
     fetchPayroll();
 
@@ -378,8 +393,10 @@ export default function SalarySlipPage() {
     ["Total Days", totalDays],
     ["Paid Days", paidDays],
     ["LOP Days", Math.max(totalDays - paidDays, 0)],
+    ["Pay Mode", payroll.payMode === "Cash" ? "Cash" : "Account"],
     ["Status", payroll.status || "—"],
   ];
+  const canEditPayMode = ["ADMIN", "KEY_ADMIN", "KEYADMIN"].includes(currentUserRole || "");
 
   const employeeDetails: [string, string][] = [
     ["Employee Name", `${emp.firstName || ""} ${emp.lastName || ""}`.trim()],
@@ -478,6 +495,19 @@ export default function SalarySlipPage() {
               <div><label className="block text-[10px] font-semibold text-zinc-500">Designation</label><Input className="h-9 w-40" value={designation} onChange={(e) => setDesignation(e.target.value)} /></div>
               <div><label className="block text-[10px] font-semibold text-zinc-500">Remarks</label><Input className="h-9 w-48" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional remark" /></div>
               <Button variant="outline" className="h-9" onClick={handleSaveSlipDetails}>Save Details</Button>
+              {canEditPayMode && (
+                <div>
+                  <label className="block text-[10px] font-semibold text-zinc-500">Pay Mode</label>
+                  <select
+                    className="h-9 w-28 rounded-md border border-input bg-background px-2 text-sm"
+                    value={payroll.payMode === "Cash" ? "Cash" : "Account"}
+                    onChange={(e) => handlePayModeChange(e.target.value)}
+                  >
+                    <option value="Account">Account</option>
+                    <option value="Cash">Cash</option>
+                  </select>
+                </div>
+              )}
             </div>
           )}
           {currentUserRole !== "Employee" && currentUserRole !== "INVESTOR" && (
@@ -600,7 +630,7 @@ export default function SalarySlipPage() {
           </div>
 
           {/* Attendance Summary */}
-          <div className="mb-5 grid grid-cols-4 border border-[#d1d5db] text-center">
+          <div className="mb-5 grid grid-cols-5 border border-[#d1d5db] text-center">
             {attendance.map(([label, value], i) => (
               <div
                 key={label}

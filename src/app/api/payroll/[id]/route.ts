@@ -49,10 +49,30 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     await connectToDatabase();
     const { id } = await params;
-    const { action, salaryPeriodStart, salaryPeriodEnd, designation, remarks } = await req.json(); // "Lock", "Approve", "Paid"
+    const { action, salaryPeriodStart, salaryPeriodEnd, designation, remarks, payMode } = await req.json(); // "Lock", "Approve", "Paid"
 
     const payroll = await Payroll.findById(id);
     if (!payroll) return NextResponse.json({ error: "Payroll not found" }, { status: 404 });
+
+    if (action === "UpdatePayMode") {
+      let role: string | undefined;
+      try {
+        const token = req.headers.get("cookie")?.match(/accessToken=([^;]+)/)?.[1];
+        if (token) {
+          const { verifyAccessToken } = require("@/lib/auth");
+          role = verifyAccessToken(token).role;
+        }
+      } catch (e) {}
+      if (!role || !["ADMIN", "KEY_ADMIN", "KEYADMIN"].includes(role)) {
+        return NextResponse.json({ error: "Only Admin or Key Admin can change the pay mode." }, { status: 403 });
+      }
+      if (payMode !== "Account" && payMode !== "Cash") {
+        return NextResponse.json({ error: "Pay mode must be Account or Cash." }, { status: 400 });
+      }
+      payroll.payMode = payMode;
+      await payroll.save();
+      return NextResponse.json({ success: true, data: payroll });
+    }
 
     if (action === "UpdateDates") {
       if (!salaryPeriodStart || !salaryPeriodEnd) {
