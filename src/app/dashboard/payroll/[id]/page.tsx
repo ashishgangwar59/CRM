@@ -107,7 +107,7 @@ export default function SalarySlipPage() {
       "The Nukleus Center, Mezzanine Level (Adjacent to Visa Consultation Office)Shivaji Stadium Metro Station • Airport Express Line Connaught Place, New Delhi 110001",
     email: "info@niventracapitaladvisory.com",
     website: "www.niventracapitaladvisory.com",
-    phone: "18008900818",
+    phone: "1800 8900 818",
     gstNo: "07AAICN4810R1Z2",
   });
 
@@ -558,11 +558,7 @@ export default function SalarySlipPage() {
                     .filter(Boolean)
                     .join("  |  ")}
                 </p>
-                {/* {companyProfile.gstNo && (
-                  <p className="mt-0.5 text-[10.5px] font-semibold text-[#4b5563]">
-                    GSTIN: {companyProfile.gstNo}
-                  </p>
-                )} */}
+               
               </div>
             </div>
             <div className="shrink-0 text-right">
@@ -572,12 +568,7 @@ export default function SalarySlipPage() {
               <p className="mt-0.5 text-[12px] font-semibold text-[#374151]">
                 {monthLabel}
               </p>
-              <p className="mt-2 text-[10px] uppercase tracking-wider text-[#6b7280]">
-                Ref. No.
-              </p>
-              <p className="font-mono text-[12px] font-semibold text-[#111827]">
-                PS-{payroll._id.toString().slice(-8).toUpperCase()}
-              </p>
+             
             </div>
           </div>
           <div className="h-[3px] w-full bg-[#134086]" />
@@ -679,7 +670,7 @@ export default function SalarySlipPage() {
               <p className="mt-1 text-[11.5px] text-[#374151]">
                 <span className="text-[#6b7280]">In words: </span>
                 <span className="font-semibold">
-                  Indian Rupees {numberToWords(Math.round(payroll.netSalary || 0))}
+                   {numberToWords(Math.round(payroll.netSalary || 0))}
                 </span>
               </p>
               <p className="mt-1 text-[10px] text-[#6b7280]">
@@ -694,25 +685,7 @@ export default function SalarySlipPage() {
             </div>
           </div>
 
-          {/* Payment Details */}
-          {payroll.paymentDetails && (
-            <div className="mb-5 grid grid-cols-3 border border-[#d1d5db] text-[12px]">
-              {[
-                ["Payment Status", payroll.status],
-                ["Transaction ID", payroll.paymentDetails.transactionId],
-                ["Paid On", formatSlipDate(payroll.paymentDetails.paymentDate)],
-              ].map(([label, value], i) => (
-                <div key={label} className={`px-3 py-2 ${i < 2 ? "border-r border-[#e5e7eb]" : ""}`}>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280]">
-                    {label}
-                  </p>
-                  <p className="mt-0.5 font-mono font-semibold text-[#111827] break-all">
-                    {value || "—"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+         
 
           {/* Remarks */}
           {payroll.remarks && (
