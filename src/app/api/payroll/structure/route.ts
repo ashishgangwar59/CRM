@@ -88,10 +88,14 @@ export async function POST(req: Request) {
       // We only update if the payroll is still in Draft state (not Locked/Approved/Paid)
       const existingPayroll = await Payroll.findOne({ employeeId: data.employeeId, monthYear: targetMonthYear });
       if (!existingPayroll || existingPayroll.status === "Draft") {
+        // Keep any LOP already applied on the draft; total days = actual days in the month.
+        const existingLop = existingPayroll && existingPayroll.totalDays && existingPayroll.paidDays != null
+          ? Math.max(0, existingPayroll.totalDays - existingPayroll.paidDays)
+          : 0;
         const result = await calculatePayrollForEmployee(
           data.employeeId,
           targetMonthYear,
-          0, 0, 30, 0, true,
+          0, 0, 0 /* 0 => actual days in month */, existingLop, true,
           payload.userId
         );
 

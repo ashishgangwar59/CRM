@@ -6,6 +6,7 @@ import { Leave } from "@/lib/models/Leave";
 import { verifyAccessToken } from "@/lib/auth";
 import { calculatePayrollForEmployee } from "@/lib/payrollEngine";
 import { notificationService } from "@/lib/notifications";
+import { getDaysInMonth } from "@/lib/dateUtils";
 
 export async function POST(req: Request) {
   try {
@@ -31,9 +32,10 @@ export async function POST(req: Request) {
     }
 
     // 1. Get all active employees
-    const monthEnd = new Date(`${monthYear}-31T23:59:59.999Z`);
+    const standardDaysInMonth = getDaysInMonth(monthYear); // 28/29/30/31
+    const monthStart = new Date(`${monthYear}-01T00:00:00.000Z`);
+    const monthEnd = new Date(`${monthYear}-${String(standardDaysInMonth).padStart(2, "0")}T23:59:59.999Z`);
     const activeEmployees = await Employee.find({ status: "Active", $or: [{ dateOfJoining: { $exists: false } }, { dateOfJoining: null }, { dateOfJoining: { $lte: monthEnd } }] }).select("_id designation");
-    const standardDaysInMonth = 30; // Could be calculated dynamically
     
     let processedCount = 0;
     let failedCount = 0;
@@ -46,17 +48,24 @@ export async function POST(req: Request) {
           employeeId: emp._id,
           leaveType: "Loss of Pay",
           status: "Approved",
-          startDate: { $gte: new Date(`${monthYear}-01`), $lt: new Date(`${monthYear}-31T23:59:59`) }
+          startDate: { $lte: monthEnd },
+          endDate: { $gte: monthStart }
         });
 
+        // Count only the LOP days that fall inside this month (inclusive of start and end).
+        const DAY_MS = 1000 * 60 * 60 * 24;
         let lopDays = 0;
         leaves.forEach(leave => {
           if (leave.isHalfDay) lopDays += 0.5;
           else {
-            const diff = Math.abs(leave.endDate.getTime() - leave.startDate.getTime());
-            lopDays += Math.ceil(diff / (1000 * 60 * 60 * 24) + 1) + 1;
+            const start = Math.max(new Date(leave.startDate).getTime(), monthStart.getTime());
+            const end = Math.min(new Date(leave.endDate || leave.startDate).getTime(), monthEnd.getTime());
+            if (end >= start) {
+              lopDays += Math.floor(end / DAY_MS) - Math.floor(start / DAY_MS) + 1;
+            }
           }
         });
+        lopDays = Math.min(lopDays, standardDaysInMonth);
 
         const result = await calculatePayrollForEmployee(
           emp._id.toString(), 

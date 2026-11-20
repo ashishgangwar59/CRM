@@ -54,6 +54,9 @@ export default function AdminInvestorsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [maturityFilter, setMaturityFilter] = useState("");
+  const [maturityMonth, setMaturityMonth] = useState("");
+  const [maturityFrom, setMaturityFrom] = useState("");
+  const [maturityTo, setMaturityTo] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
   const [filterDays, setFilterDays] = useState("");
@@ -211,10 +214,17 @@ export default function AdminInvestorsPage() {
     status: "",
   });
 
+  const maturityQuery =
+    `${maturityFilter ? `&maturityStatus=${maturityFilter}` : ""}` +
+    `${maturityMonth ? `&maturityMonth=${maturityMonth}` : ""}` +
+    `${maturityFrom ? `&maturityFrom=${maturityFrom}` : ""}` +
+    `${maturityTo ? `&maturityTo=${maturityTo}` : ""}`;
+  const hasMaturityDateFilter = !!(maturityMonth || maturityFrom || maturityTo);
+
   const fetchInvestors = async () => {
     setLoading(true);
     try {
-      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}${maturityFilter ? `&maturityStatus=${maturityFilter}` : ""}${employeeFilter ? `&referralEmployeeId=${encodeURIComponent(employeeFilter)}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
+      const query = `?search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}${maturityQuery}${employeeFilter ? `&referralEmployeeId=${encodeURIComponent(employeeFilter)}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}&page=${page}&limit=${limit}`;
       const res = await fetch(`/api/investors/me${query}`);
       const json = await res.json();
       if (json.success) {
@@ -244,11 +254,11 @@ export default function AdminInvestorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, maturityFilter, employeeFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
+  }, [debouncedSearch, statusFilter, maturityFilter, maturityMonth, maturityFrom, maturityTo, employeeFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, limit]);
 
   useEffect(() => {
     fetchInvestors();
-  }, [debouncedSearch, statusFilter, maturityFilter, employeeFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
+  }, [debouncedSearch, statusFilter, maturityFilter, maturityMonth, maturityFrom, maturityTo, employeeFilter, filterDate, filterMonth, filterDays, filterFromDate, filterToDate, page, limit]);
 
   const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,7 +384,7 @@ export default function AdminInvestorsPage() {
   const exportToExcel = async () => {
     try {
       // Fetch ALL data matching current filters by setting a huge limit
-      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}`);
+      const res = await fetch(`/api/investors/me?page=1&limit=100000&search=${encodeURIComponent(debouncedSearch)}${statusFilter ? `&status=${statusFilter}` : ""}${maturityQuery}${employeeFilter ? `&referralEmployeeId=${encodeURIComponent(employeeFilter)}` : ""}&date=${filterDate}&month=${filterMonth}&days=${filterDays}&fromDate=${filterFromDate}&toDate=${filterToDate}`);
       const json = await res.json();
 
       let dataToExport: any[] = [];
@@ -504,6 +514,23 @@ export default function AdminInvestorsPage() {
             ))}
           </select>
 
+          <select
+            value={maturityFilter}
+            onChange={(e) => setMaturityFilter(e.target.value)}
+            className={`h-10 w-full rounded-md border px-3 text-sm xl:w-52 ${maturityFilter || hasMaturityDateFilter ? "border-indigo-400 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-500/10 dark:text-indigo-300" : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"}`}
+            aria-label="Filter investors by maturity"
+          >
+            <option value="">All Maturities</option>
+            <option value="done">Maturity Done</option>
+            <option value="today">Maturing Today</option>
+            <option value="due_soon">Due in 7 Days</option>
+            <option value="due_30">Due in 30 Days</option>
+            <option value="due_90">Due in 90 Days</option>
+            <option value="this_month">Maturing This Month</option>
+            <option value="next_month">Maturing Next Month</option>
+            <option value="upcoming">All Upcoming</option>
+          </select>
+
           <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
             <div className="relative group flex items-center justify-center">
               <button
@@ -593,7 +620,7 @@ export default function AdminInvestorsPage() {
             <div className="relative group flex items-center justify-center">
               <button
                 onClick={() => setShowDateFilterModal(true)}
-                className={`cursor-pointer p-2 rounded-full transition-colors ${(filterDays || filterMonth || filterDate || filterFromDate || filterToDate) ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400" : "text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"}`}
+                className={`cursor-pointer p-2 rounded-full transition-colors ${(filterDays || filterMonth || filterDate || filterFromDate || filterToDate || hasMaturityDateFilter) ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400" : "text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"}`}
               >
                 <Calendar className="w-5 h-5" />
               </button>
@@ -1802,14 +1829,49 @@ export default function AdminInvestorsPage() {
                   />
                 </div>
               </div>
+
+              {/* Maturity Date Filters */}
+              <div className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Maturity Date</p>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Maturity Month</Label>
+                  <Input
+                    type="month"
+                    className="w-full h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                    value={maturityMonth}
+                    onChange={(e) => {
+                      setMaturityMonth(e.target.value);
+                      setMaturityFrom(""); setMaturityTo("");
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Maturity Date Range</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="date"
+                      className="flex-1 h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                      value={maturityFrom}
+                      onChange={(e) => { setMaturityFrom(e.target.value); setMaturityMonth(""); }}
+                    />
+                    <span className="text-zinc-400 font-medium text-sm">to</span>
+                    <Input
+                      type="date"
+                      className="flex-1 h-11 text-sm bg-zinc-50 dark:bg-zinc-800/50"
+                      value={maturityTo}
+                      onChange={(e) => { setMaturityTo(e.target.value); setMaturityMonth(""); }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Footer */}
             <div className="p-5 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/20">
-              {(filterDays || filterMonth || filterDate || filterFromDate || filterToDate) && (
+              {(filterDays || filterMonth || filterDate || filterFromDate || filterToDate || hasMaturityDateFilter) && (
                 <Button
                   variant="ghost"
-                  onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); setFilterFromDate(""); setFilterToDate(""); }}
+                  onClick={() => { setFilterDays(""); setFilterMonth(""); setFilterDate(""); setFilterFromDate(""); setFilterToDate(""); setMaturityMonth(""); setMaturityFrom(""); setMaturityTo(""); }}
                   className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 mr-auto font-semibold"
                 >
                   Clear Filters

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { IndianRupee, Settings, Link as LinkIcon, Download, CheckSquare, Loader2, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getDaysInMonth, getSlipDays } from "@/lib/dateUtils";
 
 export default function PayrollDashboardPage() {
   const router = useRouter();
@@ -99,9 +100,11 @@ export default function PayrollDashboardPage() {
     }
   }, [monthYear, role]);
 
+  const daysInSelectedMonth = getDaysInMonth(monthYear);
+
   const handleGenerate = async (employeeId: string, currentPaidDays?: number) => {
     setGenerating(true);
-    const paidDays = selectedDaysMap[employeeId] ?? currentPaidDays ?? 30;
+    const paidDays = selectedDaysMap[employeeId] ?? currentPaidDays ?? daysInSelectedMonth;
     const manualIncentive = manualIncentivesMap[employeeId] || 0;
     const eligibleRevenue = revenueMap[employeeId] || 0;
     try {
@@ -511,7 +514,7 @@ export default function PayrollDashboardPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="inline-block px-2.5 py-0.5 rounded bg-zinc-100 text-zinc-800 text-xs font-semibold">
-                          {payroll.paidDays || 30} Days
+                          {getSlipDays(payroll).paidDays} Days
                         </span>
                       </TableCell>
                       <TableCell className="text-right">₹{payroll.grossSalary.toLocaleString()}</TableCell>
@@ -538,7 +541,11 @@ export default function PayrollDashboardPage() {
               ) : (
                 paginatedEmployees.map((emp) => {
                   const payroll = payrolls.find(p => p.employeeId?._id === emp._id || p.employeeId === emp._id);
-                  const selectedDays = selectedDaysMap[emp._id] ?? 30;
+                  const selectedDays = selectedDaysMap[emp._id] ?? daysInSelectedMonth;
+                  // A previously generated full-month slip (paidDays == totalDays) stays full month on recalculation.
+                  const existingPaidDays = payroll && payroll.totalDays && payroll.paidDays >= payroll.totalDays
+                    ? daysInSelectedMonth
+                    : payroll?.paidDays;
                   
                   return (
                     <TableRow key={emp._id}>
@@ -565,12 +572,14 @@ export default function PayrollDashboardPage() {
                               <Input 
                                 type="number"
                                 className="w-20 h-7 text-xs mx-auto"
-                                defaultValue={payroll.paidDays || 30}
+                                min={0}
+                                max={daysInSelectedMonth}
+                                defaultValue={existingPaidDays ?? daysInSelectedMonth}
                                 onChange={(e) => setSelectedDaysMap({ ...selectedDaysMap, [emp._id]: Number(e.target.value) })}
                               />
                             ) : (
                               <span className="inline-block px-2.5 py-0.5 rounded bg-zinc-100 text-zinc-800 text-xs font-semibold">
-                                {payroll.paidDays || 30} Days
+                                {getSlipDays(payroll).paidDays} Days
                               </span>
                             )}
                           </TableCell>
@@ -597,7 +606,7 @@ export default function PayrollDashboardPage() {
                                     value={manualIncentivesMap[emp._id] || ""}
                                     onChange={(e) => setManualIncentivesMap({ ...manualIncentivesMap, [emp._id]: Number(e.target.value) })}
                                  />
-                                 <Button size="sm" variant="secondary" className="h-7 px-2 text-[10px]" onClick={() => handleGenerate(emp._id, payroll.paidDays)} title="Recalculate Salary">
+                                 <Button size="sm" variant="secondary" className="h-7 px-2 text-[10px]" onClick={() => handleGenerate(emp._id, existingPaidDays)} title="Recalculate Salary">
                                     ↺ 
                                  </Button>
                                </div>
@@ -615,7 +624,7 @@ export default function PayrollDashboardPage() {
                               onChange={(e) => setSelectedDaysMap({ ...selectedDaysMap, [emp._id]: Number(e.target.value) })}
                               className="text-xs border border-zinc-300 rounded px-2 py-1 bg-white text-zinc-900 font-medium"
                             >
-                              <option value={30}>30 Days (1 Month)</option>
+                              <option value={daysInSelectedMonth}>{daysInSelectedMonth} Days (Full Month)</option>
                               <option value={15}>15 Days Salary</option>
                               <option value={20}>20 Days Salary</option>
                               <option value={10}>10 Days Salary</option>

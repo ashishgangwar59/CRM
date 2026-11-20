@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getSlipDays } from "@/lib/dateUtils";
 import {
   Download,
   Mail,
@@ -399,12 +400,11 @@ export default function SalarySlipPage() {
   ];
   const salaryRowCount = Math.max(earningRows.length, deductionRows.length);
 
-  const totalDays = payroll.totalDays || 30;
-  const paidDays = payroll.paidDays ?? totalDays;
+  const { totalDays, paidDays, lopDays } = getSlipDays(payroll);
   const attendance: [string, string | number][] = [
     ["Total Days", totalDays],
     ["Paid Days", paidDays],
-    ["LOP Days", Math.max(totalDays - paidDays, 0)],
+    ["LOP Days", lopDays],
     ["Pay Mode", payroll.payMode === "Cash" ? "Cash" : "Account"],
     ["Status", payroll.status || "—"],
   ];
@@ -483,7 +483,7 @@ export default function SalarySlipPage() {
             </h1>
             <p className="text-zinc-500 dark:text-zinc-400">
               {emp.firstName} {emp.lastName} • {monthNameStr} (
-              {payroll.paidDays || 30} Days Salary)
+              {getSlipDays(payroll).paidDays} Days Salary)
             </p>
             {(payroll.salaryPeriodStart || payroll.salaryPeriodEnd) && (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">

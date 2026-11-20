@@ -7,6 +7,7 @@ import { DeductionConfiguration } from "@/lib/models/DeductionConfiguration";
 import { Team } from "@/lib/models/Team";
 import { PayrollAuditLog } from "@/lib/models/PayrollAuditLog";
 import mongoose from "mongoose";
+import { getDaysInMonth } from "@/lib/dateUtils";
 
 export async function calculatePayrollForEmployee(
   employeeId: string, 
@@ -30,6 +31,8 @@ export async function calculatePayrollForEmployee(
   if (!structure) throw new Error("Salary structure not found for employee");
 
   // 2. Fixed Earnings (Prorated for LOP)
+  if (!totalDays || totalDays <= 0) totalDays = getDaysInMonth(monthYear);
+  LOPDays = Math.min(Math.max(0, LOPDays || 0), totalDays);
   const paidDays = totalDays - LOPDays;
   const prorationFactor = Math.max(0, paidDays / totalDays);
 

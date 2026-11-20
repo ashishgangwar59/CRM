@@ -91,19 +91,60 @@ export async function GET(req: Request) {
       }
 
       // Maturity status filter based on bondMaturityDate
+      // bondMaturityDate is stored as "YYYY-MM-DD", so string comparison works.
+      const toYmd = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const nowDate = new Date();
       nowDate.setHours(0, 0, 0, 0);
+      const todayStr = toYmd(nowDate);
+      const addDays = (n: number) => {
+        const d = new Date(nowDate);
+        d.setDate(d.getDate() + n);
+        return toYmd(d);
+      };
+      const maturityCond: any = {};
       if (maturityStatus === "done") {
         // Maturity date has already passed
-        query.bondMaturityDate = { $lt: nowDate.toISOString().split("T")[0] };
+        maturityCond.$lt = todayStr;
+      } else if (maturityStatus === "today") {
+        maturityCond.$gte = todayStr;
+        maturityCond.$lte = todayStr;
       } else if (maturityStatus === "due_soon") {
         // Maturity date is within the next 7 days (today inclusive)
-        const in7Days = new Date(nowDate);
-        in7Days.setDate(in7Days.getDate() + 7);
-        query.bondMaturityDate = {
-          $gte: nowDate.toISOString().split("T")[0],
-          $lte: in7Days.toISOString().split("T")[0],
-        };
+        maturityCond.$gte = todayStr;
+        maturityCond.$lte = addDays(7);
+      } else if (maturityStatus === "due_30") {
+        maturityCond.$gte = todayStr;
+        maturityCond.$lte = addDays(30);
+      } else if (maturityStatus === "due_90") {
+        maturityCond.$gte = todayStr;
+        maturityCond.$lte = addDays(90);
+      } else if (maturityStatus === "this_month" || maturityStatus === "next_month") {
+        const offset = maturityStatus === "this_month" ? 0 : 1;
+        const start = new Date(nowDate.getFullYear(), nowDate.getMonth() + offset, 1);
+        const end = new Date(nowDate.getFullYear(), nowDate.getMonth() + offset + 1, 0);
+        maturityCond.$gte = toYmd(start);
+        maturityCond.$lte = toYmd(end);
+      } else if (maturityStatus === "upcoming") {
+        maturityCond.$gte = todayStr;
+      }
+
+      // Custom maturity month / range
+      const maturityMonth = searchParams.get("maturityMonth") || "";
+      const maturityFrom = searchParams.get("maturityFrom") || "";
+      const maturityTo = searchParams.get("maturityTo") || "";
+      if (maturityMonth && /^\d{4}-\d{2}$/.test(maturityMonth)) {
+        const [y, m] = maturityMonth.split("-").map(Number);
+        const monthStart = `${maturityMonth}-01`;
+        const monthEnd = toYmd(new Date(y, m, 0));
+        if (!maturityCond.$gte || monthStart > maturityCond.$gte) maturityCond.$gte = monthStart;
+        if (!maturityCond.$lte || monthEnd < maturityCond.$lte) maturityCond.$lte = monthEnd;
+      }
+      if (maturityFrom && (!maturityCond.$gte || maturityFrom > maturityCond.$gte)) maturityCond.$gte = maturityFrom;
+      if (maturityTo && (!maturityCond.$lte || maturityTo < maturityCond.$lte)) maturityCond.$lte = maturityTo;
+
+      if (Object.keys(maturityCond).length > 0) {
+        query.bondMaturityDate = { $nin: [null, ""], ...maturityCond };
       }
 
       const filterDate = searchParams.get("date") || "";

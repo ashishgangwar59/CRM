@@ -5,6 +5,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { notificationService } from "@/lib/notifications";
 import { calculatePayrollForEmployee } from "@/lib/payrollEngine";
 import { Employee } from "@/lib/models/Employee";
+import { getDaysInMonth } from "@/lib/dateUtils";
 
 export async function POST(req: Request) {
   try {
@@ -30,9 +31,10 @@ export async function POST(req: Request) {
     // salary proration/adjustment.
     let lopDays = 0;
 
-    const standardDaysInMonth = 30; // Could be dynamic based on monthYear
+    const standardDaysInMonth = getDaysInMonth(monthYear); // 28/29/30/31
     if (typeof customPaidDays === "number" && customPaidDays > 0) {
-       lopDays = standardDaysInMonth - customPaidDays;
+       // Paid days above the month length (e.g. "30" in February) mean a full month.
+       lopDays = Math.max(0, standardDaysInMonth - Math.min(customPaidDays, standardDaysInMonth));
     }
 
     // 2. Call the Automated Payroll Engine with month's eligible revenue
