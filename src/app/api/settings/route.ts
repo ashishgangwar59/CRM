@@ -195,6 +195,22 @@ export async function PUT(req: Request) {
     delete updates.updatedAt;
     delete updates.__v;
 
+    // Save backupConfig field-by-field so the server-managed lastAutoBackupDate isn't overwritten
+    // (overwriting it could re-send today's automatic backup).
+    if (updates.backupConfig && typeof updates.backupConfig === "object") {
+      const { email, backupTime } = updates.backupConfig;
+      delete updates.backupConfig;
+      if (typeof email === "string") updates["backupConfig.email"] = email.trim();
+      if (typeof backupTime === "string" && /^\d{2}:\d{2}$/.test(backupTime)) {
+        updates["backupConfig.backupTime"] = backupTime;
+        // If the time was moved to later today, allow today's backup to run at the new time.
+        const { getZonedNow } = await import("@/lib/cronService");
+        if (backupTime !== settings.backupConfig?.backupTime && backupTime > getZonedNow().time) {
+          updates["backupConfig.lastAutoBackupDate"] = "";
+        }
+      }
+    }
+
     // Use findOneAndUpdate to ensure nested fields like letterTemplates are properly merged and saved
     const updatedSettings = await SystemSettings.findOneAndUpdate(
       {},

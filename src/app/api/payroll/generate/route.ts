@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { joinedAfterMonth } from "@/lib/joiningMonth";
 import { connectToDatabase } from "@/lib/db";
 import { Payroll } from "@/lib/models/Payroll";
 import { verifyAccessToken } from "@/lib/auth";
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
 
     const employee = await Employee.findById(employeeId).select("dateOfJoining designation");
     if (!employee) return NextResponse.json({ error: "Employee not found." }, { status: 404 });
-    if (employee.dateOfJoining && monthYear < new Date(employee.dateOfJoining).toISOString().slice(0, 7)) {
+    if (joinedAfterMonth(employee.dateOfJoining, monthYear)) {
       return NextResponse.json({ error: "Salary slip cannot be generated before the employee's joining month." }, { status: 400 });
     }
 

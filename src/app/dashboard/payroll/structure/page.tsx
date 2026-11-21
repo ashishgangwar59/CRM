@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Download, IndianRupee, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
+import { joinedAfterMonth } from "@/lib/joiningMonth";
+
+const MONTH_STORAGE_KEY = "salaryStructure.monthYear";
 
 export default function SalaryStructurePage() {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -17,7 +20,8 @@ export default function SalaryStructurePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
   const [employeeSearch, setEmployeeSearch] = useState("");
-  const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
+  // Empty until restored from URL / localStorage, so a refresh keeps the chosen month.
+  const [monthYear, setMonthYear] = useState("");
 
   const [formData, setFormData] = useState({
     basic: 0,
@@ -62,7 +66,26 @@ export default function SalaryStructurePage() {
     fetchEmployees();
   }, []);
 
+  // Restore the selected month on load: URL ?month= first, then last used, then current month.
   useEffect(() => {
+    const isValid = (v: string | null) => !!v && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+    const fromUrl = new URLSearchParams(window.location.search).get("month");
+    let fromStorage: string | null = null;
+    try { fromStorage = localStorage.getItem(MONTH_STORAGE_KEY); } catch {}
+    setMonthYear(
+      isValid(fromUrl) ? fromUrl! :
+      isValid(fromStorage) ? fromStorage! :
+      new Date().toISOString().slice(0, 7)
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!monthYear) return;
+    // Persist the month so refreshing the page stays on it.
+    try { localStorage.setItem(MONTH_STORAGE_KEY, monthYear); } catch {}
+    const url = new URL(window.location.href);
+    url.searchParams.set("month", monthYear);
+    window.history.replaceState(null, "", url.toString());
     fetchStructures();
   }, [monthYear]);
 
@@ -165,6 +188,8 @@ export default function SalaryStructurePage() {
   const selectedEmployeeObj = employees.find(e => e._id === selectedEmp);
   const isBranchHead = selectedEmployeeObj?.designation?.toLowerCase().includes("branch head");
   const filteredEmployees = employees.filter((employee) =>
+    // Hide employees who joined after the selected month.
+    !joinedAfterMonth(employee.dateOfJoining, monthYear) &&
     `${employee.firstName || ""} ${employee.lastName || ""} ${employee.employeeCode || ""}`
       .toLowerCase()
       .includes(employeeSearch.trim().toLowerCase())
@@ -174,7 +199,7 @@ export default function SalaryStructurePage() {
     <div className="space-y-6 w-full pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <Link href="/dashboard/payroll">
+          <Link href={monthYear ? `/dashboard/payroll?month=${monthYear}` : "/dashboard/payroll"}>
             <Button variant="ghost" className="mb-2 -ml-3 text-zinc-600 hover:text-zinc-900">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payroll
             </Button>

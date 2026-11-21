@@ -65,6 +65,26 @@ export default function SettingsPage() {
     { name: "Database Backup", icon: Database }
   ];
 
+  // Tabs visible only to KEY_ADMIN (hidden for ADMIN and regular users)
+  const KEY_ADMIN_ONLY_TABS = ["Email Templates", "SMS Templates", "Integrations", "Access Control", "Database Backup"];
+  const [role, setRole] = useState("");
+  const isKeyAdmin = role === "KEY_ADMIN" || role === "KEYADMIN";
+  const visibleTabs = TABS.filter(tab => isKeyAdmin || !KEY_ADMIN_ONLY_TABS.includes(tab.name));
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => { if (data.success) setRole(data.role || ""); })
+      .catch(console.error);
+  }, []);
+
+  // If a restricted tab is active and the user isn't KEY_ADMIN, fall back to the first tab
+  useEffect(() => {
+    if (!isKeyAdmin && KEY_ADMIN_ONLY_TABS.includes(activeTab)) {
+      setActiveTab("Company Profile");
+    }
+  }, [isKeyAdmin, activeTab]);
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -81,7 +101,7 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "Access Control" && users.length === 0) {
+    if (activeTab === "Access Control" && isKeyAdmin && users.length === 0) {
       fetch("/api/users").then(res => res.json()).then(data => {
         if (data.success) setUsers(data.data);
       });
@@ -89,7 +109,7 @@ export default function SettingsPage() {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === "Database Backup") {
+    if (activeTab === "Database Backup" && isKeyAdmin) {
       fetch("/api/settings/backup/status")
         .then(res => res.json())
         .then(data => {
@@ -170,13 +190,17 @@ export default function SettingsPage() {
   };
 
   const handleSendBackupEmail = async () => {
+    if (!settings?.backupConfig?.email) {
+      setBackupMsg({ type: "error", text: "Enter the recipient email and click Save Changes first." });
+      return;
+    }
     setSendingEmail(true);
     setBackupMsg(null);
     try {
       const res = await fetch("/api/settings/backup/send", { method: "POST" });
       const json = await res.json();
       if (res.ok && json.success) {
-        setBackupMsg({ type: "success", text: "Backup generated and emailed successfully!" });
+        setBackupMsg({ type: "success", text: json.message || "Backup generated and emailed successfully!" });
       } else {
         setBackupMsg({ type: "error", text: json.error || "Failed to send backup email" });
       }
@@ -265,7 +289,7 @@ export default function SettingsPage() {
         {/* Sidebar Nav */}
         <div className="w-full md:w-64 shrink-0">
           <nav className="space-y-1">
-            {TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <button
                 key={tab.name}
                 onClick={() => setActiveTab(tab.name)}
@@ -875,7 +899,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Daily Schedule Time</Label>
+                        <Label>Daily Schedule Time (IST)</Label>
                         <Input 
                           type="time" 
                           value={settings.backupConfig?.backupTime || "10:00"} 

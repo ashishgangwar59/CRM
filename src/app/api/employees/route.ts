@@ -295,6 +295,20 @@ export async function GET(req: Request) {
       query.status = status;
     }
 
+    // Optionally hide employees whose login account is ADMIN / KEY_ADMIN (e.g. Payroll Dashboard).
+    if (searchParams.get("excludeAdmins") === "true") {
+      const adminUsers = await User.find({
+        role: { $in: ["ADMIN", "KEY_ADMIN", "KEYADMIN", "SUPER_ADMIN", "SUPERADMIN"] },
+      }).select("email").lean();
+      const adminEmailPatterns = adminUsers
+        .map((u: any) => u.email)
+        .filter(Boolean)
+        .map((email: string) => new RegExp(`^${email.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"));
+      if (adminEmailPatterns.length > 0) {
+        query.$and = [...(query.$and || []), { email: { $nin: adminEmailPatterns } }];
+      }
+    }
+
     const page = parseInt(searchParams.get("page") || "0");
     const limit = parseInt(searchParams.get("limit") || "0");
 

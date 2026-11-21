@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Download, FileText, FileSpreadsheet, Filter } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -28,6 +28,29 @@ export default function UniversalReportsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+
+  // Search + pagination for the results table
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  // Search by name / employee code / any visible column (PayrollId is an internal id, so skipped).
+  const filteredRows = normalizedSearch
+    ? rows.filter(row =>
+        Object.entries(row).some(([key, val]) =>
+          key !== "PayrollId" && val != null && String(val).toLowerCase().includes(normalizedSearch)
+        )
+      )
+    : rows;
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const paginatedRows = filteredRows.slice(pageStart, pageStart + pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rows, searchTerm, pageSize]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -86,8 +109,8 @@ export default function UniversalReportsPage() {
   };
 
   const exportExcel = () => {
-    if (rows.length === 0) return alert("No data to export");
-    const exportData = rows.map(r => {
+    if (filteredRows.length === 0) return alert("No data to export");
+    const exportData = filteredRows.map(r => {
       const { PayrollId, ...rest } = r;
       return rest;
     });
@@ -98,7 +121,7 @@ export default function UniversalReportsPage() {
   };
 
   const exportPDF = () => {
-    if (rows.length === 0) return alert("No data to export");
+    if (filteredRows.length === 0) return alert("No data to export");
     const doc = new jsPDF();
     
     // Add Title
@@ -111,7 +134,7 @@ export default function UniversalReportsPage() {
     // Extract headers dynamically from the first row object keys, excluding PayrollId
     const headers = Object.keys(rows[0]).filter(h => h !== "PayrollId");
     // Extract data arrays
-    const data = rows.map(row => headers.map(header => String(row[header])));
+    const data = filteredRows.map(row => headers.map(header => String(row[header])));
 
     autoTable(doc, {
       head: [headers],
@@ -183,13 +206,25 @@ export default function UniversalReportsPage() {
       {/* Results Area */}
       {hasRun && !loading && rows.length > 0 && (
         <div className="space-y-6">
-          <div className="flex justify-end space-x-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search by employee name or code..."
+                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+              />
+            </div>
+            <div className="flex justify-end space-x-3">
             <Button variant="outline" className="text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={exportExcel}>
               <FileSpreadsheet className="w-4 h-4 mr-2" /> Export to Excel
             </Button>
             <Button variant="outline" className="text-rose-700 border-rose-200 hover:bg-rose-50" onClick={exportPDF}>
               <FileText className="w-4 h-4 mr-2" /> Export to PDF
             </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -228,8 +263,15 @@ export default function UniversalReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((row, idx) => (
-                      <TableRow key={idx}>
+                    {paginatedRows.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={Object.keys(rows[0]).length} className="py-10 text-center text-zinc-500">
+                          No records match &quot;{searchTerm}&quot;.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {paginatedRows.map((row, idx) => (
+                      <TableRow key={pageStart + idx}>
                         {Object.entries(row).map(([key, val]: any, vIdx) => {
                           if (key === "PayrollId") {
                             return (
@@ -251,6 +293,36 @@ export default function UniversalReportsPage() {
                   </TableBody>
                 </Table>
               </CardContent>
+              {/* Pagination */}
+              <div className="flex flex-col gap-3 border-t border-zinc-200 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <span>Rows per page:</span>
+                  <select
+                    value={pageSize}
+                    onChange={e => setPageSize(Number(e.target.value))}
+                    className="h-8 rounded-md border border-zinc-200 bg-white px-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+                  </select>
+                  <span>
+                    {filteredRows.length === 0
+                      ? "0 records"
+                      : `${pageStart + 1}–${Math.min(pageStart + pageSize, filteredRows.length)} of ${filteredRows.length}`}
+                    {normalizedSearch && ` (filtered from ${rows.length})`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setCurrentPage(1)}>First</Button>
+                  <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setCurrentPage(safePage - 1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="whitespace-nowrap">Page {safePage} of {totalPages}</span>
+                  <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setCurrentPage(safePage + 1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setCurrentPage(totalPages)}>Last</Button>
+                </div>
+              </div>
             </Card>
           </div>
         </div>

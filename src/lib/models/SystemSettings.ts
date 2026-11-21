@@ -83,6 +83,7 @@ export interface ISystemSettings extends Document {
   backupConfig: {
     email: string;
     backupTime: string; // e.g. "10:00"
+    lastAutoBackupDate?: string;
   };
   payrollVisibility: {
     employeeCanViewSalarySlip: boolean;
@@ -209,7 +210,9 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
     },
     backupConfig: {
       email: { type: String, default: "admin@example.com" },
-      backupTime: { type: String, default: "10:00" }
+      backupTime: { type: String, default: "10:00" },
+      // "YYYY-MM-DD" (IST) of the last automatic backup – prevents duplicates and allows catch-up.
+      lastAutoBackupDate: { type: String, default: "" }
     },
     payrollVisibility: {
       employeeCanViewSalarySlip: { type: Boolean, default: true }

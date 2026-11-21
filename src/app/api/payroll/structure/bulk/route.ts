@@ -6,6 +6,7 @@ import { Employee } from "@/lib/models/Employee";
 import { Payroll } from "@/lib/models/Payroll";
 import { SalaryStructure } from "@/lib/models/SalaryStructure";
 import { calculatePayrollForEmployee } from "@/lib/payrollEngine";
+import { getJoiningMonth, joinedAfterMonth } from "@/lib/joiningMonth";
 
 const salaryColumns = [
   "Basic",
@@ -71,10 +72,12 @@ export async function GET(req: Request) {
     }
 
     await connectToDatabase();
-    const employees = await Employee.find({ status: "Active" })
-      .select("_id employeeCode firstName lastName department designation")
+    const allEmployees = await Employee.find({ status: "Active" })
+      .select("_id employeeCode firstName lastName department designation dateOfJoining")
       .sort({ employeeCode: 1 })
       .lean();
+    // Skip employees who joined after the selected month.
+    const employees = allEmployees.filter(employee => !joinedAfterMonth(employee.dateOfJoining, monthYear));
     const structures = await SalaryStructure.find({
       employeeId: { $in: employees.map(employee => employee._id) },
     }).sort({ createdAt: -1 }).lean();
@@ -209,12 +212,15 @@ export async function POST(req: Request) {
     const employees = await Employee.find({
       employeeCode: { $in: importedRows.map(row => row.employeeCode) },
       status: "Active",
-    }).select("_id employeeCode");
+    }).select("_id employeeCode dateOfJoining");
     const employeeByCode = new Map(employees.map(employee => [employee.employeeCode, employee]));
 
     for (const row of importedRows) {
-      if (!employeeByCode.has(row.employeeCode)) {
+      const employee = employeeByCode.get(row.employeeCode);
+      if (!employee) {
         errors.push(`Row ${row.rowNumber}: Active employee ${row.employeeCode} was not found.`);
+      } else if (joinedAfterMonth(employee.dateOfJoining, monthYear)) {
+        errors.push(`Row ${row.rowNumber}: Employee ${row.employeeCode} joined in ${getJoiningMonth(employee.dateOfJoining)}, so salary structure cannot be added for ${monthYear}.`);
       }
     }
     if (errors.length > 0) {

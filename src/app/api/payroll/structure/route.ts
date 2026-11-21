@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { SalaryStructure } from "@/lib/models/SalaryStructure";
 import { verifyAccessToken } from "@/lib/auth";
+import { getJoiningMonth, joinedAfterMonth } from "@/lib/joiningMonth";
 
 export async function GET(req: Request) {
   try {
@@ -67,6 +68,17 @@ export async function POST(req: Request) {
 
     const payload = verifyAccessToken(token);
     const data = await req.json();
+
+    // Block salary structures for months before the employee joined.
+    if (data.employeeId && data.monthYear) {
+      const { Employee } = await import("@/lib/models/Employee");
+      const employee: any = await Employee.findById(data.employeeId).select("dateOfJoining").lean();
+      if (employee && joinedAfterMonth(employee.dateOfJoining, data.monthYear)) {
+        return NextResponse.json({
+          error: `This employee joined in ${getJoiningMonth(employee.dateOfJoining)}. Salary structure cannot be added for ${data.monthYear}.`,
+        }, { status: 400 });
+      }
+    }
 
     const structure = await SalaryStructure.findOneAndUpdate(
       // Salary structures are unique per employee (employeeId_1 index).

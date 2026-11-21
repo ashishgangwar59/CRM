@@ -9,15 +9,22 @@ import { IndianRupee, Settings, Link as LinkIcon, Download, CheckSquare, Loader2
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getDaysInMonth, getSlipDays } from "@/lib/dateUtils";
+import { joinedAfterMonth } from "@/lib/joiningMonth";
+
+const PAYROLL_MONTH_KEY = "payrollMonth";
 
 export default function PayrollDashboardPage() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
+  // Selected month survives refresh: URL ?month= first, then last used (localStorage), then current month.
   const [monthYear, setMonthYear] = useState(() => {
-    if (typeof window !== "undefined") {
-      return sessionStorage.getItem("payrollMonth") ?? new Date().toISOString().slice(0, 7);
-    }
-    return new Date().toISOString().slice(0, 7);
+    const current = new Date().toISOString().slice(0, 7);
+    if (typeof window === "undefined") return current;
+    const isValid = (v: string | null) => !!v && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+    const fromUrl = new URLSearchParams(window.location.search).get("month");
+    let fromStorage: string | null = null;
+    try { fromStorage = localStorage.getItem(PAYROLL_MONTH_KEY); } catch {}
+    return isValid(fromUrl) ? fromUrl! : isValid(fromStorage) ? fromStorage! : current;
   });
   const [payrolls, setPayrolls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +63,8 @@ export default function PayrollDashboardPage() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("/api/employees?slim=true&status=Active");
+      // Admin / Key Admin accounts are not listed in the payroll dashboard.
+      const res = await fetch("/api/employees?slim=true&status=Active&excludeAdmins=true");
       const data = await res.json();
       if (data.success) {
         setEmployees(data.data);
@@ -92,6 +100,15 @@ export default function PayrollDashboardPage() {
   useEffect(() => {
     fetchRoleAndData();
   }, []);
+
+  // Keep the chosen month in the URL + localStorage (admin view only; employees see all months).
+  useEffect(() => {
+    if (!role || role === "Employee" || !monthYear) return;
+    try { localStorage.setItem(PAYROLL_MONTH_KEY, monthYear); } catch {}
+    const url = new URL(window.location.href);
+    url.searchParams.set("month", monthYear);
+    window.history.replaceState(null, "", url.toString());
+  }, [monthYear, role]);
 
   useEffect(() => {
     if (role) {
@@ -256,6 +273,8 @@ export default function PayrollDashboardPage() {
     return !normalizedSearch || `${employee?.firstName || ""} ${employee?.lastName || ""} ${employee?.employeeCode || ""}`.toLowerCase().includes(normalizedSearch);
   });
   const filteredEmployees = employees.filter((emp) => {
+    // Hide employees who joined after the selected month.
+    if (monthYear && joinedAfterMonth(emp.dateOfJoining, monthYear)) return false;
     return !normalizedSearch || `${emp.firstName || ""} ${emp.lastName || ""} ${emp.employeeCode || ""}`.toLowerCase().includes(normalizedSearch);
   });
 
@@ -329,7 +348,7 @@ export default function PayrollDashboardPage() {
               >
                 {generatingAll ? "Running..." : "Run All Payrolls"}
               </Button>
-              <Link href="/dashboard/payroll/structure">
+              <Link href={monthYear ? `/dashboard/payroll/structure?month=${monthYear}` : "/dashboard/payroll/structure"}>
                 <Button variant="outline"><Settings className="mr-2 h-4 w-4"/> Structures</Button>
               </Link>
             </>
@@ -344,13 +363,7 @@ export default function PayrollDashboardPage() {
                   id="payroll-month"
                   type="month"
                   value={monthYear}
-                  onChange={(e) => {
-                    const selectedMonth = e.target.value;
-                    setMonthYear(selectedMonth);
-                    if (typeof window !== "undefined") {
-                      sessionStorage.setItem("payrollMonth", selectedMonth);
-                    }
-                  }}
+                  onChange={(e) => setMonthYear(e.target.value)}
                   className="h-10 w-40"
                 />
               </div>

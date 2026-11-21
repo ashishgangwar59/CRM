@@ -7,6 +7,7 @@ import { Payroll } from "@/lib/models/Payroll";
 import { WalletTransaction } from "@/lib/models/WalletTransaction";
 import { Employee } from "@/lib/models/Employee";
 import { Lead } from "@/lib/models/Lead";
+import { User } from "@/lib/models/User";
 
 export async function GET(req: Request) {
   try {
@@ -92,16 +93,32 @@ export async function GET(req: Request) {
         break;
 
       case "Salary":
-        const payrollFilter: any = Object.keys(dateQuery).length ? { createdAt: dateQuery } : {};
-        if (payload.role === "Employee") payrollFilter.employeeId = payload.userId;
-        const payrollRecords = await Payroll.find(payrollFilter).populate("employeeId", "firstName lastName employeeCode").lean();
+        // Filter by the PAYROLL MONTH (monthYear), not by when the record was created –
+        // e.g. August salary is usually generated/paid in September.
+        const payrollFilter: any = {};
+        if (month) {
+          payrollFilter.monthYear = month;
+        } else if (year) {
+          payrollFilter.monthYear = { $regex: `^${year.replace(/\D/g, "")}-` };
+        }
+        if (payload.role === "Employee") {
+          // payload.userId is the login (User) id; payrolls reference the Employee record.
+          const user: any = await User.findById(payload.userId).select("email").lean();
+          const employee: any = user?.email ? await Employee.findOne({ email: user.email }).select("_id").lean() : null;
+          payrollFilter.employeeId = employee?._id || null;
+        }
+        const payrollRecords = await Payroll.find(payrollFilter)
+          .populate("employeeId", "firstName lastName employeeCode")
+          .sort({ monthYear: 1 })
+          .lean();
 
         let salaryCounts: any = { Paid: 0, Approved: 0, Locked: 0, Draft: 0 };
         payrollRecords.forEach(p => {
           salaryCounts[p.status] = (salaryCounts[p.status] || 0) + 1;
           rows.push({
             Month: p.monthYear,
-            Employee: `${(p.employeeId as any)?.firstName || ""} ${(p.employeeId as any)?.lastName || ""}`,
+            Code: (p.employeeId as any)?.employeeCode || "",
+            Employee: `${(p.employeeId as any)?.firstName || ""} ${(p.employeeId as any)?.lastName || ""}`.trim() || "(Deleted employee)",
             Gross: p.grossSalary,
             Deductions: p.totalDeductions,
             Net: p.netSalary,
