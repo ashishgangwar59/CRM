@@ -58,6 +58,8 @@ export interface ISystemSettings extends Document {
   };
   investorLegalBondTemplate?: string;
   investorMaturityPeriodMonths?: number;
+  // Mobile app public home page content (see src/lib/appHomeContent.ts)
+  appHomeContent?: Record<string, any>;
   integrations: {
     smtp: {
       host: string;
@@ -70,6 +72,10 @@ export interface ISystemSettings extends Document {
       razorpayAccountNumber: string;
       razorpayKeyId: string;
       razorpayKeySecret: string;
+      enabled?: boolean;
+      allowOnline?: boolean;
+      allowManual?: boolean;
+      razorpayWebhookSecret?: string;
     };
     smsGateway: {
       twilioAccountSid: string;
@@ -78,6 +84,15 @@ export interface ISystemSettings extends Document {
       twilioVerifyServiceSid: string;
       msg91AuthKey: string;
       msg91SenderId: string;
+    };
+    kyc?: {
+      enabled: boolean;
+      provider: "mock" | "surepass";
+      mode: "sandbox" | "live";
+      apiToken: string;
+      nameMatchThreshold: number; // 0-100
+      requireDocumentMatch: boolean;
+      allowManualReviewFallback: boolean;
     };
   };
   backupConfig: {
@@ -186,6 +201,7 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
 4. By checking the agreement box, the investor digitally signs and confirms that all submitted information is accurate and legally binding.`
     },
     investorMaturityPeriodMonths: { type: Number, default: 1 },
+    appHomeContent: { type: Schema.Types.Mixed, default: undefined },
     integrations: {
       smtp: {
         host: { type: String, default: "" },
@@ -198,6 +214,10 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
         razorpayAccountNumber: { type: String, default: "" },
         razorpayKeyId: { type: String, default: "" },
         razorpayKeySecret: { type: String, default: "" },
+        enabled: { type: Boolean, default: false },
+        allowOnline: { type: Boolean, default: true },
+        allowManual: { type: Boolean, default: true },
+        razorpayWebhookSecret: { type: String, default: "" },
       },
       smsGateway: {
         twilioAccountSid: { type: String, default: "" },
@@ -206,6 +226,15 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
         twilioVerifyServiceSid: { type: String, default: "" },
         msg91AuthKey: { type: String, default: "" },
         msg91SenderId: { type: String, default: "" },
+      },
+      kyc: {
+        enabled: { type: Boolean, default: false },
+        provider: { type: String, enum: ["mock", "surepass"], default: "mock" },
+        mode: { type: String, enum: ["sandbox", "live"], default: "sandbox" },
+        apiToken: { type: String, default: "" },
+        nameMatchThreshold: { type: Number, default: 80 },
+        requireDocumentMatch: { type: Boolean, default: true },
+        allowManualReviewFallback: { type: Boolean, default: false },
       }
     },
     backupConfig: {
@@ -328,4 +357,4 @@ const SystemSettingsSchema: Schema<ISystemSettings> = new Schema(
 if (mongoose.models.SystemSettings) {
   delete mongoose.models.SystemSettings;
 }
-export const SystemSettings: Model<ISystemSettings> = mongoose.model("SystemSettings", SystemSettingsSchema);
+export const SystemSettings: Model<ISystemSettings> = mongoose.model<ISystemSettings>("SystemSettings", SystemSettingsSchema);

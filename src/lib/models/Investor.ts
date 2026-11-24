@@ -30,6 +30,33 @@ export interface IInvestor extends Document {
     branchName?: string;
   };
 
+  // Investment payment totals (kept in sync by lib/payments/service.ts)
+  payment?: {
+    status: "Unpaid" | "Partially Paid" | "Paid";
+    amountPaid: number;
+    pendingVerificationAmount: number;
+    lastPaidAt?: Date;
+  };
+
+  // Government KYC verification (Aadhaar OTP + PAN + uploaded document match)
+  kycVerification?: {
+    status: "Not Started" | "Verified" | "Needs Review" | "Manual Override";
+    sessionId?: mongoose.Types.ObjectId;
+    aadhaarMasked?: string;
+    aadhaarName?: string;
+    aadhaarDob?: string;
+    panNumber?: string;
+    panName?: string;
+    panAadhaarLinked?: boolean | null;
+    nameMatchScore?: number;
+    documentsMatched?: boolean;
+    provider?: string;
+    verifiedAt?: Date;
+    overriddenBy?: mongoose.Types.ObjectId;
+    overrideReason?: string;
+    overriddenAt?: Date;
+  };
+
   // Document Approval Statuses (one-by-one verification)
   docVerifications?: {
     aadhar?: "Approved" | "Rejected" | "Pending";
@@ -133,6 +160,31 @@ const InvestorSchema: Schema<IInvestor> = new Schema(
       accountNumber: { type: String },
       ifscCode: { type: String },
       branchName: { type: String },
+    },
+
+    payment: {
+      status: { type: String, enum: ["Unpaid", "Partially Paid", "Paid"], default: "Unpaid" },
+      amountPaid: { type: Number, default: 0 },
+      pendingVerificationAmount: { type: Number, default: 0 },
+      lastPaidAt: { type: Date },
+    },
+
+    kycVerification: {
+      status: { type: String, enum: ["Not Started", "Verified", "Needs Review", "Manual Override"], default: "Not Started" },
+      sessionId: { type: Schema.Types.ObjectId, ref: "KycSession" },
+      aadhaarMasked: { type: String },
+      aadhaarName: { type: String },
+      aadhaarDob: { type: String },
+      panNumber: { type: String },
+      panName: { type: String },
+      panAadhaarLinked: { type: Boolean, default: null },
+      nameMatchScore: { type: Number },
+      documentsMatched: { type: Boolean },
+      provider: { type: String },
+      verifiedAt: { type: Date },
+      overriddenBy: { type: Schema.Types.ObjectId, ref: "User" },
+      overrideReason: { type: String },
+      overriddenAt: { type: Date },
     },
 
     docVerifications: {

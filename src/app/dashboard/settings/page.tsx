@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings, Plug, Database, Download, Upload, AlertTriangle } from "lucide-react";
+import { Building, Users, Briefcase, Clock, Umbrella, Mail, MessageSquare, Shield, Settings, Plug, Database, Download, Upload, AlertTriangle, Smartphone } from "lucide-react";
+import { APP_HOME_ICONS, DEFAULT_APP_HOME_CONTENT, resolveAppHomeContent } from "@/lib/appHomeContent";
 
 const RichEditor = ({ defaultValue, onChange }: { defaultValue: string, onChange: (v: string) => void }) => {
   return (
@@ -51,6 +52,7 @@ export default function SettingsPage() {
 
   const TABS = [
     { name: "Company Profile", icon: Building },
+    { name: "Mobile App Home", icon: Smartphone },
     { name: "Invoice Bank Accounts", icon: Building },
     { name: "Departments", icon: Users },
     { name: "Designations", icon: Briefcase },
@@ -155,7 +157,8 @@ export default function SettingsPage() {
       if (res.ok) {
         alert("Settings saved successfully!");
       } else {
-        alert("Failed to save settings.");
+        const json = await res.json().catch(() => ({}));
+        alert(json.error || "Failed to save settings.");
       }
     } catch (e) {
       alert("Error saving settings.");
@@ -368,6 +371,102 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+
+              {activeTab === "Mobile App Home" && (() => {
+                const home = resolveAppHomeContent(settings.appHomeContent);
+                const setHome = (patch: Partial<typeof home>) =>
+                  setSettings({ ...settings, appHomeContent: { ...home, ...patch } });
+                const taClass = "flex w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
+                const updateSection = (si: number, patch: any) =>
+                  setHome({ sections: home.sections.map((s, i) => (i === si ? { ...s, ...patch } : s)) });
+                const updateCard = (si: number, ci: number, patch: any) =>
+                  updateSection(si, { cards: home.sections[si].cards.map((c, i) => (i === ci ? { ...c, ...patch } : c)) });
+
+                return (
+                  <div className="space-y-8">
+                    <p className="text-sm text-zinc-500">
+                      This content appears on the mobile app&apos;s first screen, before login. Contact details (address, email, phone) come from the Company Profile tab. Click <strong>Save Changes</strong>; the app shows updates the next time it opens.
+                    </p>
+
+                    <section className="space-y-4">
+                      <h3 className="font-semibold text-zinc-900">Hero</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label>Badge</Label><Input value={home.heroBadge} onChange={e => setHome({ heroBadge: e.target.value })} /></div>
+                        <div className="space-y-2"><Label>Tagline</Label><Input value={home.heroTagline} onChange={e => setHome({ heroTagline: e.target.value })} /></div>
+                        <div className="space-y-2"><Label>Title</Label><Input value={home.heroTitle} onChange={e => setHome({ heroTitle: e.target.value })} /></div>
+                        <div className="space-y-2"><Label>Subtitle</Label><Input value={home.heroSubtitle} onChange={e => setHome({ heroSubtitle: e.target.value })} /></div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description</Label>
+                        <textarea className={`${taClass} min-h-[80px]`} value={home.heroDescription} onChange={e => setHome({ heroDescription: e.target.value })} />
+                      </div>
+                    </section>
+
+                    <section className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-zinc-900">Highlight stats</h3>
+                        <Button variant="outline" size="sm" onClick={() => setHome({ highlights: [...home.highlights, { value: "", label: "" }] })}>+ Add stat</Button>
+                      </div>
+                      {home.highlights.map((h, i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <Input className="w-36" placeholder="11.5%" value={h.value} onChange={e => setHome({ highlights: home.highlights.map((x, j) => j === i ? { ...x, value: e.target.value } : x) })} />
+                          <Input placeholder="NCD yield p.a." value={h.label} onChange={e => setHome({ highlights: home.highlights.map((x, j) => j === i ? { ...x, label: e.target.value } : x) })} />
+                          <Button variant="outline" size="sm" onClick={() => setHome({ highlights: home.highlights.filter((_, j) => j !== i) })}>Remove</Button>
+                        </div>
+                      ))}
+                    </section>
+
+                    <section className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-zinc-900">Tabs &amp; cards</h3>
+                        <Button variant="outline" size="sm" onClick={() => setHome({ sections: [...home.sections, { title: "New tab", cards: [] }] })}>+ Add tab</Button>
+                      </div>
+                      {home.sections.map((section, si) => (
+                        <div key={si} className="rounded-lg border border-zinc-200 p-4 space-y-3">
+                          <div className="flex gap-2 items-center">
+                            <Label className="shrink-0">Tab name</Label>
+                            <Input value={section.title} onChange={e => updateSection(si, { title: e.target.value })} />
+                            <Button variant="outline" size="sm" onClick={() => setHome({ sections: home.sections.filter((_, j) => j !== si) })}>Delete tab</Button>
+                          </div>
+                          {section.cards.map((card, ci) => (
+                            <div key={ci} className="rounded-md bg-zinc-50 border border-zinc-100 p-3 space-y-2">
+                              <div className="flex gap-2 items-center">
+                                <select
+                                  className="h-9 rounded-md border border-zinc-300 bg-white px-2 text-sm"
+                                  value={card.icon}
+                                  onChange={e => updateCard(si, ci, { icon: e.target.value })}
+                                >
+                                  {APP_HOME_ICONS.map(ic => <option key={ic} value={ic}>{ic}</option>)}
+                                </select>
+                                <Input placeholder="Card title" value={card.title} onChange={e => updateCard(si, ci, { title: e.target.value })} />
+                                <Button variant="outline" size="sm" onClick={() => updateSection(si, { cards: section.cards.filter((_, j) => j !== ci) })}>Remove</Button>
+                              </div>
+                              <textarea className={`${taClass} min-h-[60px]`} placeholder="Card description" value={card.description} onChange={e => updateCard(si, ci, { description: e.target.value })} />
+                            </div>
+                          ))}
+                          <Button variant="outline" size="sm" onClick={() => updateSection(si, { cards: [...section.cards, { icon: "building", title: "", description: "" }] })}>+ Add card</Button>
+                        </div>
+                      ))}
+                    </section>
+
+                    <section className="space-y-4">
+                      <h3 className="font-semibold text-zinc-900">Links &amp; footer</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label>Book consultation URL</Label><Input value={home.consultUrl} onChange={e => setHome({ consultUrl: e.target.value })} /></div>
+                        <div className="space-y-2"><Label>Talk to expert URL</Label><Input value={home.contactUrl} onChange={e => setHome({ contactUrl: e.target.value })} /></div>
+                        <div className="space-y-2"><Label>Company profile PDF URL</Label><Input placeholder="https://.../profile.pdf" value={home.profilePdfUrl} onChange={e => setHome({ profilePdfUrl: e.target.value })} /></div>
+                        <div className="space-y-2"><Label>Footer note</Label><Input value={home.footerNote} onChange={e => setHome({ footerNote: e.target.value })} /></div>
+                      </div>
+                    </section>
+
+                    <div>
+                      <Button variant="outline" size="sm" onClick={() => { if (confirm("Reset the mobile home page to the default content?")) setHome(DEFAULT_APP_HOME_CONTENT); }}>
+                        Reset to default content
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {activeTab === "Invoice Bank Accounts" && (
                 <div className="space-y-5">
@@ -646,21 +745,60 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Payment Gateway (Razorpay/Cashfree)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Account Number</Label>
-                        <Input value={settings.integrations.paymentGateway?.razorpayAccountNumber || ""} onChange={e => setSettings({ ...settings, integrations: { ...settings.integrations, paymentGateway: { ...settings.integrations.paymentGateway, razorpayAccountNumber: e.target.value } } })} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Key ID</Label>
-                        <Input value={settings.integrations.paymentGateway?.razorpayKeyId || ""} onChange={e => setSettings({ ...settings, integrations: { ...settings.integrations, paymentGateway: { ...settings.integrations.paymentGateway, razorpayKeyId: e.target.value } } })} />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label>Key Secret</Label>
-                        <Input type="password" value={settings.integrations.paymentGateway?.razorpayKeySecret || ""} onChange={e => setSettings({ ...settings, integrations: { ...settings.integrations, paymentGateway: { ...settings.integrations.paymentGateway, razorpayKeySecret: e.target.value } } })} />
-                      </div>
-                    </div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Payment Gateway (Razorpay) – Investment Payments</h3>
+                    {(() => {
+                      const pg = settings.integrations.paymentGateway || {};
+                      const setPg = (patch: any) => setSettings({ ...settings, integrations: { ...settings.integrations, paymentGateway: { ...pg, ...patch } } });
+                      const keyId = String(pg.razorpayKeyId || "");
+                      const webhookUrl = typeof window !== "undefined" ? `${window.location.origin}/api/payments/razorpay/webhook` : "/api/payments/razorpay/webhook";
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <label className="md:col-span-2 flex items-center gap-2 text-sm font-semibold">
+                            <input type="checkbox" checked={!!pg.enabled} onChange={e => setPg({ enabled: e.target.checked })} />
+                            Enable investment payments (investor dashboard &amp; after Debenture Application)
+                          </label>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" checked={pg.allowOnline !== false} onChange={e => setPg({ allowOnline: e.target.checked })} />
+                            Allow online payment (Razorpay: UPI / card / net-banking)
+                          </label>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" checked={pg.allowManual !== false} onChange={e => setPg({ allowManual: e.target.checked })} />
+                            Allow bank transfer with Transaction / UTR No. + screenshot
+                          </label>
+                          <div className="space-y-2">
+                            <Label>Key ID</Label>
+                            <Input value={keyId} onChange={e => setPg({ razorpayKeyId: e.target.value.trim() })} placeholder="rzp_test_… or rzp_live_…" />
+                            {keyId && (
+                              <p className={`text-xs font-semibold ${keyId.startsWith("rzp_live_") ? "text-emerald-600" : "text-amber-600"}`}>
+                                {keyId.startsWith("rzp_live_") ? "LIVE mode – real payments" : "TEST mode – no real money"}
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Key Secret</Label>
+                            <Input type="password" autoComplete="off" value={pg.razorpayKeySecret || ""} onChange={e => setPg({ razorpayKeySecret: e.target.value.trim() })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Webhook Secret</Label>
+                            <Input type="password" autoComplete="off" value={pg.razorpayWebhookSecret || ""} onChange={e => setPg({ razorpayWebhookSecret: e.target.value.trim() })} placeholder="Set the same secret in Razorpay → Webhooks" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Account Number (optional)</Label>
+                            <Input value={pg.razorpayAccountNumber || ""} onChange={e => setPg({ razorpayAccountNumber: e.target.value })} />
+                          </div>
+                          <div className="md:col-span-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 space-y-1">
+                            <p><b>Razorpay webhook URL:</b> <span className="font-mono">{webhookUrl}</span></p>
+                            <p>In Razorpay Dashboard → Settings → Webhooks, add this URL with events <b>payment.captured</b>, <b>payment.failed</b> and <b>order.paid</b>, using the Webhook Secret above.</p>
+                          </div>
+                          {pg.enabled && pg.allowOnline !== false && (!keyId || !pg.razorpayKeySecret) && (
+                            <p className="md:col-span-2 text-xs font-semibold text-rose-600">Online payment needs both Key ID and Key Secret.</p>
+                          )}
+                          {pg.enabled && pg.allowOnline !== false && keyId && !pg.razorpayWebhookSecret && (
+                            <p className="md:col-span-2 text-xs font-semibold text-amber-600">Recommended: add a Webhook Secret so payments are recorded even if the investor closes the browser.</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div>
@@ -693,6 +831,92 @@ export default function SettingsPage() {
                         <Input value={settings.integrations.smsGateway?.msg91SenderId || ""} onChange={e => setSettings({ ...settings, integrations: { ...settings.integrations, smsGateway: { ...settings.integrations.smsGateway, msg91SenderId: e.target.value } } })} />
                       </div>
                     </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 border-b pb-2 mb-4">Aadhaar & PAN Verification (KYC)</h3>
+                    <p className="text-xs text-zinc-500 mb-4">
+                      When enabled, the Debenture Application form and the investor KYC step stay locked until the applicant verifies Aadhaar (OTP) and PAN with government records through the KYC provider, and the uploaded cards match.
+                    </p>
+                    {(() => {
+                      const kyc = settings.integrations.kyc || {};
+                      const setKyc = (patch: any) => setSettings({ ...settings, integrations: { ...settings.integrations, kyc: { ...kyc, ...patch } } });
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <label className="md:col-span-2 flex items-center gap-2 text-sm font-semibold">
+                            <input type="checkbox" checked={!!kyc.enabled} onChange={e => setKyc({ enabled: e.target.checked })} />
+                            Enable KYC verification (required before submitting the forms)
+                          </label>
+                          <div className="space-y-2">
+                            <Label>Provider</Label>
+                            <select
+                              className="block w-full text-sm border border-zinc-300 rounded-md bg-white px-3 py-2"
+                              value={kyc.provider || "mock"}
+                              onChange={e => setKyc({ provider: e.target.value })}
+                            >
+                              <option value="mock">Test mode (no real check – OTP 123456)</option>
+                              <option value="surepass">Surepass</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Environment</Label>
+                            <select
+                              className="block w-full text-sm border border-zinc-300 rounded-md bg-white px-3 py-2"
+                              value={kyc.mode || "sandbox"}
+                              onChange={e => setKyc({ mode: e.target.value })}
+                              disabled={(kyc.provider || "mock") === "mock"}
+                            >
+                              <option value="sandbox">Sandbox (testing)</option>
+                              <option value="live">Live</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <Label>API Token</Label>
+                            <Input
+                              type="password"
+                              autoComplete="off"
+                              value={kyc.apiToken || ""}
+                              onChange={e => setKyc({ apiToken: e.target.value.trim() })}
+                              placeholder="Paste the API token from your Surepass dashboard"
+                            />
+                            {kyc.provider === "surepass" && !kyc.apiToken && (
+                              <p className="text-xs font-semibold text-rose-600">
+                                API token is required for Surepass – paste it here and click Save Changes.
+                              </p>
+                            )}
+                            {kyc.provider === "surepass" && kyc.apiToken && (
+                              <p className="text-xs text-emerald-600">Token entered ({kyc.apiToken.length} characters). Click Save Changes to apply.</p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Name match threshold (%)</Label>
+                            <Input
+                              type="number"
+                              min={50}
+                              max={100}
+                              value={kyc.nameMatchThreshold ?? 80}
+                              onChange={e => setKyc({ nameMatchThreshold: Math.min(100, Math.max(50, parseInt(e.target.value) || 80)) })}
+                            />
+                            <p className="text-xs text-zinc-400">How closely the names on Aadhaar, PAN and the uploaded cards must match. 80 is recommended.</p>
+                          </div>
+                          <div className="space-y-3 pt-1">
+                            <label className="flex items-start gap-2 text-sm">
+                              <input type="checkbox" className="mt-1" checked={kyc.requireDocumentMatch !== false} onChange={e => setKyc({ requireDocumentMatch: e.target.checked })} />
+                              <span>Require uploaded Aadhaar & PAN cards to match (OCR)</span>
+                            </label>
+                            <label className="flex items-start gap-2 text-sm">
+                              <input type="checkbox" className="mt-1" checked={!!kyc.allowManualReviewFallback} onChange={e => setKyc({ allowManualReviewFallback: e.target.checked })} />
+                              <span>Allow submission without verification (marked &quot;Needs Review&quot; for admin)</span>
+                            </label>
+                          </div>
+                          {kyc.enabled && (kyc.provider || "mock") === "mock" && (
+                            <div className="md:col-span-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+                              ⚠ Test mode is active – no real government verification happens. Switch to a real provider before going live.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

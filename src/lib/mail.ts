@@ -112,6 +112,7 @@ export async function sendSalarySlipEmail({
   grossSalary,
   netSalary,
   pdfBase64,
+  htmlBody,
 }: {
   email: string;
   employeeName: string;
@@ -119,7 +120,9 @@ export async function sendSalarySlipEmail({
   grossSalary: number;
   netSalary: number;
   pdfBase64?: string;
-}) {
+  /** Full salary-slip HTML (lib/payslipTemplate.ts). When given it is the email body. */
+  htmlBody?: string;
+}): Promise<boolean> {
   const subject = `Salary Slip for ${monthYear} - Niventra Capital`;
   const textContent = `Hi ${employeeName},\n\nYour salary slip for ${monthYear} has been generated.\n\nGross Salary: ₹${grossSalary.toLocaleString()}\nNet Salary: ₹${netSalary.toLocaleString()}\n\nPlease access your employee portal to view and download your salary slips.\n\nBest regards,\nHR Administration Team`;
 
@@ -162,16 +165,19 @@ export async function sendSalarySlipEmail({
         to: email,
         subject,
         text: textContent,
-        html: htmlContent,
+        html: htmlBody || htmlContent,
         attachments,
       });
       console.log(`Salary slip email successfully sent to ${email}`);
+      return true;
     } catch (err) {
       console.error("Nodemailer send salary slip failed:", err);
       saveEmailLocally(email, subject, textContent);
+      return false;
     }
   } else {
     saveEmailLocally(email, subject, textContent);
+    return false;
   }
 }
 
@@ -187,4 +193,52 @@ function saveEmailLocally(email: string, subject: string, content: string) {
   } catch (err) {
     console.error("Failed to save simulated email locally:", err);
   }
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
+/** Emails the investment Payment Receipt. Returns false when SMTP is not configured. */
+export async function sendPaymentReceiptEmail(p: {
+  receiptNo: string;
+  investorName: string;
+  email: string;
+  investorCode: string;
+  applicationNo: string;
+  amount: number;
+  method: string;
+  razorpayPaymentId: string;
+  manual: { utrNo: string; mode: string; paymentDate: string };
+  paidAt: Date | string | null;
+}): Promise<boolean> {
+  if (!p.email) return false;
+  const smtpConfig = await getTransporter();
+  if (!smtpConfig) return false;
+
+  const amount = Number(p.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const paidOn = p.paidAt ? new Date(p.paidAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "";
+  const reference = p.method === "online" ? `Razorpay Payment ID: ${p.razorpayPaymentId}` : `Transaction / UTR No.: ${p.manual?.utrNo}`;
+  const mode = p.method === "online" ? "Online (Razorpay)" : (p.manual?.mode || "Bank Transfer");
+  const rows: [string, string][] = [
+    ["Receipt No.", p.receiptNo],
+    ["Investor", `${p.investorName} (${p.investorCode})`],
+    ["Application No.", p.applicationNo || "-"],
+    ["Amount Received", `Rs. ${amount}`],
+    ["Payment Mode", mode],
+    ["Reference", reference],
+    ["Date", paidOn],
+  ];
+
+  await smtpConfig.transporter.sendMail({
+    from: smtpConfig.from,
+    to: p.email,
+    subject: `Payment Receipt ${p.receiptNo} – Rs. ${amount} received`,
+    text: `Dear ${p.investorName},\n\nWe have received your investment payment.\n\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nYou can view and download this receipt from your investor dashboard.\n\nThank you.`,
+    html: `<p>Dear ${escapeHtml(p.investorName)},</p><p>We have received your investment payment.</p>
+<table cellpadding="6" style="border-collapse:collapse;border:1px solid #ddd;font-family:Arial,sans-serif;font-size:14px">
+${rows.map(([k, v]) => `<tr><td style="border:1px solid #ddd;background:#f7f7f7"><b>${escapeHtml(k)}</b></td><td style="border:1px solid #ddd">${escapeHtml(v)}</td></tr>`).join("")}
+</table><p>You can view and download this receipt from your investor dashboard.</p><p>Thank you.</p>`,
+  });
+  return true;
 }

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2, Upload, Eye, X, File, Edit2 } from "lucide-react";
+import { Trash2, Plus, Printer, RefreshCw, FileText, Save, List, Loader2, Upload, Eye, X, File, Edit2, CreditCard } from "lucide-react";
+import InvestmentPaymentsTab from "@/components/payments/InvestmentPaymentsTab";
 
 interface UploadedFile {
   name: string;
@@ -36,7 +37,7 @@ export default function InvoicePage() {
   const [themeColor, setThemeColor] = useState("#1a3668");
 
   // Tab & Saved Invoice states
-  const [activeTab, setActiveTab] = useState<"editor" | "list">("editor");
+  const [activeTab, setActiveTab] = useState<"editor" | "list" | "payments">("editor");
   const [savedInvoices, setSavedInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewInvoice, setViewInvoice] = useState<any>(null);
@@ -568,6 +569,13 @@ export default function InvoicePage() {
         >
           <List className="w-4 h-4 mr-1.5" /> Saved Invoices ({savedInvoices.length})
         </Button>
+        <Button
+          variant={activeTab === "payments" ? "default" : "ghost"}
+          onClick={() => setActiveTab("payments")}
+          className={`text-xs font-semibold rounded-t-lg rounded-b-none border-b-2 px-4 py-2 h-9 ${activeTab === "payments" ? "border-indigo-650 bg-[#0d2452] text-white" : "border-dark text-dark dark:text-zinc-400"}`}
+        >
+          <CreditCard className="w-4 h-4 mr-1.5" /> Investment Payments
+        </Button>
         {activeTab === "list" && (
           <Button
             variant="ghost"
@@ -579,6 +587,10 @@ export default function InvoicePage() {
         )}
       </div>
 
+      {/* Investment payment receipts (Razorpay + verified UTR payments) */}
+      {activeTab === "payments" && <InvestmentPaymentsTab />}
+
+      {activeTab !== "payments" && (<>
       {/* Editor Controls Section - Hidden during print */}
       <Card className="print:hidden border border-zinc-200 dark:border-zinc-800 shadow-xl bg-white dark:bg-zinc-950">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between space-y-2 md:space-y-0 pb-4 border-b border-zinc-150 dark:border-zinc-850">
@@ -1781,6 +1793,7 @@ export default function InvoicePage() {
           </div>
         </div>
       </div>
+      </>)}
     </div>
   )
 }

@@ -7,6 +7,9 @@ import { Counter } from "@/lib/models/Counter";
 import { DebentureContactOtp } from "@/lib/models/DebentureContactOtp";
 import { verifyAccessToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { requireVerifiedKyc, investorSummary, maskAadhaar } from "@/lib/kyc/service";
+import { KycUserError } from "@/lib/kyc/types";
+import { createPayToken } from "@/lib/payments/service";
 
 function getToken(req: Request): string | null {
   const cookieHeader = req.headers.get("cookie");
@@ -118,7 +121,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
     }
 
-    if (data.skipContactVerification !== true) {
+    // Check authentication for existing users
+    let authenticatedUserId = null;
+    let authenticatedUserRole = null;
+    const token = getToken(req);
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        if (payload && payload.userId) {
+          authenticatedUserId = payload.userId;
+          authenticatedUserRole = payload.role;
+        }
+      } catch (e) {
+        // invalid token, ignore
+      }
+    }
+
+    // A logged-in investor adding another investment from their dashboard has already proved
+    // their identity by logging in – no email/mobile OTP needed when it's their own account email.
+    let isOwnInvestorAccount = false;
+    if (authenticatedUserId && String(authenticatedUserRole || "").toUpperCase() === "INVESTOR") {
+      const loggedInUser: any = await User.findById(authenticatedUserId).select("email").lean();
+      isOwnInvestorAccount = Boolean(loggedInUser?.email && String(loggedInUser.email).toLowerCase().trim() === cleanEmail);
+    }
+
+    if (data.skipContactVerification !== true && !isOwnInvestorAccount) {
       const now = new Date();
       const [verifiedEmail, verifiedPhone] = await Promise.all([
         DebentureContactOtp.findOne({
@@ -152,19 +179,58 @@ export async function POST(req: Request) {
 
     const calculatedTotal = Number(faceValue || 1000) * Number(noOfDebentures || 1);
 
-    // Check authentication for existing users
-    let authenticatedUserId = null;
-    let authenticatedUserRole = null;
-    const token = getToken(req);
-    if (token) {
-      try {
-        const payload = verifyAccessToken(token);
-        if (payload && payload.userId) {
-          authenticatedUserId = payload.userId;
-          authenticatedUserRole = payload.role;
-        }
-      } catch (e) {
-        // invalid token, ignore
+    // --- Government KYC (Aadhaar OTP + PAN + document match) ---
+    // When enabled in Settings → Integrations → KYC, the application is only accepted
+    // with a verified KYC session (or an investor already verified / approved by admin).
+    let existingInvestorKyc: any = null;
+    if (authenticatedUserId && String(authenticatedUserRole || "").toUpperCase() === "INVESTOR") {
+      const prior: any = await Investor.findOne({
+        userId: authenticatedUserId,
+        "kycVerification.status": { $in: ["Verified", "Manual Override"] },
+      }).sort({ createdAt: -1 }).select("kycVerification kycDocs").lean();
+      if (prior) existingInvestorKyc = { ...prior.kycVerification, kycDocs: prior.kycDocs };
+    }
+
+    let kycResult: any;
+    try {
+      kycResult = await requireVerifiedKyc(req, {
+        kycToken: data.kycToken,
+        applicantName: fullName,
+        existingInvestorKyc,
+      });
+    } catch (kycError: any) {
+      if (kycError instanceof KycUserError) {
+        return NextResponse.json({ error: kycError.message, kycRequired: true }, { status: kycError.status });
+      }
+      throw kycError;
+    }
+
+    // Values taken from the verified KYC override whatever the browser sent.
+    let kycPanNumber = panNumber ? String(panNumber).toUpperCase().trim() : "";
+    let kycAadhaarNumber = aadharNumber ? String(aadharNumber).trim() : "";
+    let kycPanDocUrl = panDocUrl || "";
+    let kycAadhaarDocUrl = aadharDocUrl || "";
+    let kycVerification: any = undefined;
+    let kycAutoApproved = false;
+
+    if (kycResult.enabled) {
+      if (kycResult.session) {
+        const s = kycResult.session;
+        kycVerification = investorSummary(s, kycResult.status);
+        if (s.pan?.number) kycPanNumber = s.pan.number;
+        if (s.aadhaar?.last4) kycAadhaarNumber = maskAadhaar(s.aadhaar.last4);
+        if (s.documents?.pan?.url) kycPanDocUrl = s.documents.pan.url;
+        if (s.documents?.aadhaar?.url) kycAadhaarDocUrl = s.documents.aadhaar.url;
+        kycAutoApproved = kycResult.status === "Verified" && kycVerification.documentsMatched;
+      } else if (kycResult.existing) {
+        const ex = kycResult.existing;
+        kycVerification = { ...ex };
+        delete kycVerification.kycDocs;
+        if (ex.panNumber) kycPanNumber = ex.panNumber;
+        if (ex.aadhaarMasked) kycAadhaarNumber = ex.aadhaarMasked;
+        kycPanDocUrl = kycPanDocUrl || ex.kycDocs?.panDocUrl || "";
+        kycAadhaarDocUrl = kycAadhaarDocUrl || ex.kycDocs?.aadharDocUrl || "";
+        kycAutoApproved = ex.status === "Verified" && Boolean(ex.documentsMatched);
       }
     }
 
@@ -273,19 +339,21 @@ export async function POST(req: Request) {
           nomineeAge: nomineeAge ? nomineeAge.trim() : "",
           nomineeDocUrl: nomineeDocUrl || "",
           kycDocs: {
-            panNumber: panNumber ? panNumber.toUpperCase().trim() : "",
-            aadharNumber: aadharNumber ? aadharNumber.trim() : "",
-            panDocUrl: panDocUrl || "",
-            aadharDocUrl: aadharDocUrl || "",
+            panNumber: kycPanNumber,
+            aadharNumber: kycAadhaarNumber,
+            panDocUrl: kycPanDocUrl,
+            aadharDocUrl: kycAadhaarDocUrl,
             bankPassbookUrl: bankPassbookUrl || "",
             signatureUrl: signatureUrl || "",
             bankName: bankName || "",
             accountNumber: accountNo || "",
             ifscCode: ifscCode || "",
           },
+          ...(kycVerification ? { kycVerification } : {}),
           docVerifications: {
-            aadhar: aadharDocUrl ? "Pending" : "Pending",
-            pan: panDocUrl ? "Pending" : "Pending",
+            // Government-verified + document-matched KYC is approved automatically.
+            aadhar: kycAutoApproved ? "Approved" : "Pending",
+            pan: kycAutoApproved ? "Approved" : "Pending",
             marksheet10th: "Pending",
             marksheet12th: "Pending",
             bankPassbook: bankPassbookUrl ? "Pending" : "Pending",
@@ -304,11 +372,25 @@ export async function POST(req: Request) {
       }
     }
 
+    // Link the KYC session to the new investor/login so it is kept (no expiry) and reused on investor login.
+    if (kycResult?.session && investor) {
+      try {
+        const s = kycResult.session;
+        s.investorIds = [...(s.investorIds || []), investor._id];
+        if (!s.userId && userId) s.userId = userId;
+        s.expiresAt = undefined;
+        await s.save();
+      } catch (linkErr) {
+        console.error("[KYC] Failed to link KYC session to investor:", linkErr);
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
         message: "Debenture Application submitted and stored in Database successfully!",
-        data: { applicationNo, investorCode, investor },
+        // payToken lets the applicant pay for this investment right away without logging in (valid 48h).
+        data: { applicationNo, investorCode, investor, payToken: investor ? createPayToken(String(investor._id)) : undefined },
       },
       { status: 201 }
     );

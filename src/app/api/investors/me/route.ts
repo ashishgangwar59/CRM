@@ -10,6 +10,8 @@ import { Team } from "@/lib/models/Team";
 import { Counter } from "@/lib/models/Counter";
 import { verifyAccessToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { requireVerifiedKyc, investorSummary, maskAadhaar } from "@/lib/kyc/service";
+import { KycUserError } from "@/lib/kyc/types";
 
 function getToken(req: Request): string | null {
   const cookieHeader = req.headers.get("cookie");
@@ -506,6 +508,51 @@ export async function PUT(req: Request) {
     }
 
     const { investmentAmount, kycDocs, bondAgreement, debentureForm } = body;
+
+    // --- Government KYC gate (Settings → Integrations → KYC) ---
+    if (kycDocs) {
+      let kycResult: any;
+      try {
+        kycResult = await requireVerifiedKyc(req, { existingInvestorKyc: investor.kycVerification });
+      } catch (kycError: any) {
+        if (kycError instanceof KycUserError) {
+          return NextResponse.json({ error: kycError.message, kycRequired: true }, { status: kycError.status });
+        }
+        throw kycError;
+      }
+
+      if (kycResult.enabled && kycResult.session) {
+        const s = kycResult.session;
+        const summary = investorSummary(s, kycResult.status);
+        investor.kycVerification = summary as any;
+        // Verified values always win over what the browser sent.
+        kycDocs.panNumber = s.pan?.number || kycDocs.panNumber;
+        if (s.aadhaar?.last4) kycDocs.aadharNumber = maskAadhaar(s.aadhaar.last4);
+        if (s.documents?.pan?.url) kycDocs.panDocUrl = s.documents.pan.url;
+        if (s.documents?.aadhaar?.url) kycDocs.aadharDocUrl = s.documents.aadhaar.url;
+        if (kycResult.status === "Verified" && summary.documentsMatched) {
+          investor.docVerifications = {
+            ...(investor.docVerifications || {}),
+            aadhar: "Approved",
+            pan: "Approved",
+          } as any;
+        }
+        if (!(s.investorIds || []).some((id: any) => String(id) === String(investor._id))) {
+          s.investorIds = [...(s.investorIds || []), investor._id];
+          await s.save();
+        }
+        investor.markModified("kycVerification");
+      } else if (kycResult.enabled && kycResult.existing) {
+        // Already verified earlier – don't allow the verified identity to be changed from the browser.
+        const ex = kycResult.existing;
+        if (ex.panNumber) kycDocs.panNumber = ex.panNumber;
+        if (ex.aadhaarMasked) kycDocs.aadharNumber = ex.aadhaarMasked;
+        if (ex.documentsMatched) {
+          kycDocs.panDocUrl = investor.kycDocs?.panDocUrl || kycDocs.panDocUrl;
+          kycDocs.aadharDocUrl = investor.kycDocs?.aadharDocUrl || kycDocs.aadharDocUrl;
+        }
+      }
+    }
 
     if (investmentAmount !== undefined) {
       investor.investmentAmount = Number(investmentAmount);

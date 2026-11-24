@@ -163,6 +163,15 @@ export async function GET(req: Request) {
       await settings.save();
     }
 
+    // Integration secrets (SMTP password, payment / SMS / KYC API keys) are only for settings admins.
+    const role = String(payload.role || "").toUpperCase().replace(/_/g, "");
+    if (role !== "KEYADMIN" && role !== "ADMIN" && role !== "MANAGER") {
+      const safe: any = settings.toObject();
+      delete safe.integrations;
+      delete safe.backupConfig;
+      return NextResponse.json({ success: true, data: safe });
+    }
+
     return NextResponse.json({ success: true, data: settings });
   } catch (error) {
     console.error("Settings GET Error:", error);
@@ -194,6 +203,18 @@ export async function PUT(req: Request) {
     delete updates.createdAt;
     delete updates.updatedAt;
     delete updates.__v;
+
+    // KYC: a real provider can't work without its API token – refuse the save instead of failing for applicants.
+    const kycUpdate = updates.integrations?.kyc;
+    if (kycUpdate && kycUpdate.provider === "surepass") {
+      kycUpdate.apiToken = String(kycUpdate.apiToken || "").trim();
+      if (kycUpdate.enabled && !kycUpdate.apiToken) {
+        return NextResponse.json(
+          { error: "KYC: Surepass API token is empty. Paste the token in Settings → Integrations → KYC, or switch the provider to Test mode." },
+          { status: 400 }
+        );
+      }
+    }
 
     // Save backupConfig field-by-field so the server-managed lastAutoBackupDate isn't overwritten
     // (overwriting it could re-send today's automatic backup).

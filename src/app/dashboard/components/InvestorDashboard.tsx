@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { DollarSign, Upload, CheckCircle2, Clock, XCircle, FileText, TrendingUp, ShieldCheck, CheckSquare, Award, IndianRupee, CalendarDays } from "lucide-react";
 import PaymentBondModal from "../investors/PaymentBondModal";
 import DashboardPhotoSignatureUploader from "@/components/DashboardPhotoSignatureUploader";
+import { useKyc, KycVerifyButton, KycVerifyDialog } from "@/components/kyc/KycVerify";
+import InvestmentPayPanel from "@/components/payments/InvestmentPayPanel";
 
 export function InvestorDashboard() {
   const [allInvestments, setAllInvestments] = useState<any[]>([]);
@@ -43,6 +45,30 @@ export function InvestorDashboard() {
   const [signatureText, setSignatureText] = useState("");
 
   const [bondTemplate, setBondTemplate] = useState<string>("");
+
+  // Government KYC (Aadhaar OTP + PAN + document match)
+  const kyc = useKyc("investor");
+  const [kycDialog, setKycDialog] = useState<null | "aadhaar" | "pan">(null);
+  const recordKycStatus = investor?.kycVerification?.status;
+  const kycApprovedOnRecord = recordKycStatus === "Verified" || recordKycStatus === "Manual Override";
+  const kycSessionVerified = kyc.view?.overallStatus === "Verified";
+  const kycOk = !kyc.enabled || kycApprovedOnRecord || kycSessionVerified || Boolean(kyc.view?.allowManualReviewFallback);
+  const kycDocsHandled = kyc.enabled && Boolean(kyc.view?.requireDocumentMatch);
+
+  // Fill verified Aadhaar / PAN details into the KYC form as each step completes.
+  useEffect(() => {
+    if (!kyc.enabled || !kyc.view) return;
+    const v = kyc.view;
+    const aOk = v.aadhaar.status === "Verified";
+    const pOk = v.pan.status === "Verified" && v.overallStatus !== "Failed";
+    setKycDocs((prev) => ({
+      ...prev,
+      ...(aOk ? { aadharNumber: v.aadhaar.masked || prev.aadharNumber } : {}),
+      ...(pOk ? { panNumber: v.pan.number || prev.panNumber } : {}),
+      ...(v.documents.aadhaar.status === "Matched" ? { aadharDocUrl: v.documents.aadhaar.url } : {}),
+      ...(v.documents.pan.status === "Matched" ? { panDocUrl: v.documents.pan.url } : {}),
+    }));
+  }, [kyc.enabled, kyc.view]);
 
   const loadInvestmentData = (data: any) => {
     setInvestor(data);
@@ -133,6 +159,13 @@ export function InvestorDashboard() {
   const handleSubmitAll = async () => {
     setSaving(true);
     setMsg(null);
+
+    if (!kycOk) {
+      setMsg({ type: "error", text: "Please verify your Aadhaar and PAN using the Verify buttons next to those fields." });
+      setSaving(false);
+      setKycDialog(kyc.aadhaarComplete ? "pan" : "aadhaar");
+      return;
+    }
 
     if (!kycDocs.aadharDocUrl || !kycDocs.panDocUrl || !kycDocs.bankPassbookUrl) {
       setMsg({ type: "error", text: "Please upload mandatory docs: Aadhar, PAN, and Bank Passbook." });
@@ -441,6 +474,9 @@ export function InvestorDashboard() {
         </div>
       )}
 
+      {/* Pay the investment online (Razorpay) or submit a bank-transfer UTR – hidden when payments are disabled */}
+      <InvestmentPayPanel key={investor._id} investorId={investor._id} />
+
       {/* Step 1: Investment Amount */}
       <Card>
         <CardHeader>
@@ -463,6 +499,29 @@ export function InvestorDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Government KYC verification – shown until the investor is verified */}
+      {kycApprovedOnRecord ? (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+          <ShieldCheck className="h-5 w-5" />
+          {recordKycStatus === "Manual Override" ? "KYC approved by Admin." : "Aadhaar & PAN verified with government records."}
+          {investor.kycVerification?.aadhaarMasked && <span className="font-normal">Aadhaar {investor.kycVerification.aadhaarMasked} · PAN {investor.kycVerification.panNumber}</span>}
+        </div>
+      ) : null}
+
+      {/* Aadhaar / PAN government verification popup (opened from the Verify buttons) */}
+      {!kycApprovedOnRecord && (
+        <KycVerifyDialog
+          kyc={kyc}
+          step={kycDialog || "aadhaar"}
+          open={kycDialog !== null}
+          onClose={() => setKycDialog(null)}
+          onSwitchStep={(step) => setKycDialog(step)}
+          initialAadhaar={kycDocs.aadharNumber}
+          initialPan={kycDocs.panNumber}
+          applicantName={investor.fullName}
+        />
+      )}
 
       {/* Step 2: Mandatory & Optional KYC Documents */}
       <Card className="border-zinc-200 dark:border-zinc-800 shadow-md overflow-hidden">
@@ -488,6 +547,8 @@ export function InvestorDashboard() {
             ].map((item) => {
               const fileUrl = (kycDocs as any)[item.field];
               const docStatus = investor.docVerifications?.[item.statusKey as keyof typeof investor.docVerifications];
+              // Aadhaar / PAN number + card come from the government KYC verification above.
+              const kycManaged = kyc.enabled && (item.statusKey === "aadhar" || item.statusKey === "pan");
 
               return (
                 <div key={item.field} className="p-4 border rounded-xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all space-y-3 shadow-sm">
@@ -512,13 +573,28 @@ export function InvestorDashboard() {
                   </div>
 
                   {item.numField && (
+                    <div className="flex items-center gap-2">
                     <Input
                       placeholder={item.numPlaceholder}
                       value={item.numVal}
                       onChange={(e) => setKycDocs({ ...kycDocs, [item.numKey]: e.target.value })}
-                      disabled={investor.status === "Verified" || docStatus === "Approved"}
+                      disabled={investor.status === "Verified" || docStatus === "Approved" || kycManaged}
                       className="bg-zinc-50 dark:bg-green text-sm disabled:opacity-75"
                     />
+                    {kycManaged && !kycApprovedOnRecord && (
+                      <KycVerifyButton
+                        kyc={kyc}
+                        step={item.statusKey === "aadhar" ? "aadhaar" : "pan"}
+                        onClick={() => setKycDialog(item.statusKey === "aadhar" ? "aadhaar" : "pan")}
+                        className="h-9"
+                      />
+                    )}
+                    </div>
+                  )}
+                  {kycManaged && (
+                    <p className="text-[11px] font-semibold text-indigo-600">
+                      {kycApprovedOnRecord ? "Verified with government records." : kycDocsHandled ? "Click Verify to check this number and upload the card." : "Click Verify to check this number."}
+                    </p>
                   )}
 
                   {/* Attractive Drag/Drop Zone */}
@@ -535,7 +611,7 @@ export function InvestorDashboard() {
                       accept=".pdf,application/pdf"
                       className="hidden"
                       onChange={(e) => handleFileUpload(e, item.field)}
-                      disabled={investor.status === "Verified" || docStatus === "Approved"}
+                      disabled={investor.status === "Verified" || docStatus === "Approved" || (kycManaged && kycDocsHandled)}
                     />
 
                     {docStatus === "Approved" ? (

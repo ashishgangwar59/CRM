@@ -24,6 +24,8 @@ import { QRCodeSVG } from "qrcode.react";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/cropImage";
 import { getDaysBetweenDates } from "@/lib/dateUtils";
+import { useKyc, KycVerifyButton, KycVerifyDialog } from "@/components/kyc/KycVerify";
+import InvestmentPayPanel from "@/components/payments/InvestmentPayPanel";
 function DebentureFormContent() {
   const searchParams: any = useSearchParams();
   const refCodeParam = searchParams.get("ref") || "";
@@ -37,6 +39,13 @@ function DebentureFormContent() {
     type: "success" | "error";
   } | null>(null);
   const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File }>({});
+  // Government KYC state (Verify buttons next to Aadhaar / PAN open the popup)
+  const kyc = useKyc("public");
+  const [kycDialog, setKycDialog] = useState<null | "aadhaar" | "pan">(null);
+  const [kycRefill, setKycRefill] = useState(0); // bump to re-apply verified details (e.g. after Reset Form)
+  const kycVerified = kyc.verified;
+  const kycLocked = kyc.enabled && !kycVerified && !kyc.view?.allowManualReviewFallback;
+  const kycDocsHandled = kyc.enabled && Boolean(kyc.view?.requireDocumentMatch);
   const [skipContactVerification, setSkipContactVerification] = useState(false);
   const [emailOtp, setEmailOtp] = useState({
     code: "",
@@ -548,6 +557,44 @@ function DebentureFormContent() {
     }));
   };
 
+  // Fill the form with government-verified details as each step completes.
+  const kycAadhaarVerified = kyc.enabled && kyc.view?.aadhaar.status === "Verified";
+  const kycPanVerified = kyc.enabled && kyc.view?.pan.status === "Verified" && kyc.view?.overallStatus !== "Failed";
+  useEffect(() => {
+    if (!kyc.enabled || !kyc.view) return;
+    const v = kyc.view;
+    const aOk = v.aadhaar.status === "Verified";
+    const pOk = v.pan.status === "Verified" && v.overallStatus !== "Failed";
+    const aDoc = v.documents.aadhaar.status === "Matched" ? v.documents.aadhaar.url : "";
+    const pDoc = v.documents.pan.status === "Matched" ? v.documents.pan.url : "";
+    if (!aOk && !pOk) return;
+    setForm((prev) => ({
+      ...prev,
+      ...(aOk ? {
+        fullName: v.aadhaar.name || prev.fullName,
+        dob: v.aadhaar.dob && /^\d{4}-\d{2}-\d{2}$/.test(v.aadhaar.dob) ? v.aadhaar.dob : prev.dob,
+        address: prev.address || v.aadhaar.address,
+        city: prev.city || v.aadhaar.city,
+        state: prev.state || v.aadhaar.state,
+        pinCode: prev.pinCode || v.aadhaar.pinCode,
+        fatherSpouseName: prev.fatherSpouseName || (v.aadhaar.careOf || "").replace(/^(S\/O|D\/O|W\/O|C\/O)[:\s]*/i, ""),
+        aadharNumber: v.aadhaar.masked || prev.aadharNumber,
+      } : {}),
+      ...(pOk ? { panNumber: v.pan.number || prev.panNumber } : {}),
+      ...(aDoc ? { aadharDocUrl: aDoc } : {}),
+      ...(pDoc ? { panDocUrl: pDoc } : {}),
+    }));
+    // Verified KYC documents are already stored on the server.
+    if (aDoc || pDoc) {
+      setPendingFiles((prev) => {
+        const next = { ...prev };
+        if (pDoc) delete next.panDocUrl;
+        if (aDoc) delete next.aadharDocUrl;
+        return next;
+      });
+    }
+  }, [kyc.enabled, kyc.view, kycRefill]);
+
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     field: string,
@@ -795,6 +842,12 @@ function DebentureFormContent() {
       setTimeout(() => setToastMsg(null), 4000);
     };
 
+    if (kycLocked) {
+      showError("Please verify your Aadhaar and PAN using the Verify buttons next to those fields.");
+      setKycDialog(kyc.aadhaarComplete ? "pan" : "aadhaar");
+      return;
+    }
+
     // Client-side validations
     if (!form.fullName || !form.fullName.trim()) {
       showError("Please enter the Full Name (Applicant).");
@@ -923,7 +976,7 @@ function DebentureFormContent() {
       const res = await fetch("/api/debenture-application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...finalForm, skipContactVerification }),
+        body: JSON.stringify({ ...finalForm, skipContactVerification, kycToken: kyc.view?.token }),
       });
 
       const json = await res.json();
@@ -1002,7 +1055,7 @@ function DebentureFormContent() {
   if (submitted) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4"
+        className="min-h-screen flex flex-col items-center justify-center gap-4 p-4"
         style={{ background: "#e7e7e7" }}
       >
         <Card
@@ -1047,6 +1100,14 @@ function DebentureFormContent() {
             </a>
           </div>
         </Card>
+        {/* Pay now (online or bank-transfer UTR) right after submitting */}
+        {submitted.investor?._id && submitted.payToken && (
+          <InvestmentPayPanel
+            investorId={String(submitted.investor._id)}
+            payToken={submitted.payToken}
+            className="w-full max-w-2xl"
+          />
+        )}
       </div>
     );
   }
@@ -1773,6 +1834,18 @@ function DebentureFormContent() {
         }
       `}</style>
 
+      {/* Aadhaar / PAN government verification popup (opened from the Verify buttons) */}
+      <KycVerifyDialog
+        kyc={kyc}
+        step={kycDialog || "aadhaar"}
+        open={kycDialog !== null}
+        onClose={() => setKycDialog(null)}
+        onSwitchStep={(step) => setKycDialog(step)}
+        initialAadhaar={form.aadharNumber}
+        initialPan={form.panNumber}
+        applicantName={form.fullName}
+      />
+
       <form className="sheet" id="debentureForm" onSubmit={handleSubmit}>
         {/* HEADER */}
         <div className="header">
@@ -1992,6 +2065,8 @@ function DebentureFormContent() {
                 type="text"
                 name="fullName"
                 required
+                readOnly={kycAadhaarVerified}
+                title={kycAadhaarVerified ? "Verified from Aadhaar" : undefined}
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
               />
@@ -2028,6 +2103,7 @@ function DebentureFormContent() {
               <input
                 type="date"
                 name="dob"
+                readOnly={kycAadhaarVerified && !!form.dob}
                 style={{ width: "150px" }}
                 value={form.dob}
                 onChange={(e) => setForm({ ...form, dob: e.target.value })}
@@ -2039,6 +2115,7 @@ function DebentureFormContent() {
                 <input
                   type="text"
                   name="panNumber"
+                  readOnly={kycPanVerified}
                   maxLength={10}
                   style={{
                     width: "140px",
@@ -2057,6 +2134,7 @@ function DebentureFormContent() {
                   placeholder="PAN NO."
                 />
               </div>
+              <KycVerifyButton kyc={kyc} step="pan" onClick={() => setKycDialog("pan")} />
               <span style={{ marginLeft: "10px", whiteSpace: "nowrap" }}>
                 Aadhaar No. &nbsp;:
               </span>
@@ -2064,6 +2142,7 @@ function DebentureFormContent() {
                 <input
                   type="text"
                   name="aadharNumber"
+                  readOnly={kycAadhaarVerified}
                   maxLength={12}
                   style={{
                     width: "160px",
@@ -2081,6 +2160,7 @@ function DebentureFormContent() {
                   placeholder="AADHAAR NO."
                 />
               </div>
+              <KycVerifyButton kyc={kyc} step="aadhaar" onClick={() => setKycDialog("aadhaar")} />
             </div>
           </div>
           <div className="field-row">
@@ -3231,12 +3311,18 @@ function DebentureFormContent() {
               >
                 Attach PAN Card
               </span>
-              <input
-                type="file"
-                accept=".pdf,image/*"
-                style={{ fontSize: "11px" }}
-                onChange={(e) => handleFileUpload(e, "panDocUrl")}
-              />
+              {kycDocsHandled ? (
+                <span style={{ fontSize: "11px", color: "#555", display: "block" }}>
+                  {form.panDocUrl ? "Verified via KYC" : "Upload via the Verify button next to PAN No."}
+                </span>
+              ) : (
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  style={{ fontSize: "11px" }}
+                  onChange={(e) => handleFileUpload(e, "panDocUrl")}
+                />
+              )}
               {form.panDocUrl && (
                 <div className="flex items-center gap-2 mt-1">
                   <span
@@ -3280,12 +3366,18 @@ function DebentureFormContent() {
               >
                 Attach Aadhaar Card
               </span>
-              <input
-                type="file"
-                accept=".pdf,image/*"
-                style={{ fontSize: "11px" }}
-                onChange={(e) => handleFileUpload(e, "aadharDocUrl")}
-              />
+              {kycDocsHandled ? (
+                <span style={{ fontSize: "11px", color: "#555", display: "block" }}>
+                  {form.aadharDocUrl ? "Verified via KYC" : "Upload via the Verify button next to Aadhaar No."}
+                </span>
+              ) : (
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  style={{ fontSize: "11px" }}
+                  onChange={(e) => handleFileUpload(e, "aadharDocUrl")}
+                />
+              )}
               {form.aadharDocUrl && (
                 <div className="flex items-center gap-2 mt-1">
                   <span
@@ -3581,6 +3673,8 @@ function DebentureFormContent() {
             setSkipContactVerification(false);
             clearSignature();
             setError(null);
+            // Re-apply the verified KYC details (they can't be cleared by Reset).
+            setKycRefill((n) => n + 1);
           }}
         >
           Reset Form

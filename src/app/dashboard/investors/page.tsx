@@ -1,5 +1,6 @@
 "use client";
 
+import { KycStatusBadge, KycDetailsCard } from "@/components/kyc/KycAdmin";
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -761,6 +762,20 @@ export default function AdminInvestorsPage() {
                             }`}>
                             {inv.status}
                           </span>
+                          <div><KycStatusBadge kyc={inv.kycVerification} /></div>
+                          {(() => {
+                            const ps = inv.payment?.status || "Unpaid";
+                            const pending = inv.payment?.pendingVerificationAmount > 0;
+                            const cls = ps === "Paid" ? "bg-emerald-100 text-emerald-700" : ps === "Partially Paid" ? "bg-sky-100 text-sky-700" : "bg-zinc-100 text-zinc-500";
+                            return (
+                              <div className="flex flex-wrap gap-1">
+                                <span className={"inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold " + cls}>
+                                  {ps}{ps === "Partially Paid" ? " ₹" + Number(inv.payment?.amountPaid || 0).toLocaleString("en-IN") : ""}
+                                </span>
+                                {pending && <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">UTR to verify</span>}
+                              </div>
+                            );
+                          })()}
                           {inv.docVerifications && (
                             <p className="text-[11px] text-zinc-500 font-medium">
                               Docs: <span className="font-bold text-emerald-600 dark:text-emerald-400">
@@ -1127,6 +1142,17 @@ export default function AdminInvestorsPage() {
                   </div>
                 </div>
               )}
+
+              {/* Government KYC verification details + manual override */}
+              <KycDetailsCard
+                investorId={selectedInvestor._id}
+                kyc={selectedInvestor.kycVerification}
+                canOverride={["ADMIN", "KEY_ADMIN", "KEYADMIN"].includes(String(role || "").toUpperCase())}
+                onUpdated={(updated) => {
+                  setSelectedInvestor((prev: any) => ({ ...prev, kycVerification: updated.kycVerification }));
+                  fetchInvestors();
+                }}
+              />
 
               {/* Uploaded Documents Check List with One-by-One Verification */}
               <div className="space-y-3">
